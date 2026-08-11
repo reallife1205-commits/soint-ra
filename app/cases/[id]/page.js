@@ -8,6 +8,7 @@ import { MODULES } from "@/lib/modules";
 import Module1Table from "./Module1Table";
 import Module2Panel from "./Module2Panel";
 import Module3Panel from "./Module3Panel";
+import Module4Panel from "./Module4Panel";
 import GenericModuleTable from "./GenericModuleTable";
 import DocumentUpload from "./DocumentUpload";
 
@@ -229,6 +230,8 @@ export default function CaseDetailPage() {
             <div className="card">
               <Module3Panel caseId={id} />
             </div>
+          ) : activeModule === 4 ? (
+            <Module4Panel caseId={id} />
           ) : (
             <div className="card">
               <GenericModuleTable caseId={id} moduleNumber={activeModule} />
