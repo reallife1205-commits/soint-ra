@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useModuleRows } from "@/lib/useModuleRows";
 
 const FIELDS = [
@@ -16,8 +17,29 @@ const FIELDS = [
 export default function Module1Table({ caseId }) {
   const { rows, loading, addRow, updateRow, deleteRow } = useModuleRows(caseId, 1);
 
-  function handleCellChange(row, key, value) {
-    updateRow(row.id, { ...row.row_data, [key]: value });
+  // 타이핑 중에는 화면에만 반영하고, 창고 저장은 나중에(포커스 벗어날 때) 하기 위한 임시 상태
+  const [localValues, setLocalValues] = useState({});
+
+  useEffect(() => {
+    const next = {};
+    rows.forEach((row) => {
+      next[row.id] = { ...row.row_data };
+    });
+    setLocalValues(next);
+  }, [rows]);
+
+  function handleLocalChange(rowId, key, value) {
+    setLocalValues((prev) => ({
+      ...prev,
+      [rowId]: { ...prev[rowId], [key]: value },
+    }));
+  }
+
+  function handleBlurSave(row, key) {
+    const newData = localValues[row.id] || row.row_data;
+    if (JSON.stringify(newData) !== JSON.stringify(row.row_data)) {
+      updateRow(row.id, newData);
+    }
   }
 
   return (
@@ -59,15 +81,17 @@ export default function Module1Table({ caseId }) {
               </tr>
             ) : (
               rows.map((row) => {
-                const isConcernExceed = row.row_data.concern_standard;
-                const isActionExceed = row.row_data.action_standard;
+                const localRow = localValues[row.id] || row.row_data;
+                const isConcernExceed = localRow.concern_standard;
+                const isActionExceed = localRow.action_standard;
                 return (
                   <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
                     {FIELDS.map((f) => (
                       <td key={f.key} style={{ padding: "4px 6px" }}>
                         <input
-                          value={row.row_data[f.key] || ""}
-                          onChange={(e) => handleCellChange(row, f.key, e.target.value)}
+                          value={localRow[f.key] || ""}
+                          onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
+                          onBlur={() => handleBlurSave(row, f.key)}
                           style={{
                             width: "100%",
                             border: "none",

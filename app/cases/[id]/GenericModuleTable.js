@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useModuleRows } from "@/lib/useModuleRows";
 
 const DEFAULT_FIELDS = [
@@ -14,8 +15,28 @@ export default function GenericModuleTable({ caseId, moduleNumber }) {
     moduleNumber
   );
 
-  function handleCellChange(row, key, value) {
-    updateRow(row.id, { ...row.row_data, [key]: value });
+  const [localValues, setLocalValues] = useState({});
+
+  useEffect(() => {
+    const next = {};
+    rows.forEach((row) => {
+      next[row.id] = { ...row.row_data };
+    });
+    setLocalValues(next);
+  }, [rows]);
+
+  function handleLocalChange(rowId, key, value) {
+    setLocalValues((prev) => ({
+      ...prev,
+      [rowId]: { ...prev[rowId], [key]: value },
+    }));
+  }
+
+  function handleBlurSave(row, key) {
+    const newData = localValues[row.id] || row.row_data;
+    if (JSON.stringify(newData) !== JSON.stringify(row.row_data)) {
+      updateRow(row.id, newData);
+    }
   }
 
   return (
@@ -68,13 +89,16 @@ export default function GenericModuleTable({ caseId, moduleNumber }) {
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
+              rows.map((row) => {
+                const localRow = localValues[row.id] || row.row_data;
+                return (
                 <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
                   {DEFAULT_FIELDS.map((f) => (
                     <td key={f.key} style={{ padding: "4px 6px" }}>
                       <input
-                        value={row.row_data[f.key] || ""}
-                        onChange={(e) => handleCellChange(row, f.key, e.target.value)}
+                        value={localRow[f.key] || ""}
+                        onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
+                        onBlur={() => handleBlurSave(row, f.key)}
                         style={{
                           width: "100%",
                           border: "none",
@@ -100,7 +124,8 @@ export default function GenericModuleTable({ caseId, moduleNumber }) {
                     </button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
