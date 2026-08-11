@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { MODULES } from "@/lib/modules";
 import Module1Table from "./Module1Table";
+import Module2Panel from "./Module2Panel";
 import GenericModuleTable from "./GenericModuleTable";
 import DocumentUpload from "./DocumentUpload";
 
@@ -211,11 +212,22 @@ export default function CaseDetailPage() {
           <DocumentUpload caseId={id} moduleNumber={activeModule} />
         </div>
 
-        <div className="card" style={{ flex: 1 }}>
+        <div style={{ flex: 1 }}>
           {activeModule === 1 ? (
-            <Module1Table caseId={id} />
+            <div className="card">
+              <Module1Table caseId={id} />
+            </div>
+          ) : activeModule === 2 ? (
+            <Module2Panel
+              caseInfo={caseInfo}
+              onCoordsUpdated={(lat, lon) =>
+                setCaseInfo((c) => ({ ...c, lat, lon }))
+              }
+            />
           ) : (
-            <GenericModuleTable caseId={id} moduleNumber={activeModule} />
+            <div className="card">
+              <GenericModuleTable caseId={id} moduleNumber={activeModule} />
+            </div>
           )}
         </div>
       </div>
