@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { MODULES } from "@/lib/modules";
 import Module1Table from "./Module1Table";
 import Module2Panel from "./Module2Panel";
+import Module3Panel from "./Module3Panel";
 import GenericModuleTable from "./GenericModuleTable";
 import DocumentUpload from "./DocumentUpload";
 
@@ -224,6 +225,10 @@ export default function CaseDetailPage() {
                 setCaseInfo((c) => ({ ...c, lat, lon }))
               }
             />
+          ) : activeModule === 3 ? (
+            <div className="card">
+              <Module3Panel caseId={id} />
+            </div>
           ) : (
             <div className="card">
               <GenericModuleTable caseId={id} moduleNumber={activeModule} />
