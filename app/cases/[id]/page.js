@@ -1,51 +1,224 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { MODULES } from "@/lib/modules";
+import Module1Table from "./Module1Table";
+import GenericModuleTable from "./GenericModuleTable";
+import DocumentUpload from "./DocumentUpload";
 
 export default function CaseDetailPage() {
   const { id } = useParams();
   const [caseInfo, setCaseInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeModule, setActiveModule] = useState(1);
+  const [moduleStatus, setModuleStatus] = useState({});
 
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabase.from("cases").select("*").eq("id", id).single();
-      setCaseInfo(data);
-      setLoading(false);
-    }
-    load();
+  const loadCase = useCallback(async () => {
+    const { data } = await supabase.from("cases").select("*").eq("id", id).single();
+    setCaseInfo(data);
   }, [id]);
 
-  return (
-    <div className="page">
-      <Link href="/cases" style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
-        ← 목록으로
-      </Link>
+  const loadModuleStatus = useCallback(async () => {
+    const { data } = await supabase
+      .from("module_status")
+      .select("*")
+      .eq("case_id", id);
+    const map = {};
+    (data || []).forEach((row) => {
+      map[row.module_number] = row;
+    });
+    setModuleStatus(map);
+  }, [id]);
 
-      {loading ? (
-        <div className="card" style={{ marginTop: 16 }}>
-          불러오는 중이에요...
-        </div>
-      ) : !caseInfo ? (
+  useEffect(() => {
+    async function init() {
+      setLoading(true);
+      await Promise.all([loadCase(), loadModuleStatus()]);
+      setLoading(false);
+    }
+    init();
+  }, [loadCase, loadModuleStatus]);
+
+  const completedCount = Object.values(moduleStatus).filter(
+    (m) => m.is_completed
+  ).length;
+
+  async function toggleComplete() {
+    const current = moduleStatus[activeModule];
+    const newValue = !current?.is_completed;
+
+    if (current) {
+      await supabase
+        .from("module_status")
+        .update({
+          is_completed: newValue,
+          completed_at: newValue ? new Date().toISOString() : null,
+        })
+        .eq("id", current.id);
+    } else {
+      await supabase.from("module_status").insert([
+        {
+          case_id: id,
+          module_number: activeModule,
+          module_name: MODULES.find((m) => m.number === activeModule)?.name,
+          is_completed: newValue,
+          completed_at: newValue ? new Date().toISOString() : null,
+        },
+      ]);
+    }
+    await loadModuleStatus();
+
+    const allDone = MODULES.every((m) =>
+      m.number === activeModule ? newValue : moduleStatus[m.number]?.is_completed
+    );
+    if (allDone) {
+      await supabase.from("cases").update({ status: "완료" }).eq("id", id);
+      loadCase();
+    } else if (caseInfo?.status === "완료") {
+      await supabase.from("cases").update({ status: "작성중" }).eq("id", id);
+      loadCase();
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="card">불러오는 중이에요...</div>
+      </div>
+    );
+  }
+
+  if (!caseInfo) {
+    return (
+      <div className="page">
+        <Link href="/cases" style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          ← 목록으로
+        </Link>
         <div className="card" style={{ marginTop: 16 }}>
           해당 안건을 찾을 수 없어요.
         </div>
-      ) : (
-        <div className="card" style={{ marginTop: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>
-            {caseInfo.case_number} · {caseInfo.company_name}
+      </div>
+    );
+  }
+
+  const activeInfo = moduleStatus[activeModule];
+  const activeModuleMeta = MODULES.find((m) => m.number === activeModule);
+
+  return (
+    <div className="page">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <div>
+          <Link href="/cases" style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+            ← 목록
+          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 17 }}>
+              {caseInfo.case_number} · {caseInfo.company_name}
+            </span>
+            <span
+              className={`badge ${
+                caseInfo.status === "완료" ? "badge-green" : "badge-blue"
+              }`}
+            >
+              {caseInfo.status}
+            </span>
           </div>
-          <div style={{ color: "var(--color-text-muted)", marginTop: 4 }}>
-            {caseInfo.address}
-          </div>
-          <div style={{ marginTop: 16, fontSize: 13, color: "var(--color-text-muted)" }}>
-            모듈 1~7 탭 화면은 다음 단계에서 만들 예정이에요.
+          <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 2 }}>
+            {caseInfo.address} · 담당: {caseInfo.manager || "-"}
           </div>
         </div>
-      )}
+        <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          {completedCount}/7 완료
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          borderBottom: "1px solid var(--color-border)",
+          marginBottom: 20,
+          overflowX: "auto",
+        }}
+      >
+        {MODULES.map((m) => {
+          const isActive = activeModule === m.number;
+          const isDone = moduleStatus[m.number]?.is_completed;
+          return (
+            <button
+              key={m.number}
+              onClick={() => setActiveModule(m.number)}
+              style={{
+                border: "none",
+                background: "transparent",
+                padding: "10px 14px",
+                cursor: "pointer",
+                borderBottom: isActive
+                  ? "2px solid var(--color-primary)"
+                  : "2px solid transparent",
+                textAlign: "left",
+                minWidth: 100,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: isActive ? "var(--color-primary)" : "var(--color-text)",
+                }}
+              >
+                {isDone && "✓ "}모듈{m.number}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+                {m.name}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ fontSize: 15, fontWeight: 700 }}>
+          모듈{activeModule} — {activeModuleMeta?.name}
+        </div>
+        <button
+          className={activeInfo?.is_completed ? "btn-secondary" : "btn-primary"}
+          onClick={toggleComplete}
+        >
+          {activeInfo?.is_completed ? "완료 취소" : "완료 처리"}
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 20 }}>
+        <div className="card" style={{ width: 260, flexShrink: 0 }}>
+          <DocumentUpload caseId={id} moduleNumber={activeModule} />
+        </div>
+
+        <div className="card" style={{ flex: 1 }}>
+          {activeModule === 1 ? (
+            <Module1Table caseId={id} />
+          ) : (
+            <GenericModuleTable caseId={id} moduleNumber={activeModule} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
