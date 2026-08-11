@@ -32,14 +32,18 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
     setUploading(true);
     setError("");
 
-    const filePath = `${caseId}/module${moduleNumber}/${Date.now()}_${file.name}`;
+    // 파일 경로(내부 저장용 이름)는 영어/숫자만 남기고, 화면에 보여줄 이름은 원본 그대로 유지
+    const extMatch = file.name.match(/\.[^.]+$/);
+    const ext = extMatch ? extMatch[0] : "";
+    const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+    const filePath = `${caseId}/module${moduleNumber}/${safeName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("documents")
       .upload(filePath, file);
 
     if (uploadError) {
-      setError("업로드에 실패했어요. 다시 시도해주세요.");
+      setError(`업로드에 실패했어요: ${uploadError.message}`);
       setUploading(false);
       return;
     }
