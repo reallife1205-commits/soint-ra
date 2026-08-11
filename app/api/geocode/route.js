@@ -24,6 +24,17 @@ export async function POST(req) {
     );
     const data = await res.json();
 
+    if (!res.ok) {
+      return Response.json(
+        {
+          error: `카카오 API 오류 (${res.status}): ${
+            data.message || JSON.stringify(data)
+          }`,
+        },
+        { status: 500 }
+      );
+    }
+
     if (!data.documents || data.documents.length === 0) {
       return Response.json(
         { error: "해당 주소를 찾을 수 없어요" },
