@@ -1,10 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { useAerialTags } from "@/lib/useAerialTags";
 
+const AerialMapView = dynamic(() => import("./AerialMapView"), { ssr: false });
+
 const IMAGE_EXT_RE = /\.(png|jpe?g|webp|gif|bmp)$/i;
+
+const TABS = [
+  { key: "map", label: "지도" },
+  { key: "upload", label: "사진 업로드" },
+  { key: "timeline", label: "타임라인" },
+];
 
 const FACILITY_TYPES = [
   { key: "building", label: "건물", color: "#2f5fd6" },
@@ -23,7 +32,63 @@ const FACILITY_COLOR = Object.fromEntries(
 
 const MIN_BOX_SIZE = 0.01; // 이미지 대비 1% 미만이면 클릭으로 간주하고 무시
 
-export default function Module4Panel({ caseId }) {
+export default function Module4Panel({ caseId, caseInfo }) {
+  const [tab, setTab] = useState("map");
+
+  const coords =
+    caseInfo?.lat && caseInfo?.lon
+      ? { lat: caseInfo.lat, lon: caseInfo.lon }
+      : null;
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          borderBottom: "1px solid var(--color-border)",
+          marginBottom: 16,
+        }}
+      >
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              border: "none",
+              background: "transparent",
+              padding: "8px 14px",
+              fontSize: 13,
+              cursor: "pointer",
+              fontWeight: tab === t.key ? 700 : 400,
+              borderBottom:
+                tab === t.key
+                  ? "2px solid var(--color-primary)"
+                  : "2px solid transparent",
+              color: tab === t.key ? "var(--color-primary)" : "var(--color-text)",
+            }}
+          >
+            {t.label}
+            {t.key === "timeline" && (
+              <span style={{ marginLeft: 4, color: "var(--color-text-muted)" }}>0</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {tab === "map" && <AerialMapView coords={coords} address={caseInfo?.address} />}
+      {tab === "upload" && <UploadTaggingSection caseId={caseId} />}
+      {tab === "timeline" && (
+        <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
+          타임라인 기능은 아직 준비 중이에요. 연도별로 올린 항공사진을 나란히 비교하는
+          기능을 다음 단계에서 추가할게요.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UploadTaggingSection({ caseId }) {
   const [docs, setDocs] = useState([]);
   const [docsLoading, setDocsLoading] = useState(true);
   const [selectedDocId, setSelectedDocId] = useState(null);

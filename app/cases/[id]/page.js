@@ -231,7 +231,7 @@ export default function CaseDetailPage() {
               <Module3Panel caseId={id} />
             </div>
           ) : activeModule === 4 ? (
-            <Module4Panel caseId={id} />
+            <Module4Panel caseId={id} caseInfo={caseInfo} />
           ) : (
             <div className="card">
               <GenericModuleTable caseId={id} moduleNumber={activeModule} />
