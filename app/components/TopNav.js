@@ -1,0 +1,80 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const SECTIONS = [
+  { key: "report", label: "기술검토 리포트", href: "/cases" },
+  { key: "inventory", label: "토양 인벤토리", href: "/inventory" },
+];
+
+export default function TopNav() {
+  const pathname = usePathname();
+  const active = pathname?.startsWith("/inventory") ? "inventory" : "report";
+
+  return (
+    <header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 20,
+        flexWrap: "wrap",
+        gap: 12,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: "var(--color-primary)",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            fontSize: 18,
+          }}
+        >
+          토
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 18 }}>토담</div>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+            토양정화 기술검토 · 인벤토리 플랫폼
+          </div>
+        </div>
+      </div>
+
+      <nav
+        style={{
+          display: "flex",
+          gap: 4,
+          background: "#eef1eb",
+          borderRadius: 10,
+          padding: 4,
+        }}
+      >
+        {SECTIONS.map((s) => (
+          <Link
+            key={s.key}
+            href={s.href}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: "none",
+              color: active === s.key ? "white" : "var(--color-text)",
+              background: active === s.key ? "var(--color-primary)" : "transparent",
+            }}
+          >
+            {s.label}
+          </Link>
+        ))}
+      </nav>
+    </header>
+  );
+}

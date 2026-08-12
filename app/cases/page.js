@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { MODULES } from "@/lib/modules";
+import TopNav from "@/app/components/TopNav";
 
 const STATUS_OPTIONS = ["전체", "작성중", "완료"];
 
@@ -96,41 +97,18 @@ export default function CasesPage() {
 
   return (
     <div className="page">
-      <header
+      <TopNav />
+      <div
         style={{
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           marginBottom: 20,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              background: "var(--color-primary)",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-            }}
-          >
-            Y
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 18 }}>SOINT-RA</div>
-            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              토양정화자문위원회 기술검토 지원 시스템
-            </div>
-          </div>
-        </div>
         <button className="btn-primary" onClick={() => setShowAddForm(true)}>
           + 새 안건 등록
         </button>
-      </header>
+      </div>
 
       <div
         style={{
