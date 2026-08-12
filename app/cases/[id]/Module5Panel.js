@@ -117,11 +117,15 @@ function DartSearchTab({ caseId, onResultsChanged }) {
     setError("");
 
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 50000);
       const res = await fetch("/api/dart-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ names }),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       const data = await res.json();
 
       if (!res.ok) {
@@ -180,7 +184,13 @@ function DartSearchTab({ caseId, onResultsChanged }) {
 
       await loadNames();
     } catch (e) {
-      setError("DART 검색 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+      if (e.name === "AbortError") {
+        setError(
+          "DART 검색이 너무 오래 걸려서 중단했어요. 잠시 후 다시 시도해주세요 (첫 검색은 특히 오래 걸릴 수 있어요)."
+        );
+      } else {
+        setError("DART 검색 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+      }
     }
 
     setSearching(false);

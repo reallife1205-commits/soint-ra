@@ -1,10 +1,23 @@
 import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 // corpCode 목록은 자주 안 바뀌니까, 서버가 켜져있는 동안은 메모리에 캐싱해서 재사용해요.
 let cachedCorpList = null;
 let cachedAt = 0;
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6시간
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 async function getCorpList(apiKey) {
   const now = Date.now();
@@ -12,8 +25,10 @@ async function getCorpList(apiKey) {
     return cachedCorpList;
   }
 
-  const res = await fetch(
-    `https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key=${apiKey}`
+  const res = await fetchWithTimeout(
+    `https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key=${apiKey}`,
+    {},
+    15000
   );
   if (!res.ok) {
     throw new Error("DART 회사 목록을 받아오지 못했어요 (인증키를 확인해주세요).");
@@ -42,12 +57,18 @@ function normalizeName(name) {
 }
 
 async function fetchCompanyOverview(apiKey, corpCode) {
-  const res = await fetch(
-    `https://opendart.fss.or.kr/api/company.json?crtfc_key=${apiKey}&corp_code=${corpCode}`
-  );
-  const data = await res.json();
-  if (data.status !== "000") return null;
-  return data;
+  try {
+    const res = await fetchWithTimeout(
+      `https://opendart.fss.or.kr/api/company.json?crtfc_key=${apiKey}&corp_code=${corpCode}`,
+      {},
+      5000
+    );
+    const data = await res.json();
+    if (data.status !== "000") return null;
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(req) {
@@ -79,7 +100,7 @@ export async function POST(req) {
 
       const candidates = corpList
         .filter((c) => c.corp_name && c.corp_name.includes(name))
-        .slice(0, 3);
+        .slice(0, 2);
 
       const matches = [];
       for (const c of candidates) {
