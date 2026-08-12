@@ -72,9 +72,11 @@ function DartSearchTab({ caseId, onResultsChanged }) {
   const [ownerNames, setOwnerNames] = useState([]);
   const [statusByName, setStatusByName] = useState({});
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
+  const [autoSearching, setAutoSearching] = useState(false);
+  const [manualSearching, setManualSearching] = useState(false);
   const [error, setError] = useState("");
   const [manualQuery, setManualQuery] = useState("");
+  const [manualResults, setManualResults] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
 
   const loadNames = useCallback(async () => {
@@ -113,7 +115,8 @@ function DartSearchTab({ caseId, onResultsChanged }) {
 
   async function runSearch(names, searchType = "auto") {
     if (names.length === 0) return;
-    setSearching(true);
+    const setLoadingFlag = searchType === "auto" ? setAutoSearching : setManualSearching;
+    setLoadingFlag(true);
     setError("");
 
     try {
@@ -130,8 +133,8 @@ function DartSearchTab({ caseId, onResultsChanged }) {
 
       if (!res.ok) {
         setError(data.error || "DART 검색에 실패했어요.");
-        setSearching(false);
-        return;
+        setLoadingFlag(false);
+        return null;
       }
 
       await supabase
@@ -183,6 +186,8 @@ function DartSearchTab({ caseId, onResultsChanged }) {
       }
 
       await loadNames();
+      setLoadingFlag(false);
+      return data.results;
     } catch (e) {
       if (e.name === "AbortError") {
         setError(
@@ -191,14 +196,16 @@ function DartSearchTab({ caseId, onResultsChanged }) {
       } else {
         setError("DART 검색 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
       }
+      setLoadingFlag(false);
+      return null;
     }
-
-    setSearching(false);
   }
 
   async function handleManualSearch() {
     if (!manualQuery.trim()) return;
-    await runSearch([manualQuery.trim()], "manual");
+    setManualResults(null);
+    const results = await runSearch([manualQuery.trim()], "manual");
+    if (results) setManualResults(results);
     setManualQuery("");
   }
 
@@ -248,10 +255,10 @@ function DartSearchTab({ caseId, onResultsChanged }) {
         <button
           className="btn-primary"
           onClick={() => runSearch(ownerNames, "auto")}
-          disabled={searching || loading || ownerNames.length === 0}
+          disabled={autoSearching || loading || ownerNames.length === 0}
           style={{ marginBottom: 16 }}
         >
-          {searching ? "검색 중..." : "▶ 자동 검색 실행"}
+          {autoSearching ? "검색 중..." : "▶ 자동 검색 실행"}
         </button>
 
         {error && (
@@ -310,8 +317,8 @@ function DartSearchTab({ caseId, onResultsChanged }) {
               border: "1px solid var(--color-border)",
             }}
           />
-          <button className="btn-secondary" onClick={handleManualSearch} disabled={searching}>
-            🔍 검색
+          <button className="btn-secondary" onClick={handleManualSearch} disabled={manualSearching}>
+            {manualSearching ? "검색 중..." : "🔍 검색"}
           </button>
         </div>
         <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
@@ -340,6 +347,43 @@ function DartSearchTab({ caseId, onResultsChanged }) {
             ↗ DART 바로가기
           </a>
         </div>
+
+        {manualResults && (
+          <div style={{ marginTop: 16, borderTop: "1px solid var(--color-border)", paddingTop: 14 }}>
+            {manualResults.map((r) =>
+              r.matches.length === 0 ? (
+                <div key={r.source_name} style={{ fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>{r.source_name}</span> — DART에서
+                  찾지 못했어요. <StatusBadge status="없음" />
+                </div>
+              ) : (
+                r.matches.map((m, i) => (
+                  <div
+                    key={`${r.source_name}-${i}`}
+                    style={{
+                      fontSize: 13,
+                      padding: "8px 0",
+                      borderBottom:
+                        i < r.matches.length - 1
+                          ? "1px solid var(--color-border)"
+                          : "none",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, marginBottom: 2 }}>
+                      {m.corp_name} <StatusBadge status="완료" />
+                    </div>
+                    <div style={{ color: "var(--color-text-muted)" }}>
+                      대표자 {m.ceo_name || "-"} · 사업자번호 {m.biz_no || "-"}
+                    </div>
+                    <div style={{ color: "var(--color-text-muted)" }}>
+                      {m.address || "주소 정보 없음"}
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
