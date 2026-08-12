@@ -2,6 +2,7 @@ import JSZip from "jszip";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
+export const preferredRegion = "icn1"; // 서울 리전 - DART(한국 정부 API)와 가까워서 훨씬 빨라요
 
 // corpCode 원문(xml 텍스트)은 자주 안 바뀌니까, 서버가 켜져있는 동안은
 // 메모리에 캐싱해서 재사용해요. 매번 10만 건 전체를 객체로 만들지 않고,
@@ -10,41 +11,38 @@ let cachedXmlText = null;
 let cachedAt = 0;
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6시간
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function getCorpXmlText(apiKey) {
   const now = Date.now();
   if (cachedXmlText && now - cachedAt < CACHE_TTL_MS) {
     return cachedXmlText;
   }
 
-  const res = await fetchWithTimeout(
-    `https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key=${apiKey}`,
-    {},
-    15000
-  );
-  if (!res.ok) {
-    throw new Error("DART 회사 목록을 받아오지 못했어요 (인증키를 확인해주세요).");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 40000);
+
+  try {
+    const res = await fetch(
+      `https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key=${apiKey}`,
+      { signal: controller.signal }
+    );
+    if (!res.ok) {
+      throw new Error("DART 회사 목록을 받아오지 못했어요 (인증키를 확인해주세요).");
+    }
+
+    // 여기서 실제 파일 내용을 다 받는데, 위에서 건 타이머가 이 과정까지 감시해요.
+    const arrayBuffer = await res.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const xmlFile = Object.values(zip.files)[0];
+    if (!xmlFile) throw new Error("DART 회사 목록 파일 형식이 예상과 달라요.");
+
+    const xmlText = await xmlFile.async("text");
+
+    cachedXmlText = xmlText;
+    cachedAt = now;
+    return xmlText;
+  } finally {
+    clearTimeout(timer);
   }
-
-  const arrayBuffer = await res.arrayBuffer();
-  const zip = await JSZip.loadAsync(arrayBuffer);
-  const xmlFile = Object.values(zip.files)[0];
-  if (!xmlFile) throw new Error("DART 회사 목록 파일 형식이 예상과 달라요.");
-
-  const xmlText = await xmlFile.async("text");
-
-  cachedXmlText = xmlText;
-  cachedAt = now;
-  return xmlText;
 }
 
 function extractBlock(xmlText, idx) {
@@ -102,17 +100,20 @@ function normalizeName(name) {
 }
 
 async function fetchCompanyOverview(apiKey, corpCode) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
   try {
-    const res = await fetchWithTimeout(
+    const res = await fetch(
       `https://opendart.fss.or.kr/api/company.json?crtfc_key=${apiKey}&corp_code=${corpCode}`,
-      {},
-      5000
+      { signal: controller.signal }
     );
     const data = await res.json();
     if (data.status !== "000") return null;
     return data;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
