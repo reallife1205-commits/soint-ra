@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -53,6 +53,9 @@ export default function AerialMapView({
 }) {
   const [mapType, setMapType] = useState("satellite");
   const [showParcel, setShowParcel] = useState(false);
+  const [savingImage, setSavingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const mapWrapperRef = useRef(null);
   const [drawing, setDrawing] = useState(false);
   const [draftPoints, setDraftPoints] = useState([]);
   const [savingBoundary, setSavingBoundary] = useState(false);
@@ -118,6 +121,29 @@ export default function AerialMapView({
     setSavingBoundary(false);
   }
 
+  async function handleSaveImage() {
+    setSavingImage(true);
+    setImageError("");
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(mapWrapperRef.current, {
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+      });
+      const link = document.createElement("a");
+      const today = new Date().toISOString().slice(0, 10);
+      link.download = `항공사진_지도_${today}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (e) {
+      setImageError(
+        "이미지 저장에 실패했어요. 위성사진이 다른 서버에서 오는 이미지라 브라우저 보안 정책 때문에 막힐 수 있어요. 대신 컴퓨터의 화면 캡처 기능을 써주세요 (Windows: Win+Shift+S, Mac: Cmd+Shift+4)."
+      );
+    }
+    setSavingImage(false);
+  }
+
   return (
     <div>
       {!VWORLD_KEY && (
@@ -177,6 +203,13 @@ export default function AerialMapView({
               경계선 삭제
             </button>
           )}
+          <button
+            className="btn-secondary"
+            onClick={handleSaveImage}
+            disabled={savingImage}
+          >
+            {savingImage ? "저장 중..." : "🖼️ 지도 이미지 저장"}
+          </button>
         </div>
         <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
           <a href={kakaoUrl} target="_blank" rel="noreferrer" style={{ color: "var(--color-primary)" }}>
@@ -229,7 +262,21 @@ export default function AerialMapView({
         </div>
       )}
 
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {imageError && (
+        <div
+          className="card"
+          style={{
+            background: "var(--color-badge-yellow-bg)",
+            border: "1px solid var(--color-badge-yellow-bg)",
+            marginBottom: 10,
+            fontSize: 13,
+          }}
+        >
+          {imageError}
+        </div>
+      )}
+
+      <div className="card" ref={mapWrapperRef} style={{ padding: 0, overflow: "hidden" }}>
         <MapContainer
           center={[coords.lat, coords.lon]}
           zoom={18}
