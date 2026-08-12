@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   MapContainer,
   TileLayer,
+  WMSTileLayer,
   Marker,
   Popup,
   Polygon,
@@ -51,6 +52,7 @@ export default function AerialMapView({
   onBoundarySave,
 }) {
   const [mapType, setMapType] = useState("satellite");
+  const [showParcel, setShowParcel] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [draftPoints, setDraftPoints] = useState([]);
   const [savingBoundary, setSavingBoundary] = useState(false);
@@ -154,6 +156,12 @@ export default function AerialMapView({
               {t.label}
             </button>
           ))}
+          <button
+            className={showParcel ? "btn-primary" : "btn-secondary"}
+            onClick={() => setShowParcel((v) => !v)}
+          >
+            ⬜ 대상 필지
+          </button>
           {boundaryEditable && !drawing && (
             <button className="btn-secondary" onClick={startDrawing}>
               📐 경계 그리기
@@ -238,6 +246,18 @@ export default function AerialMapView({
               />
               {mapType === "hybrid" && (
                 <TileLayer url={vworldTileUrl("Hybrid", "png")} maxZoom={19} />
+              )}
+              {showParcel && (
+                <WMSTileLayer
+                  url={`https://api.vworld.kr/req/wms?key=${VWORLD_KEY}&domain=${
+                    typeof window !== "undefined" ? window.location.hostname : ""
+                  }`}
+                  layers="lp_pa_cbnd_bubun"
+                  styles="lp_pa_cbnd_bubun"
+                  format="image/png"
+                  transparent={true}
+                  version="1.3.0"
+                />
               )}
             </>
           )}
