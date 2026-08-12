@@ -1,11 +1,12 @@
 import JSZip from "jszip";
-import { XMLParser } from "fast-xml-parser";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-// corpCode 목록은 자주 안 바뀌니까, 서버가 켜져있는 동안은 메모리에 캐싱해서 재사용해요.
-let cachedCorpList = null;
+// corpCode 원문(xml 텍스트)은 자주 안 바뀌니까, 서버가 켜져있는 동안은
+// 메모리에 캐싱해서 재사용해요. 매번 10만 건 전체를 객체로 만들지 않고,
+// 필요한 이름만 텍스트에서 직접 찾아서 훨씬 가볍게 처리해요.
+let cachedXmlText = null;
 let cachedAt = 0;
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6시간
 
@@ -19,10 +20,10 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
   }
 }
 
-async function getCorpList(apiKey) {
+async function getCorpXmlText(apiKey) {
   const now = Date.now();
-  if (cachedCorpList && now - cachedAt < CACHE_TTL_MS) {
-    return cachedCorpList;
+  if (cachedXmlText && now - cachedAt < CACHE_TTL_MS) {
+    return cachedXmlText;
   }
 
   const res = await fetchWithTimeout(
@@ -40,15 +41,51 @@ async function getCorpList(apiKey) {
   if (!xmlFile) throw new Error("DART 회사 목록 파일 형식이 예상과 달라요.");
 
   const xmlText = await xmlFile.async("text");
-  const parser = new XMLParser();
-  const parsed = parser.parse(xmlText);
 
-  const list = parsed?.result?.list;
-  const corpList = Array.isArray(list) ? list : list ? [list] : [];
-
-  cachedCorpList = corpList;
+  cachedXmlText = xmlText;
   cachedAt = now;
-  return corpList;
+  return xmlText;
+}
+
+function extractBlock(xmlText, idx) {
+  const start = xmlText.lastIndexOf("<list>", idx);
+  const end = xmlText.indexOf("</list>", idx);
+  if (start === -1 || end === -1) return null;
+  return xmlText.slice(start, end);
+}
+
+function parseBlock(block) {
+  const codeMatch = block.match(/<corp_code>([^<]*)<\/corp_code>/);
+  const nameMatch = block.match(/<corp_name>([^<]*)<\/corp_name>/);
+  return {
+    corp_code: codeMatch ? codeMatch[1].trim() : null,
+    corp_name: nameMatch ? nameMatch[1].trim() : null,
+  };
+}
+
+// 텍스트 안에서 이름이 등장하는 곳을 찾아 그 주변 <list> 블록만 읽어요.
+// 10만 건을 전부 훑지 않아서 훨씬 빨라요.
+function findCandidates(xmlText, name, maxResults = 2) {
+  const results = [];
+  const seen = new Set();
+  let searchFrom = 0;
+
+  while (results.length < maxResults) {
+    const idx = xmlText.indexOf(name, searchFrom);
+    if (idx === -1) break;
+
+    const block = extractBlock(xmlText, idx);
+    if (block) {
+      const parsed = parseBlock(block);
+      if (parsed.corp_code && parsed.corp_name && !seen.has(parsed.corp_code)) {
+        seen.add(parsed.corp_code);
+        results.push(parsed);
+      }
+    }
+    searchFrom = idx + name.length;
+  }
+
+  return results;
 }
 
 // "곽경수 외 1인" -> "곽경수" 처럼, DART에서 찾을 수 있는 형태로 이름을 정리해요.
@@ -87,7 +124,7 @@ export async function POST(req) {
   }
 
   try {
-    const corpList = await getCorpList(apiKey);
+    const xmlText = await getCorpXmlText(apiKey);
 
     const results = [];
 
@@ -98,9 +135,7 @@ export async function POST(req) {
         continue;
       }
 
-      const candidates = corpList
-        .filter((c) => c.corp_name && c.corp_name.includes(name))
-        .slice(0, 2);
+      const candidates = findCandidates(xmlText, name, 2);
 
       const matches = [];
       for (const c of candidates) {
