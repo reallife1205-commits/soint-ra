@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { useAerialTags } from "@/lib/useAerialTags";
+import TimelinePanel from "./TimelinePanel";
 const AerialMapView = dynamic(() => import("./AerialMapView"), { ssr: false });
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|webp|gif|bmp)$/i;
@@ -33,6 +34,7 @@ const MIN_BOX_SIZE = 0.01; // 이미지 대비 1% 미만이면 클릭으로 간�
 
 export default function Module4Panel({ caseId, caseInfo }) {
   const [tab, setTab] = useState("map");
+  const [timelineCount, setTimelineCount] = useState(0);
 
   const coords =
     caseInfo?.lat && caseInfo?.lon
@@ -78,7 +80,9 @@ export default function Module4Panel({ caseId, caseInfo }) {
           >
             {t.label}
             {t.key === "timeline" && (
-              <span style={{ marginLeft: 4, color: "var(--color-text-muted)" }}>0</span>
+              <span style={{ marginLeft: 4, color: "var(--color-text-muted)" }}>
+                {timelineCount}
+              </span>
             )}
           </button>
         ))}
@@ -95,10 +99,7 @@ export default function Module4Panel({ caseId, caseInfo }) {
       )}
       {tab === "upload" && <UploadTaggingSection caseId={caseId} />}
       {tab === "timeline" && (
-        <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
-          타임라인 기능은 아직 준비 중이에요. 연도별로 올린 항공사진을 나란히 비교하는
-          기능을 다음 단계에서 추가할게요.
-        </div>
+        <TimelinePanel caseId={caseId} onCountChange={setTimelineCount} />
       )}
     </div>
   );
