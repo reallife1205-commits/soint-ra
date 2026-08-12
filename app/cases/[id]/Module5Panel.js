@@ -74,7 +74,8 @@ function DartSearchTab({ caseId, onResultsChanged }) {
   const [loading, setLoading] = useState(true);
   const [autoSearching, setAutoSearching] = useState(false);
   const [manualSearching, setManualSearching] = useState(false);
-  const [error, setError] = useState("");
+  const [autoError, setAutoError] = useState("");
+  const [manualError, setManualError] = useState("");
   const [manualQuery, setManualQuery] = useState("");
   const [manualResults, setManualResults] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -116,8 +117,9 @@ function DartSearchTab({ caseId, onResultsChanged }) {
   async function runSearch(names, searchType = "auto") {
     if (names.length === 0) return;
     const setLoadingFlag = searchType === "auto" ? setAutoSearching : setManualSearching;
+    const setErrorFlag = searchType === "auto" ? setAutoError : setManualError;
     setLoadingFlag(true);
-    setError("");
+    setErrorFlag("");
 
     try {
       const controller = new AbortController();
@@ -132,7 +134,7 @@ function DartSearchTab({ caseId, onResultsChanged }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "DART 검색에 실패했어요.");
+        setErrorFlag(data.error || "DART 검색에 실패했어요.");
         setLoadingFlag(false);
         return null;
       }
@@ -190,11 +192,11 @@ function DartSearchTab({ caseId, onResultsChanged }) {
       return data.results;
     } catch (e) {
       if (e.name === "AbortError") {
-        setError(
+        setErrorFlag(
           "DART 검색이 너무 오래 걸려서 중단했어요. 잠시 후 다시 시도해주세요 (첫 검색은 특히 오래 걸릴 수 있어요)."
         );
       } else {
-        setError("DART 검색 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+        setErrorFlag("DART 검색 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
       }
       setLoadingFlag(false);
       return null;
@@ -261,9 +263,9 @@ function DartSearchTab({ caseId, onResultsChanged }) {
           {autoSearching ? "검색 중..." : "▶ 자동 검색 실행"}
         </button>
 
-        {error && (
+        {autoError && (
           <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
-            {error}
+            {autoError}
           </div>
         )}
 
@@ -321,6 +323,12 @@ function DartSearchTab({ caseId, onResultsChanged }) {
             {manualSearching ? "검색 중..." : "🔍 검색"}
           </button>
         </div>
+
+        {manualError && (
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+            {manualError}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
           <a
             href="https://www.bizno.net"

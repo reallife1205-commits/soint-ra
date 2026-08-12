@@ -54,12 +54,20 @@ function extractBlock(xmlText, idx) {
   return xmlText.slice(start, end);
 }
 
+function extractTagValue(block, tag) {
+  // DART 원본 파일이 <tag><![CDATA[값]]></tag> 형식이거나 <tag>값</tag> 형식일 수 있어서 둘 다 처리해요.
+  const cdataRe = new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*<\\/${tag}>`);
+  const plainRe = new RegExp(`<${tag}>([^<]*)<\\/${tag}>`);
+  let m = block.match(cdataRe);
+  if (m) return m[1].trim();
+  m = block.match(plainRe);
+  return m ? m[1].trim() : null;
+}
+
 function parseBlock(block) {
-  const codeMatch = block.match(/<corp_code>([^<]*)<\/corp_code>/);
-  const nameMatch = block.match(/<corp_name>([^<]*)<\/corp_name>/);
   return {
-    corp_code: codeMatch ? codeMatch[1].trim() : null,
-    corp_name: nameMatch ? nameMatch[1].trim() : null,
+    corp_code: extractTagValue(block, "corp_code"),
+    corp_name: extractTagValue(block, "corp_name"),
   };
 }
 
