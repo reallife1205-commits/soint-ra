@@ -100,6 +100,18 @@ export default function InventorySiteDetailPage() {
     router.push("/inventory");
   }
 
+  async function handleBoundarySave(points) {
+    const value = points ? points.map((p) => ({ lat: p.lat, lon: p.lon })) : null;
+    const { error: updateError } = await supabase
+      .from("inventory_sites")
+      .update({ boundary_points: value, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (!updateError) {
+      setForm((f) => ({ ...f, boundary_points: value }));
+      setSite((s) => ({ ...s, boundary_points: value }));
+    }
+  }
+
   if (loading) {
     return (
       <div className="page">
@@ -239,7 +251,13 @@ export default function InventorySiteDetailPage() {
           <div className="card" style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>
             위치
           </div>
-          <AerialMapView coords={coords} address={form.address} />
+          <AerialMapView
+            coords={coords}
+            address={form.address}
+            boundary={form.boundary_points}
+            boundaryEditable={true}
+            onBoundarySave={handleBoundarySave}
+          />
         </div>
       </div>
     </div>

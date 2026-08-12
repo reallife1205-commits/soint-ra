@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { useAerialTags } from "@/lib/useAerialTags";
-
 const AerialMapView = dynamic(() => import("./AerialMapView"), { ssr: false });
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|webp|gif|bmp)$/i;
@@ -39,6 +38,15 @@ export default function Module4Panel({ caseId, caseInfo }) {
     caseInfo?.lat && caseInfo?.lon
       ? { lat: caseInfo.lat, lon: caseInfo.lon }
       : null;
+
+  async function handleBoundarySave(points) {
+    const value = points ? points.map((p) => ({ lat: p.lat, lon: p.lon })) : null;
+    await supabase
+      .from("cases")
+      .update({ boundary_points: value })
+      .eq("id", caseId);
+    if (typeof window !== "undefined") window.location.reload();
+  }
 
   return (
     <div>
@@ -76,7 +84,15 @@ export default function Module4Panel({ caseId, caseInfo }) {
         ))}
       </div>
 
-      {tab === "map" && <AerialMapView coords={coords} address={caseInfo?.address} />}
+      {tab === "map" && (
+        <AerialMapView
+          coords={coords}
+          address={caseInfo?.address}
+          boundary={caseInfo?.boundary_points}
+          boundaryEditable={true}
+          onBoundarySave={handleBoundarySave}
+        />
+      )}
       {tab === "upload" && <UploadTaggingSection caseId={caseId} />}
       {tab === "timeline" && (
         <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>

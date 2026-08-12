@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polygon,
+  Polyline,
+  CircleMarker,
+  useMapEvents,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -25,8 +34,26 @@ const MAP_TYPES = [
   { key: "base", label: "📍 일반지도" },
 ];
 
-export default function AerialMapView({ coords, address }) {
+function DrawClickHandler({ onClick }) {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng);
+    },
+  });
+  return null;
+}
+
+export default function AerialMapView({
+  coords,
+  address,
+  boundary,
+  boundaryEditable = false,
+  onBoundarySave,
+}) {
   const [mapType, setMapType] = useState("satellite");
+  const [drawing, setDrawing] = useState(false);
+  const [draftPoints, setDraftPoints] = useState([]);
+  const [savingBoundary, setSavingBoundary] = useState(false);
 
   if (!coords) {
     return (
@@ -43,6 +70,51 @@ export default function AerialMapView({ coords, address }) {
 
   const baseLayerType = mapType === "base" ? "Base" : "Satellite";
   const baseLayerExt = mapType === "base" ? "png" : "jpeg";
+
+  const boundaryPositions =
+    boundary && boundary.length > 0
+      ? boundary.map((p) => [p.lat, p.lon])
+      : null;
+  const draftPositions = draftPoints.map((p) => [p.lat, p.lon]);
+
+  function startDrawing() {
+    setDrawing(true);
+    setDraftPoints([]);
+  }
+
+  function cancelDrawing() {
+    setDrawing(false);
+    setDraftPoints([]);
+  }
+
+  function handleMapClick(latlng) {
+    if (!drawing) return;
+    setDraftPoints((pts) => [...pts, { lat: latlng.lat, lon: latlng.lng }]);
+  }
+
+  function undoLastPoint() {
+    setDraftPoints((pts) => pts.slice(0, -1));
+  }
+
+  async function finishDrawing() {
+    if (draftPoints.length < 3) return;
+    setSavingBoundary(true);
+    if (onBoundarySave) {
+      await onBoundarySave(draftPoints);
+    }
+    setSavingBoundary(false);
+    setDrawing(false);
+    setDraftPoints([]);
+  }
+
+  async function clearBoundary() {
+    if (!confirm("저장된 경계선을 삭제할까요?")) return;
+    setSavingBoundary(true);
+    if (onBoundarySave) {
+      await onBoundarySave(null);
+    }
+    setSavingBoundary(false);
+  }
 
   return (
     <div>
@@ -72,7 +144,7 @@ export default function AerialMapView({ coords, address }) {
           gap: 8,
         }}
       >
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
           {MAP_TYPES.map((t) => (
             <button
               key={t.key}
@@ -82,6 +154,21 @@ export default function AerialMapView({ coords, address }) {
               {t.label}
             </button>
           ))}
+          {boundaryEditable && !drawing && (
+            <button className="btn-secondary" onClick={startDrawing}>
+              📐 경계 그리기
+            </button>
+          )}
+          {boundaryEditable && boundaryPositions && !drawing && (
+            <button
+              className="btn-secondary"
+              onClick={clearBoundary}
+              disabled={savingBoundary}
+              style={{ color: "var(--color-badge-red-text)" }}
+            >
+              경계선 삭제
+            </button>
+          )}
         </div>
         <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
           <a href={kakaoUrl} target="_blank" rel="noreferrer" style={{ color: "var(--color-primary)" }}>
@@ -93,12 +180,54 @@ export default function AerialMapView({ coords, address }) {
         </div>
       </div>
 
+      {drawing && (
+        <div
+          className="card"
+          style={{
+            background: "var(--color-badge-blue-bg)",
+            border: "1px solid var(--color-badge-blue-bg)",
+            marginBottom: 10,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 8,
+            fontSize: 13,
+          }}
+        >
+          <span>
+            지도를 클릭해서 경계선의 점을 찍어주세요. (점 {draftPoints.length}개
+            {draftPoints.length < 3 ? " · 최소 3개 필요해요" : ""})
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              className="btn-secondary"
+              onClick={undoLastPoint}
+              disabled={draftPoints.length === 0}
+            >
+              마지막 점 취소
+            </button>
+            <button className="btn-secondary" onClick={cancelDrawing}>
+              그리기 취소
+            </button>
+            <button
+              className="btn-primary"
+              onClick={finishDrawing}
+              disabled={draftPoints.length < 3 || savingBoundary}
+            >
+              {savingBoundary ? "저장 중..." : "완료 (저장)"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <MapContainer
           center={[coords.lat, coords.lon]}
           zoom={18}
-          style={{ height: 500, width: "100%" }}
+          style={{ height: 500, width: "100%", cursor: drawing ? "crosshair" : "" }}
         >
+          <DrawClickHandler onClick={handleMapClick} />
           {VWORLD_KEY && (
             <>
               <TileLayer
@@ -115,6 +244,30 @@ export default function AerialMapView({ coords, address }) {
           <Marker position={[coords.lat, coords.lon]}>
             <Popup>대상부지{address ? ` · ${address}` : ""}</Popup>
           </Marker>
+
+          {boundaryPositions && !drawing && (
+            <Polygon
+              positions={boundaryPositions}
+              pathOptions={{ color: "#e0793c", weight: 3, fillOpacity: 0.15 }}
+            />
+          )}
+
+          {drawing && draftPositions.length > 0 && (
+            <>
+              <Polyline
+                positions={draftPositions}
+                pathOptions={{ color: "#e0793c", weight: 3, dashArray: "6 6" }}
+              />
+              {draftPoints.map((p, i) => (
+                <CircleMarker
+                  key={i}
+                  center={[p.lat, p.lon]}
+                  radius={5}
+                  pathOptions={{ color: "#e0793c", fillColor: "#e0793c", fillOpacity: 1 }}
+                />
+              ))}
+            </>
+          )}
         </MapContainer>
       </div>
 
