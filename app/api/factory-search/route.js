@@ -4,11 +4,26 @@ export const dynamic = "force-dynamic";
 const BASE_URL =
   "https://apis.data.go.kr/B550624/fctryRegistLndpclInfo/getFctryLndpclService";
 
+function extractTag(text, tag) {
+  const re = new RegExp(`<${tag}>([^<]*)<\\/${tag}>`);
+  const m = text.match(re);
+  return m ? m[1].trim() : null;
+}
+
+function extractItemBlocks(xmlText) {
+  const blocks = [];
+  const re = /<item>([\s\S]*?)<\/item>/g;
+  let m;
+  while ((m = re.exec(xmlText))) {
+    blocks.push(m[1]);
+  }
+  return blocks;
+}
+
 async function searchOne(apiKey, name) {
   const params = new URLSearchParams({
     serviceKey: apiKey,
     cmpnyNm: name,
-    type: "json",
     numOfRows: "5",
   });
 
@@ -27,40 +42,28 @@ async function searchOne(apiKey, name) {
       throw err;
     }
 
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
+    // 이 API는 type=json 을 요청해도 XML로 응답할 때가 있어서, XML을 직접 읽어요.
+    const resultCode = extractTag(text, "resultCode");
+    if (resultCode && resultCode !== "00") {
       const err = new Error(
-        "공장등록 조회 응답을 이해하지 못했어요 (인증키를 확인해주세요)."
+        `공장등록 조회 API 에러: ${extractTag(text, "resultMsg") || resultCode}`
       );
       err.debugDetail = text.slice(0, 500);
       throw err;
     }
 
-    const resultCode = data?.response?.header?.resultCode;
-    if (resultCode && resultCode !== "00") {
-      const err = new Error(
-        `공장등록 조회 API 에러: ${data.response.header.resultMsg || resultCode}`
-      );
-      err.debugDetail = JSON.stringify(data.response.header);
-      throw err;
-    }
+    const itemBlocks = extractItemBlocks(text);
 
-    const body = data?.response?.body;
-    const rawItems = body?.items?.item;
-    const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
-
-    return items.map((item) => ({
-      fctry_manage_no: item.fctryManageNo || null,
-      cmpny_nm: item.cmpnyNm || null,
-      road_address: item.rnAdres || null,
-      rprsntv_nm: item.rprsntvNm || null,
-      org_nm: item.cvplChrgOrgnztNm || null,
-      tel_no: item.cmpnyTelno || null,
-      land_area: item.fctryLndpclAr || null,
-      building_area: item.fctryDongBuldAr || null,
-      use_area: item.spfcSeCodeNm || null,
+    return itemBlocks.map((block) => ({
+      fctry_manage_no: extractTag(block, "fctryManageNo"),
+      cmpny_nm: extractTag(block, "cmpnyNm"),
+      road_address: extractTag(block, "rnAdres"),
+      rprsntv_nm: extractTag(block, "rprsntvNm"),
+      org_nm: extractTag(block, "cvplChrgOrgnztNm"),
+      tel_no: extractTag(block, "cmpnyTelno"),
+      land_area: extractTag(block, "fctryLndpclAr"),
+      building_area: extractTag(block, "fctryDongBuldAr"),
+      use_area: extractTag(block, "spfcSeCodeNm"),
     }));
   } finally {
     clearTimeout(timer);
