@@ -11,6 +11,7 @@ import Module3Panel from "./Module3Panel";
 import Module4Panel from "./Module4Panel";
 import Module5Panel from "./Module5Panel";
 import Module6Panel from "./Module6Panel";
+import Module7Panel from "./Module7Panel";
 import GenericModuleTable from "./GenericModuleTable";
 import DocumentUpload from "./DocumentUpload";
 
@@ -238,6 +239,8 @@ export default function CaseDetailPage() {
             <Module5Panel caseId={id} />
           ) : activeModule === 6 ? (
             <Module6Panel caseId={id} />
+          ) : activeModule === 7 ? (
+            <Module7Panel caseId={id} />
           ) : (
             <div className="card">
               <GenericModuleTable caseId={id} moduleNumber={activeModule} />
