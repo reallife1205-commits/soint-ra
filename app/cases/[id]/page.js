@@ -183,9 +183,9 @@ export default function CaseDetailPage() {
                   color: isActive ? "var(--color-primary)" : "var(--color-text)",
                 }}
               >
-                {isDone && "✓ "}모듈{m.number}
+                {isDone && "✓ "}챕터 {String(m.number).padStart(2, "0")}
               </div>
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+              <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 500 }}>
                 {m.name}
               </div>
             </button>
@@ -202,7 +202,7 @@ export default function CaseDetailPage() {
         }}
       >
         <div style={{ fontSize: 17, fontWeight: 700 }}>
-          모듈{activeModule} — {activeModuleMeta?.name}
+          챕터 {String(activeModule).padStart(2, "0")} — {activeModuleMeta?.name}
         </div>
         <button
           className={activeInfo?.is_completed ? "btn-secondary" : "btn-primary"}

@@ -63,7 +63,7 @@ export default function AerialMapView({
   if (!coords) {
     return (
       <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
-        먼저 모듈2에서 부지 주소의 좌표를 확인해주세요. 좌표가 있어야 지도를 표시할 수 있어요.
+        먼저 챕터 02에서 부지 주소의 좌표를 확인해주세요. 좌표가 있어야 지도를 표시할 수 있어요.
       </div>
     );
   }

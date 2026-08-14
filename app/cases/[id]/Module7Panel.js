@@ -375,7 +375,7 @@ function IntegratedTimeline({ caseId }) {
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>이력 목록</div>
         {owners.length === 0 && tenants.length === 0 ? (
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-            모듈3에 소유·임대차 이력을 입력하면 여기에 자동으로 나와요.
+            챕터 03에 소유·임대차 이력을 입력하면 여기에 자동으로 나와요.
           </div>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>

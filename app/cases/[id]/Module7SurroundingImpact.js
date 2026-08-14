@@ -81,7 +81,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
 
     const substanceNames = Object.keys(targetMaxBySubstance);
     if (substanceNames.length === 0) {
-      setInfoMsg("모듈1에 오염물질/최고농도가 입력되어 있어야 계산할 수 있어요.");
+      setInfoMsg("챕터 01에 오염물질/최고농도가 입력되어 있어야 계산할 수 있어요.");
       setRecalculating(false);
       return;
     }
@@ -124,7 +124,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
         });
       }
     } else {
-      setInfoMsg("부지 좌표가 없어서 주변부지 데이터는 못 가져왔어요. (모듈2에서 좌표 확인 필요)");
+      setInfoMsg("부지 좌표가 없어서 주변부지 데이터는 못 가져왔어요. (챕터 02에서 좌표 확인 필요)");
     }
 
     const rowsToUpsert = substanceNames.map((name) => {
@@ -193,7 +193,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
         <div>
           <div style={{ fontWeight: 700, fontSize: 17 }}>주변부지 오염 영향 판단</div>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
-            대상부지(모듈1) vs 주변부지(모듈2 반경 검색 데이터) 최고농도 비교 · 판정 클릭 시 변경
+            대상부지(챕터 01) vs 주변부지(챕터 02 반경 검색 데이터) 최고농도 비교 · 판정 클릭 시 변경
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -237,7 +237,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
         <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
       ) : rows.length === 0 ? (
         <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-          오른쪽 위 &quot;재계산&quot;을 눌러서 모듈1·모듈2 데이터를 불러와 비교해보세요.
+          오른쪽 위 &quot;재계산&quot;을 눌러서 챕터 01·챕터 02 데이터를 불러와 비교해보세요.
         </div>
       ) : (
         <div style={{ overflowX: "auto" }}>

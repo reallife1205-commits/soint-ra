@@ -209,7 +209,7 @@ export default function PollutionMappingTab({ caseId }) {
 
       {companies.length === 0 ? (
         <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-          모듈5에서 DART 검색 또는 공장등록 조회로 회사를 먼저 찾아주세요. (모듈3
+          챕터 05에서 DART 검색 또는 공장등록 조회로 회사를 먼저 찾아주세요. (챕터 03
           소유자만 있어도 표시돼요.)
         </div>
       ) : substances.length === 0 ? (

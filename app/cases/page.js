@@ -246,7 +246,7 @@ export default function CasesPage() {
                         color: "var(--color-text-muted)",
                       }}
                     >
-                      <span>모듈 진행</span>
+                      <span>챕터 진행</span>
                       <span>
                         {progress.done}/7
                       </span>

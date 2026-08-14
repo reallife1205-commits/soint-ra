@@ -158,7 +158,7 @@ export default function FactorySearchTab({ caseId }) {
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>
-          모듈3 이력 기반 자동 검색
+          챕터 03 이력 기반 자동 검색
         </div>
         <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginBottom: 12 }}>
           소유·임대차 이력에서 추출된 {ownerNames.length}개 업체명을 조회해요.
@@ -190,7 +190,7 @@ export default function FactorySearchTab({ caseId }) {
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
         ) : ownerNames.length === 0 ? (
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-            모듈3에 등록된 소유자/임차인 이력이 없어요. 먼저 모듈3을 채워주세요.
+            챕터 03에 등록된 소유자/임차인 이력이 없어요. 먼저 챕터 03을 채워주세요.
           </div>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>

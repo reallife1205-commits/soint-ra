@@ -50,7 +50,7 @@ export default function GenericModuleTable({ caseId, moduleNumber }) {
           fontSize: 15,
         }}
       >
-        이 모듈의 표 형태는 아직 정해지지 않아서, 자유롭게 항목을 적을 수 있는
+        이 챕터의 표 형태는 아직 정해지지 않아서, 자유롭게 항목을 적을 수 있는
         기본 표로 되어있어요. 정확한 항목이 정해지면 이 표를 그에 맞게 바꿔드릴게요.
       </div>
 
