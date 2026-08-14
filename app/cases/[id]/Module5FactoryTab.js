@@ -71,7 +71,10 @@ export default function FactorySearchTab({ caseId }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorFlag(data.error || "공장등록 조회에 실패했어요.");
+        setErrorFlag(
+          (data.error || "공장등록 조회에 실패했어요.") +
+            (data.debugDetail ? `\n\n[상세정보] ${data.debugDetail}` : "")
+        );
         setLoadingFlag(false);
         return null;
       }
@@ -171,7 +174,14 @@ export default function FactorySearchTab({ caseId }) {
         </button>
 
         {autoError && (
-          <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+          <div
+            style={{
+              color: "var(--color-badge-red-text)",
+              fontSize: 13,
+              marginBottom: 10,
+              whiteSpace: "pre-wrap",
+            }}
+          >
             {autoError}
           </div>
         )}
@@ -232,7 +242,14 @@ export default function FactorySearchTab({ caseId }) {
         </div>
 
         {manualError && (
-          <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+          <div
+            style={{
+              color: "var(--color-badge-red-text)",
+              fontSize: 13,
+              marginBottom: 10,
+              whiteSpace: "pre-wrap",
+            }}
+          >
             {manualError}
           </div>
         )}

@@ -22,32 +22,29 @@ async function searchOne(apiKey, name) {
     const text = await res.text();
 
     if (!res.ok) {
-      console.error(
-        `factory-search: HTTP ${res.status}, 원본 응답:`,
-        text.slice(0, 1000)
-      );
+      const err = new Error(`공장등록 조회 서버가 오류를 돌려줬어요 (HTTP ${res.status})`);
+      err.debugDetail = text.slice(0, 500);
+      throw err;
     }
 
     let data;
     try {
       data = JSON.parse(text);
     } catch {
-      console.error(
-        "factory-search: JSON 파싱 실패, 원본 응답:",
-        text.slice(0, 1000)
+      const err = new Error(
+        "공장등록 조회 응답을 이해하지 못했어요 (인증키를 확인해주세요)."
       );
-      throw new Error("공장등록 조회 응답을 이해하지 못했어요 (인증키를 확인해주세요).");
+      err.debugDetail = text.slice(0, 500);
+      throw err;
     }
 
     const resultCode = data?.response?.header?.resultCode;
     if (resultCode && resultCode !== "00") {
-      console.error(
-        "factory-search: API 에러 응답:",
-        JSON.stringify(data.response.header)
-      );
-      throw new Error(
+      const err = new Error(
         `공장등록 조회 API 에러: ${data.response.header.resultMsg || resultCode}`
       );
+      err.debugDetail = JSON.stringify(data.response.header);
+      throw err;
     }
 
     const body = data?.response?.body;
@@ -100,7 +97,11 @@ export async function POST(req) {
     return Response.json({ results });
   } catch (e) {
     return Response.json(
-      { error: e.message || "공장등록 조회 중 문제가 발생했어요" },
+      {
+        error: e.message || "공장등록 조회 중 문제가 발생했어요",
+        debugDetail: e.debugDetail || null,
+        debugStack: String(e.stack || "").slice(0, 500),
+      },
       { status: 500 }
     );
   }
