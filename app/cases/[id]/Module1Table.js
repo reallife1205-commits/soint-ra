@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useModuleRows } from "@/lib/useModuleRows";
+import { SUBSTANCE_LABELS } from "@/lib/substances";
 
 const FIELDS = [
   { key: "contaminant", label: "오염물질", width: 120 },
@@ -44,6 +45,11 @@ export default function Module1Table({ caseId }) {
 
   return (
     <div>
+      <datalist id="substance-options">
+        {SUBSTANCE_LABELS.map((label) => (
+          <option key={label} value={label} />
+        ))}
+      </datalist>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
@@ -92,6 +98,7 @@ export default function Module1Table({ caseId }) {
                           value={localRow[f.key] || ""}
                           onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
                           onBlur={() => handleBlurSave(row, f.key)}
+                          list={f.key === "contaminant" ? "substance-options" : undefined}
                           style={{
                             width: "100%",
                             border: "none",

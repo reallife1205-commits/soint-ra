@@ -2,42 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
-// 모듈2와 동일한 물질 목록 (한글 표기 -> reference_soil_data 컬럼명)
-const SUBSTANCE_KEY_BY_LABEL = {
-  "카드뮴(Cd)": "cadmium",
-  "카드뮴": "cadmium",
-  "구리(Cu)": "copper",
-  "구리": "copper",
-  "비소(As)": "arsenic",
-  "비소": "arsenic",
-  "납(Pb)": "lead",
-  "납": "lead",
-  "6가크롬(Cr6+)": "chromium6",
-  "6가크롬": "chromium6",
-  "수은(Hg)": "mercury",
-  "수은": "mercury",
-  "아연(Zn)": "zinc",
-  "아연": "zinc",
-  "니켈(Ni)": "nickel",
-  "니켈": "nickel",
-  "유기인": "organophosphorus",
-  "시안(CN)": "cyanide",
-  "시안": "cyanide",
-  "페놀류": "phenol",
-  "페놀": "phenol",
-  "벤젠": "benzene",
-  "톨루엔": "toluene",
-  "에틸벤젠": "ethylbenzene",
-  "크실렌": "xylene",
-  "TPH": "tph",
-  "TCE": "tce",
-  "PCE": "pce",
-  "불소(F)": "fluorine",
-  "불소": "fluorine",
-  "PCB": "pcb",
-  "벤조(a)피렌": "benzoapyrene",
-};
+import { findSubstanceKey } from "@/lib/substances";
 
 const VERDICTS = ["판단불가", "외부 영향 가능성 낮음", "외부 영향 가능성 있음", "외부 영향 확인 필요"];
 const VERDICT_STYLE = {
@@ -127,7 +92,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
     let surroundingMaxBySubstance = {};
     if (coords) {
       const matchedKeys = substanceNames
-        .map((name) => SUBSTANCE_KEY_BY_LABEL[name])
+        .map((name) => findSubstanceKey(name))
         .filter(Boolean);
       const uniqueKeys = [...new Set(matchedKeys)];
 
@@ -164,7 +129,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
 
     const rowsToUpsert = substanceNames.map((name) => {
       const targetMax = targetMaxBySubstance[name];
-      const key = SUBSTANCE_KEY_BY_LABEL[name];
+      const key = findSubstanceKey(name);
       const surroundingMax = key ? surroundingMaxBySubstance[key] ?? null : null;
       const ratio =
         surroundingMax !== null && targetMax ? surroundingMax / targetMax : null;
