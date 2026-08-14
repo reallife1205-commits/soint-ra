@@ -144,6 +144,19 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
       };
     });
 
+    const { data: existingRows } = await supabase
+      .from("surrounding_impacts")
+      .select("id, substance")
+      .eq("case_id", caseId);
+
+    const staleIds = (existingRows || [])
+      .filter((r) => !substanceNames.includes(r.substance))
+      .map((r) => r.id);
+
+    if (staleIds.length > 0) {
+      await supabase.from("surrounding_impacts").delete().in("id", staleIds);
+    }
+
     await supabase
       .from("surrounding_impacts")
       .upsert(rowsToUpsert, { onConflict: "case_id,substance" });
