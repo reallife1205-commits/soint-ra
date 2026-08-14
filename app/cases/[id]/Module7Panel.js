@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import PollutionMappingTab from "./Module7PollutionMapping";
 
 const LEGAL_REFERENCE_DATE = "1996-01-06"; // 토양환경보전법 시행일 기준
 const PX_PER_YEAR = 50;
@@ -52,7 +53,8 @@ export default function Module7Panel({ caseId }) {
       </div>
 
       {tab === "timeline" && <IntegratedTimeline caseId={caseId} />}
-      {tab !== "timeline" && (
+      {tab === "mapping" && <PollutionMappingTab caseId={caseId} />}
+      {tab !== "timeline" && tab !== "mapping" && (
         <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
           이 탭은 다음 단계에서 만들게요.
         </div>
