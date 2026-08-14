@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import TopNav from "@/app/components/TopNav";
+import SoilBanner from "@/app/components/SoilBanner";
 
 export default function InventoryPage() {
   const [sites, setSites] = useState([]);
@@ -46,6 +47,7 @@ export default function InventoryPage() {
   return (
     <div className="page">
       <TopNav />
+      <SoilBanner />
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
         <button className="btn-primary" onClick={() => setShowAddForm(true)}>

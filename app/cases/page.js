@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { MODULES } from "@/lib/modules";
 import TopNav from "@/app/components/TopNav";
+import SoilBanner from "@/app/components/SoilBanner";
 
 const STATUS_OPTIONS = ["전체", "작성중", "완료"];
 
@@ -98,6 +99,7 @@ export default function CasesPage() {
   return (
     <div className="page">
       <TopNav />
+      <SoilBanner />
       <div
         style={{
           display: "flex",
