@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import FactorySearchTab from "./Module5FactoryTab";
 
 const TABS = [
   { key: "dart", label: "DART 검색" },
@@ -55,11 +56,7 @@ export default function Module5Panel({ caseId }) {
       {tab === "dart" && (
         <DartSearchTab caseId={caseId} onResultsChanged={setResultCount} />
       )}
-      {tab === "factory" && (
-        <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
-          공장등록 조회 기능은 다음 단계에서 만들게요.
-        </div>
-      )}
+      {tab === "factory" && <FactorySearchTab caseId={caseId} />}
       {tab === "manual" && <ManualAddTab caseId={caseId} onResultsChanged={setResultCount} />}
       {tab === "results" && (
         <ResultsTab caseId={caseId} onResultsChanged={setResultCount} />
