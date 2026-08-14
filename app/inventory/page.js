@@ -60,10 +60,11 @@ export default function InventoryPage() {
           placeholder="부지명, 주소, 토지이용 검색"
           style={{
             flex: 1,
-            padding: "10px 14px",
+            padding: "12px 16px",
             borderRadius: 10,
             border: "1px solid var(--color-border)",
             background: "white",
+            fontSize: 16,
           }}
         />
         <div

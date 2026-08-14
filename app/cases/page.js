@@ -123,20 +123,22 @@ export default function CasesPage() {
           placeholder="안건번호, 주소, 담당자 검색"
           style={{
             flex: 1,
-            padding: "10px 14px",
+            padding: "12px 16px",
             borderRadius: 10,
             border: "1px solid var(--color-border)",
             background: "white",
+            fontSize: 16,
           }}
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           style={{
-            padding: "10px 14px",
+            padding: "12px 16px",
             borderRadius: 10,
             border: "1px solid var(--color-border)",
             background: "white",
+            fontSize: 16,
           }}
         >
           {STATUS_OPTIONS.map((s) => (

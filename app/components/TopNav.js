@@ -45,7 +45,7 @@ export default function TopNav() {
           <div style={{ fontWeight: 700, fontSize: 19 }}>
             토담 <span style={{ fontWeight: 400, color: "var(--color-text-muted)", fontSize: 16 }}>土潭</span>
           </div>
-          <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             토양정화 기술검토 · 인벤토리 플랫폼
           </div>
         </div>
