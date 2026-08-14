@@ -185,7 +185,7 @@ export default function CaseDetailPage() {
               >
                 {isDone && "✓ "}챕터 {String(m.number).padStart(2, "0")}
               </div>
-              <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 500 }}>
+              <div style={{ fontSize: 13, color: "var(--color-secondary)", fontWeight: 600 }}>
                 {m.name}
               </div>
             </button>

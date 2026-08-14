@@ -7,7 +7,7 @@ import { SUBSTANCE_LABELS } from "@/lib/substances";
 const FIELDS = [
   { key: "contaminant", label: "오염물질", width: 120 },
   { key: "depth", label: "심도", width: 80 },
-  { key: "length", label: "길이(m)", width: 80 },
+  { key: "length", label: "깊이(m)", width: 80 },
   { key: "concern_standard", label: "우려기준 초과", width: 110 },
   { key: "action_standard", label: "대책기준 초과", width: 110 },
   { key: "max_concentration", label: "최고농도(mg/kg)", width: 130 },
