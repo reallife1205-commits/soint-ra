@@ -74,8 +74,8 @@ export default function SoilBanner() {
           <circle cx="1050" cy="158" r="2.5" />
         </g>
 
-        {/* 새싹 3개 */}
-        {[180, 560, 940].map((x, i) => (
+        {/* 새싹 4개 (양 끝 균형 맞춤) */}
+        {[60, 220, 600, 980].map((x, i) => (
           <g key={i} transform={`translate(${x}, 118)`}>
             <line x1="0" y1="0" x2="0" y2="-26" stroke="#5f7048" strokeWidth="3" strokeLinecap="round" />
             <path d="M0,-20 C-14,-24 -20,-38 -14,-48 C-2,-42 2,-28 0,-20 Z" fill="#6f8256" />
