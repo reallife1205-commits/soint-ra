@@ -25,22 +25,22 @@ export default function SoilBanner() {
         <rect x="0" y="0" width="1200" height="120" fill="url(#skyGrad)" />
 
         {/* 해 */}
-        <circle cx="1080" cy="52" r="26" fill="#d97f4d" opacity="0.85" />
-        <g stroke="#d97f4d" strokeWidth="3" opacity="0.55" strokeLinecap="round">
+        <circle cx="1080" cy="52" r="26" fill="#f0a94a" opacity="0.9" />
+        <g stroke="#f0a94a" strokeWidth="3" opacity="0.6" strokeLinecap="round">
           <line x1="1080" y1="8" x2="1080" y2="-2" />
           <line x1="1116" y1="24" x2="1124" y2="17" />
           <line x1="1116" y1="80" x2="1124" y2="87" />
         </g>
 
-        {/* 완만한 능선 (초록빛) */}
+        {/* 완만한 능선 (연초록빛) */}
         <path
           d="M0,105 C150,80 300,115 480,95 C650,76 820,108 1000,90 C1080,82 1150,92 1200,88 L1200,125 L0,125 Z"
-          fill="#8fa373"
-          opacity="0.6"
+          fill="#a8c084"
+          opacity="0.65"
         />
 
         {/* 잔디 라인 */}
-        <g stroke="#5f7048" strokeWidth="2.5" strokeLinecap="round" opacity="0.75">
+        <g stroke="#7fa35c" strokeWidth="2.5" strokeLinecap="round" opacity="0.85">
           {Array.from({ length: 60 }).map((_, i) => {
             const x = 10 + i * 20;
             const h = 5 + ((i * 37) % 6);
