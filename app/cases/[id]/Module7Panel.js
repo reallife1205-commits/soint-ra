@@ -115,12 +115,15 @@ function IntegratedTimeline({ caseId }) {
         .from("documents")
         .select("photo_year")
         .eq("case_id", caseId)
-        .eq("module_number", 4)
-        .not("photo_year", "is", null);
+        .eq("module_number", 4);
 
-      const years = [...new Set((docs || []).map((d) => d.photo_year))].sort(
-        (a, b) => a - b
-      );
+      const years = [
+        ...new Set(
+          (docs || [])
+            .map((d) => d.photo_year)
+            .filter((y) => y !== null && y !== undefined && y !== "")
+        ),
+      ].sort((a, b) => a - b);
 
       if (!cancelled) {
         setOwners(ownerList);
