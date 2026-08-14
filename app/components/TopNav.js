@@ -42,6 +42,17 @@ export default function TopNav() {
           토
         </div>
         <div>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--color-secondary)",
+              letterSpacing: "0.02em",
+              marginBottom: 1,
+            }}
+          >
+            토양을 담다
+          </div>
           <div style={{ fontWeight: 700, fontSize: 19 }}>
             토담{" "}
             <span style={{ fontWeight: 700, color: "var(--color-primary)", fontSize: 17 }}>
