@@ -50,7 +50,7 @@ export default function InventoryPage() {
       <SoilBanner />
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
-        <button className="btn-primary" onClick={() => setShowAddForm(true)}>
+        <button className="btn-accent" onClick={() => setShowAddForm(true)}>
           + 새 부지 등록
         </button>
       </div>

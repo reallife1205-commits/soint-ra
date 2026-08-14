@@ -107,7 +107,7 @@ export default function CasesPage() {
           marginBottom: 20,
         }}
       >
-        <button className="btn-primary" onClick={() => setShowAddForm(true)}>
+        <button className="btn-accent" onClick={() => setShowAddForm(true)}>
           + 새 안건 등록
         </button>
       </div>
