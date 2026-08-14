@@ -165,7 +165,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
     <div>
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 13 }}>
+          <div style={{ fontSize: 15 }}>
             📍 {caseInfo?.address}{" "}
             {coords && (
               <span style={{ color: "var(--color-text-muted)" }}>
@@ -178,13 +178,13 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
           </button>
         </div>
         {geocodeError && (
-          <div style={{ color: "var(--color-badge-red-text)", fontSize: 12, marginTop: 6 }}>
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginTop: 6 }}>
             {geocodeError}
           </div>
         )}
 
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 13, marginBottom: 6 }}>
+          <div style={{ fontSize: 15, marginBottom: 6 }}>
             조사 반경 <strong>{radius}km</strong>
           </div>
           <input
@@ -200,19 +200,19 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>
           측정항목 선택
         </div>
         {SUBSTANCE_GROUPS.map((group) => (
           <div key={group.label} style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 4 }}>
+            <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 4 }}>
               {group.label}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
               {group.items.map(([key, label]) => (
                 <label
                   key={key}
-                  style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13 }}
+                  style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 15 }}
                 >
                   <input
                     type="checkbox"
@@ -225,7 +225,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
             </div>
           </div>
         ))}
-        <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 8 }}>
+        <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 8 }}>
           선택됨 ({selected.size}개):{" "}
           {Array.from(selected).map((k) => SUBSTANCE_LABEL[k]).join(", ") || "없음"}
         </div>
@@ -254,7 +254,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
                       border: "none",
                       background: "transparent",
                       padding: "8px 12px",
-                      fontSize: 13,
+                      fontSize: 15,
                       cursor: "pointer",
                       fontWeight: activeTab === tabKey ? 700 : 400,
                       borderBottom:
@@ -298,7 +298,7 @@ function ResultTable({ rows, substances }) {
   }
   return (
     <div className="card" style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
         <thead>
           <tr style={{ background: "#f6f8f4" }}>
             <th style={{ textAlign: "left", padding: 8 }}>지점명</th>
@@ -329,7 +329,7 @@ function ResultTable({ rows, substances }) {
         </tbody>
       </table>
       {rows.length > 200 && (
-        <div style={{ fontSize: 12, color: "var(--color-text-muted)", padding: 8 }}>
+        <div style={{ fontSize: 14, color: "var(--color-text-muted)", padding: 8 }}>
           너무 많아서 가까운 200건만 표시 중이에요 (전체 {rows.length}건)
         </div>
       )}

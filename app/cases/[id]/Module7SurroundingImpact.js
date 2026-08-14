@@ -191,13 +191,13 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
     <div className="card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>주변부지 오염 영향 판단</div>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <div style={{ fontWeight: 700, fontSize: 17 }}>주변부지 오염 영향 판단</div>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             대상부지(모듈1) vs 주변부지(모듈2 반경 검색 데이터) 최고농도 비교 · 판정 클릭 시 변경
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             반경
             <input
               type="number"
@@ -219,7 +219,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
           border: "1px solid var(--color-badge-blue-bg)",
           borderRadius: 8,
           padding: 10,
-          fontSize: 12,
+          fontSize: 14,
           margin: "12px 0",
         }}
       >
@@ -228,20 +228,20 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
       </div>
 
       {infoMsg && (
-        <div style={{ color: "var(--color-badge-red-text)", fontSize: 12, marginBottom: 10 }}>
+        <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginBottom: 10 }}>
           {infoMsg}
         </div>
       )}
 
       {loading ? (
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>불러오는 중...</div>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
       ) : rows.length === 0 ? (
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
           오른쪽 위 &quot;재계산&quot;을 눌러서 모듈1·모듈2 데이터를 불러와 비교해보세요.
         </div>
       ) : (
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
             <thead>
               <tr style={{ borderBottom: "2px solid var(--color-border)", textAlign: "left" }}>
                 <th style={{ padding: "8px 6px" }}>오염물질</th>
@@ -278,7 +278,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
                           padding: "5px 10px",
                           borderRadius: 6,
                           cursor: "pointer",
-                          fontSize: 12,
+                          fontSize: 14,
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -294,7 +294,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
                         style={{
                           width: "100%",
                           padding: "4px 6px",
-                          fontSize: 12,
+                          fontSize: 14,
                           borderRadius: 4,
                           border: "1px solid var(--color-border)",
                           boxSizing: "border-box",

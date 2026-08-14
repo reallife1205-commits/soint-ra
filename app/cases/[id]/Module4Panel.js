@@ -68,7 +68,7 @@ export default function Module4Panel({ caseId, caseInfo }) {
               border: "none",
               background: "transparent",
               padding: "8px 14px",
-              fontSize: 13,
+              fontSize: 15,
               cursor: "pointer",
               fontWeight: tab === t.key ? 700 : 400,
               borderBottom:
@@ -165,7 +165,7 @@ function UploadTaggingSection({ caseId }) {
           background: "var(--color-badge-blue-bg)",
           border: "1px solid var(--color-badge-blue-bg)",
           marginBottom: 16,
-          fontSize: 13,
+          fontSize: 15,
         }}
       >
         왼쪽 사이드바에서 항공사진 파일을 업로드하면 여기서 선택해 태깅할 수 있어요.
@@ -173,15 +173,15 @@ function UploadTaggingSection({ caseId }) {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>
           태깅할 항공사진 선택
         </div>
         {docsLoading ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             불러오는 중...
           </div>
         ) : docs.length === 0 ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             아직 업로드된 항공사진이 없어요. 왼쪽에서 먼저 파일을 업로드해주세요.
           </div>
         ) : (
@@ -371,7 +371,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                     position: "absolute",
                     top: -20,
                     left: -2,
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 700,
                     color: "white",
                     background: FACILITY_COLOR[tag.facility_type] || "#6b7269",
@@ -422,11 +422,11 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
       <div className="card" style={{ flex: "1 1 260px", maxWidth: 320 }}>
         {pendingBox ? (
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>
               시설 태그 추가
             </div>
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 4 }}>
+              <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 4 }}>
                 시설 유형
               </div>
               <select
@@ -437,7 +437,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                   padding: "8px 10px",
                   border: "1px solid var(--color-border)",
                   borderRadius: 8,
-                  fontSize: 13,
+                  fontSize: 15,
                 }}
               >
                 {FACILITY_TYPES.map((f) => (
@@ -448,7 +448,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
               </select>
             </div>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 4 }}>
+              <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 4 }}>
                 메모
               </div>
               <textarea
@@ -461,7 +461,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                   padding: "8px 10px",
                   border: "1px solid var(--color-border)",
                   borderRadius: 8,
-                  fontSize: 13,
+                  fontSize: 15,
                   resize: "vertical",
                   fontFamily: "inherit",
                 }}
@@ -482,21 +482,21 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 12 }}>
             사진 위를 드래그해서 새 태그를 추가하세요.
           </div>
         )}
 
         <div style={{ marginTop: pendingBox ? 20 : 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
             태그 목록 {loading ? "" : `(${tags.length})`}
           </div>
           {loading ? (
-            <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+            <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
               불러오는 중...
             </div>
           ) : tags.length === 0 ? (
-            <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+            <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
               아직 태그가 없어요
             </div>
           ) : (
@@ -519,7 +519,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                     <span
                       style={{
                         display: "inline-block",
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: 700,
                         color: "white",
                         background: FACILITY_COLOR[tag.facility_type] || "#6b7269",
@@ -531,7 +531,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                       {FACILITY_LABEL[tag.facility_type] || tag.facility_type}
                     </span>
                     {tag.note && (
-                      <div style={{ fontSize: 12, color: "var(--color-text)" }}>
+                      <div style={{ fontSize: 14, color: "var(--color-text)" }}>
                         {tag.note}
                       </div>
                     )}

@@ -42,7 +42,7 @@ export default function Module3Panel({ caseId }) {
               border: "none",
               background: "transparent",
               padding: "8px 14px",
-              fontSize: 13,
+              fontSize: 15,
               cursor: "pointer",
               fontWeight: subTab === t.key ? 700 : 400,
               borderBottom:
@@ -59,7 +59,7 @@ export default function Module3Panel({ caseId }) {
 
       {subTab === "ownership" && (
         <>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 10 }}>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
             등기부등본 갑구 기준 소유권 변동 이력을 입력하세요. 취득일 기준 오래된 순으로 정렬돼요.
           </div>
           <CategorizedRowsTable
@@ -74,7 +74,7 @@ export default function Module3Panel({ caseId }) {
 
       {subTab === "lease" && (
         <>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 10 }}>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
             임차인 및 전대차 이력을 입력하세요. 업종 정보가 있으면 오염원 특정에 활용돼요.
           </div>
           <CategorizedRowsTable

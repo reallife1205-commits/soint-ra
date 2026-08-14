@@ -139,7 +139,7 @@ export default function InventorySiteDetailPage() {
       <TopNav />
 
       <div style={{ marginBottom: 16 }}>
-        <Link href="/inventory" style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+        <Link href="/inventory" style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
           ← 인벤토리 목록으로
         </Link>
       </div>
@@ -147,7 +147,7 @@ export default function InventorySiteDetailPage() {
       <div style={{ display: "flex", gap: 20 }}>
         <div style={{ flex: 1 }}>
           <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 14 }}>기본 정보</div>
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 14 }}>기본 정보</div>
 
             <FormField label="부지명">
               <input
@@ -174,7 +174,7 @@ export default function InventorySiteDetailPage() {
                 </button>
               </div>
               {coords && (
-                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 4 }}>
+                <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 4 }}>
                   좌표: {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
                 </div>
               )}
@@ -216,7 +216,7 @@ export default function InventorySiteDetailPage() {
             </FormField>
 
             {error && (
-              <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+              <div style={{ color: "var(--color-badge-red-text)", fontSize: 15, marginBottom: 10 }}>
                 {error}
               </div>
             )}
@@ -229,7 +229,7 @@ export default function InventorySiteDetailPage() {
                   border: "none",
                   background: "transparent",
                   color: "var(--color-badge-red-text)",
-                  fontSize: 13,
+                  fontSize: 15,
                   cursor: "pointer",
                 }}
               >
@@ -237,7 +237,7 @@ export default function InventorySiteDetailPage() {
               </button>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {savedMsg && (
-                  <span style={{ fontSize: 13, color: "var(--color-primary)" }}>{savedMsg}</span>
+                  <span style={{ fontSize: 15, color: "var(--color-primary)" }}>{savedMsg}</span>
                 )}
                 <button className="btn-primary" onClick={handleSave} disabled={saving}>
                   {saving ? "저장 중..." : "저장"}
@@ -248,7 +248,7 @@ export default function InventorySiteDetailPage() {
         </div>
 
         <div style={{ flex: 1 }}>
-          <div className="card" style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>
+          <div className="card" style={{ fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
             위치
           </div>
           <AerialMapView
@@ -267,7 +267,7 @@ export default function InventorySiteDetailPage() {
 function FormField({ label, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{label}</label>
+      <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>{label}</label>
       <div style={{ marginTop: 4 }}>{children}</div>
     </div>
   );

@@ -51,7 +51,7 @@ export default function Module1Table({ caseId }) {
         ))}
       </datalist>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
           <thead>
             <tr style={{ background: "#f6f8f4" }}>
               {FIELDS.map((f) => (
@@ -110,7 +110,7 @@ export default function Module1Table({ caseId }) {
                                 : "transparent",
                             padding: "6px 4px",
                             borderRadius: 4,
-                            fontSize: 13,
+                            fontSize: 15,
                           }}
                         />
                       </td>
@@ -145,11 +145,11 @@ export default function Module1Table({ caseId }) {
         + 심도 행 추가
       </button>
 
-      <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 12 }}>
+      <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 12 }}>
         셀 색상: <span className="badge badge-yellow" style={{ marginRight: 6 }}>우려기준 초과</span>
         <span className="badge badge-red">대책기준 초과</span>
       </div>
-      <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6 }}>
+      <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 6 }}>
         오염면적(m²)은 각 심도별 중첩부분을 감안한 최대 넓이, 오염량(m³)은 심도별 오염량의 합이에요.
       </div>
     </div>

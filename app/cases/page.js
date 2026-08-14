@@ -149,7 +149,7 @@ export default function CasesPage() {
           style={{
             display: "flex",
             alignItems: "center",
-            fontSize: 13,
+            fontSize: 15,
             color: "var(--color-text-muted)",
             whiteSpace: "nowrap",
           }}
@@ -201,7 +201,7 @@ export default function CasesPage() {
                         alignItems: "flex-start",
                       }}
                     >
-                      <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+                      <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
                         {c.case_number}
                       </div>
                       <div style={{ display: "flex", gap: 6 }}>
@@ -217,18 +217,18 @@ export default function CasesPage() {
                         </span>
                       </div>
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: 16, marginTop: 6 }}>
+                    <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>
                       {c.company_name}
                     </div>
-                    <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+                    <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
                       {c.address}
                     </div>
-                    <div style={{ fontSize: 13, marginTop: 8 }}>
+                    <div style={{ fontSize: 15, marginTop: 8 }}>
                       {c.region_grade}
                       {c.region_grade && c.contaminants ? " · " : ""}
                       {c.contaminants}
                     </div>
-                    <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>
+                    <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 4 }}>
                       담당자 {c.manager || "-"} · {c.registered_date || "-"}
                     </div>
 
@@ -238,7 +238,7 @@ export default function CasesPage() {
                         justifyContent: "space-between",
                         marginTop: 14,
                         marginBottom: 6,
-                        fontSize: 12,
+                        fontSize: 14,
                         color: "var(--color-text-muted)",
                       }}
                     >
@@ -275,12 +275,12 @@ export default function CasesPage() {
             <div style={{ fontWeight: 700, marginBottom: 12 }}>전체 현황</div>
             <div style={{ display: "flex", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>완료</div>
-                <div style={{ fontSize: 20, fontWeight: 700 }}>{summary.done}건</div>
+                <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>완료</div>
+                <div style={{ fontSize: 21, fontWeight: 700 }}>{summary.done}건</div>
               </div>
               <div>
-                <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>진행중</div>
-                <div style={{ fontSize: 20, fontWeight: 700 }}>{summary.inProgress}건</div>
+                <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>진행중</div>
+                <div style={{ fontSize: 21, fontWeight: 700 }}>{summary.inProgress}건</div>
               </div>
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function CasesPage() {
           <div className="card">
             <div style={{ fontWeight: 700, marginBottom: 12 }}>담당자별</div>
             {byManager.length === 0 && (
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+              <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
                 데이터가 없어요
               </div>
             )}
@@ -298,7 +298,7 @@ export default function CasesPage() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  fontSize: 13,
+                  fontSize: 15,
                   padding: "6px 0",
                 }}
               >
@@ -392,7 +392,7 @@ function AddCaseModal({ onClose, onCreated }) {
         className="card"
         style={{ width: 420, background: "white" }}
       >
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>
           새 안건 등록
         </div>
 
@@ -405,7 +405,7 @@ function AddCaseModal({ onClose, onCreated }) {
           { key: "contaminants", label: "오염물질 (예: 비소(As), 납(Pb))" },
         ].map((field) => (
           <div key={field.key} style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+            <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
               {field.label}
             </label>
             <input
@@ -423,7 +423,7 @@ function AddCaseModal({ onClose, onCreated }) {
         ))}
 
         <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             등록일
           </label>
           <input
@@ -441,7 +441,7 @@ function AddCaseModal({ onClose, onCreated }) {
         </div>
 
         {error && (
-          <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 15, marginBottom: 10 }}>
             {error}
           </div>
         )}

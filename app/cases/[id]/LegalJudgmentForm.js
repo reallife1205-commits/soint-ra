@@ -68,7 +68,7 @@ export default function LegalJudgmentForm({ caseId }) {
     <div>
       <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             오염 예상 기간
           </label>
           <input
@@ -82,12 +82,12 @@ export default function LegalJudgmentForm({ caseId }) {
               borderRadius: 8,
               border: "1px solid var(--color-border)",
               marginTop: 4,
-              fontSize: 13,
+              fontSize: 15,
             }}
           />
         </div>
         <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             주요 책임자 추정
           </label>
           <input
@@ -101,13 +101,13 @@ export default function LegalJudgmentForm({ caseId }) {
               borderRadius: 8,
               border: "1px solid var(--color-border)",
               marginTop: 4,
-              fontSize: 13,
+              fontSize: 15,
             }}
           />
         </div>
       </div>
 
-      <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+      <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
         판단 요약
       </label>
       <textarea
@@ -122,13 +122,13 @@ export default function LegalJudgmentForm({ caseId }) {
           borderRadius: 8,
           border: "1px solid var(--color-border)",
           marginTop: 4,
-          fontSize: 13,
+          fontSize: 15,
           resize: "vertical",
         }}
       />
 
       {saving && (
-        <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 6 }}>
+        <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 6 }}>
           저장 중...
         </div>
       )}

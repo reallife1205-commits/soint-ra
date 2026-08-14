@@ -39,7 +39,7 @@ export default function Module7Panel({ caseId, caseInfo }) {
               border: "none",
               background: "transparent",
               padding: "8px 14px",
-              fontSize: 13,
+              fontSize: 15,
               cursor: "pointer",
               fontWeight: tab === t.key ? 700 : 400,
               borderBottom:
@@ -194,7 +194,7 @@ function IntegratedTimeline({ caseId }) {
   return (
     <div>
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 14 }}>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginBottom: 14 }}>
           소유자·임차인 기간, 항공사진, 법 기준일을 한눈에 확인합니다. 가로 스크롤 가능해요.
         </div>
 
@@ -208,7 +208,7 @@ function IntegratedTimeline({ caseId }) {
                   style={{
                     position: "absolute",
                     left: xForYearFraction(y),
-                    fontSize: 11,
+                    fontSize: 13,
                     color: "var(--color-text-muted)",
                     transform: "translateX(-50%)",
                   }}
@@ -235,7 +235,7 @@ function IntegratedTimeline({ caseId }) {
                 position: "absolute",
                 top: 26,
                 left: legalX + 4,
-                fontSize: 11,
+                fontSize: 13,
                 color: "#d64545",
                 fontWeight: 700,
                 zIndex: 2,
@@ -247,7 +247,7 @@ function IntegratedTimeline({ caseId }) {
 
             {/* 소유자 행 */}
             <div style={{ marginTop: 40 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>소유자</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>소유자</div>
               <div style={{ position: "relative", height: ROW_HEIGHT }}>
                 {owners.map((o, i) => {
                   const s = yearFraction(o.start);
@@ -267,7 +267,7 @@ function IntegratedTimeline({ caseId }) {
                         top: 4,
                         background: "#a8562f",
                         color: "white",
-                        fontSize: 11,
+                        fontSize: 13,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -288,7 +288,7 @@ function IntegratedTimeline({ caseId }) {
             {/* 임차인 행 */}
             {tenants.length > 0 && (
               <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>임차인</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>임차인</div>
                 <div style={{ position: "relative", height: ROW_HEIGHT }}>
                   {tenants.map((t, i) => {
                     const s = yearFraction(t.start);
@@ -308,7 +308,7 @@ function IntegratedTimeline({ caseId }) {
                           top: 4,
                           background: "#5f7048",
                           color: "white",
-                          fontSize: 11,
+                          fontSize: 13,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -329,7 +329,7 @@ function IntegratedTimeline({ caseId }) {
 
             {/* 항공사진 행 */}
             <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>항공사진</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>항공사진</div>
               <div style={{ position: "relative", height: 30 }}>
                 {photoDocs.map((doc) => (
                   <button
@@ -340,7 +340,7 @@ function IntegratedTimeline({ caseId }) {
                       position: "absolute",
                       left: xForYearFraction(doc.photo_year) - 10,
                       textAlign: "center",
-                      fontSize: 10,
+                      fontSize: 13,
                       color: "var(--color-text-muted)",
                       border: "none",
                       background: "transparent",
@@ -348,7 +348,7 @@ function IntegratedTimeline({ caseId }) {
                       padding: 0,
                     }}
                   >
-                    <div style={{ fontSize: 16 }}>🖼️</div>
+                    <div style={{ fontSize: 18 }}>🖼️</div>
                     <div>{doc.photo_year}</div>
                   </button>
                 ))}
@@ -357,7 +357,7 @@ function IntegratedTimeline({ caseId }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 16, fontSize: 12, marginTop: 12, color: "var(--color-text-muted)" }}>
+        <div style={{ display: "flex", gap: 16, fontSize: 14, marginTop: 12, color: "var(--color-text-muted)" }}>
           <span>
             <span style={{ display: "inline-block", width: 10, height: 10, background: "#a8562f", borderRadius: 2, marginRight: 4 }} />
             소유자
@@ -372,21 +372,21 @@ function IntegratedTimeline({ caseId }) {
       </div>
 
       <div className="card">
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>이력 목록</div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>이력 목록</div>
         {owners.length === 0 && tenants.length === 0 ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             모듈3에 소유·임대차 이력을 입력하면 여기에 자동으로 나와요.
           </div>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {owners.map((o, i) => (
-              <li key={`o${i}`} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
+              <li key={`o${i}`} style={{ fontSize: 15, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
                 <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#a8562f", marginRight: 8 }} />
                 소유자 {o.name} ({formatDate(o.start)} ~ {formatDate(o.end)})
               </li>
             ))}
             {tenants.map((t, i) => (
-              <li key={`t${i}`} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
+              <li key={`t${i}`} style={{ fontSize: 15, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
                 <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#5f7048", marginRight: 8 }} />
                 임차인 {t.name} ({formatDate(t.start)} ~ {formatDate(t.end)})
               </li>
@@ -421,12 +421,12 @@ function IntegratedTimeline({ caseId }) {
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>
                 {selectedPhoto.photo_year}년 · {selectedPhoto.photo_note || selectedPhoto.file_name}
               </div>
               <button
                 onClick={() => setSelectedPhoto(null)}
-                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 18 }}
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 19 }}
               >
                 ✕
               </button>

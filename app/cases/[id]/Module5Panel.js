@@ -33,7 +33,7 @@ export default function Module5Panel({ caseId }) {
               border: "none",
               background: "transparent",
               padding: "8px 14px",
-              fontSize: 13,
+              fontSize: 15,
               cursor: "pointer",
               fontWeight: tab === t.key ? 700 : 400,
               borderBottom:
@@ -217,7 +217,7 @@ function DartSearchTab({ caseId, onResultsChanged }) {
             border: "none",
             background: "transparent",
             cursor: "pointer",
-            fontSize: 13,
+            fontSize: 15,
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -227,7 +227,7 @@ function DartSearchTab({ caseId, onResultsChanged }) {
           ⓘ DART 검색 가능 범위 참고사항 {showInfo ? "▲" : "▼"}
         </button>
         {showInfo && (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 10 }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 10 }}>
             DART는 상장사 및 외부감사 대상 법인처럼 공시 의무가 있는 회사만
             검색돼요. 개인사업자나 소규모 법인은 DART에 정보가 없을 수 있어요.
             그런 경우 &quot;공장등록 조회&quot; 탭이나 &quot;수동 추가&quot; 탭을
@@ -237,12 +237,12 @@ function DartSearchTab({ caseId, onResultsChanged }) {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+        <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>
           모듈3 이력 기반 자동 검색
         </div>
         <div
           style={{
-            fontSize: 13,
+            fontSize: 15,
             color: "var(--color-text-muted)",
             marginBottom: 12,
           }}
@@ -261,15 +261,15 @@ function DartSearchTab({ caseId, onResultsChanged }) {
         </button>
 
         {autoError && (
-          <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 15, marginBottom: 10 }}>
             {autoError}
           </div>
         )}
 
         {loading ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>불러오는 중...</div>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
         ) : ownerNames.length === 0 ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             모듈3에 등록된 소유자/임차인 이력이 없어요. 먼저 모듈3을 채워주세요.
           </div>
         ) : (
@@ -283,7 +283,7 @@ function DartSearchTab({ caseId, onResultsChanged }) {
                   alignItems: "center",
                   padding: "10px 0",
                   borderBottom: "1px solid var(--color-border)",
-                  fontSize: 13,
+                  fontSize: 15,
                 }}
               >
                 <span>
@@ -300,8 +300,8 @@ function DartSearchTab({ caseId, onResultsChanged }) {
       </div>
 
       <div className="card">
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>추가 검색</div>
-        <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 10 }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>추가 검색</div>
+        <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
           위 목록에 없는 업체명을 직접 검색해요.
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
@@ -322,11 +322,11 @@ function DartSearchTab({ caseId, onResultsChanged }) {
         </div>
 
         {manualError && (
-          <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 15, marginBottom: 10 }}>
             {manualError}
           </div>
         )}
-        <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
+        <div style={{ display: "flex", gap: 14, fontSize: 14 }}>
           <a
             href="https://www.bizno.net"
             target="_blank"
@@ -357,7 +357,7 @@ function DartSearchTab({ caseId, onResultsChanged }) {
           <div style={{ marginTop: 16, borderTop: "1px solid var(--color-border)", paddingTop: 14 }}>
             {manualResults.map((r) =>
               r.matches.length === 0 ? (
-                <div key={r.source_name} style={{ fontSize: 13 }}>
+                <div key={r.source_name} style={{ fontSize: 15 }}>
                   <span style={{ fontWeight: 600 }}>{r.source_name}</span> — DART에서
                   찾지 못했어요. <StatusBadge status="없음" />
                 </div>
@@ -366,7 +366,7 @@ function DartSearchTab({ caseId, onResultsChanged }) {
                   <div
                     key={`${r.source_name}-${i}`}
                     style={{
-                      fontSize: 13,
+                      fontSize: 15,
                       padding: "8px 0",
                       borderBottom:
                         i < r.matches.length - 1
@@ -463,7 +463,7 @@ function ManualAddTab({ caseId, onResultsChanged }) {
       <div style={{ fontWeight: 700, marginBottom: 14 }}>직접 입력해서 추가</div>
       {fields.map((f) => (
         <div key={f.key} style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{f.label}</label>
+          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>{f.label}</label>
           <input
             value={form[f.key]}
             onChange={(e) => update(f.key, e.target.value)}
@@ -478,7 +478,7 @@ function ManualAddTab({ caseId, onResultsChanged }) {
         </div>
       ))}
       <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>메모</label>
+        <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>메모</label>
         <textarea
           value={form.note}
           onChange={(e) => update("note", e.target.value)}
@@ -539,7 +539,7 @@ function ResultsTab({ caseId, onResultsChanged }) {
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
         <thead>
           <tr style={{ borderBottom: "2px solid var(--color-border)", textAlign: "left" }}>
             <th style={{ padding: "8px 6px" }}>검색 대상</th>

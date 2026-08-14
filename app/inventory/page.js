@@ -70,7 +70,7 @@ export default function InventoryPage() {
           style={{
             display: "flex",
             alignItems: "center",
-            fontSize: 13,
+            fontSize: 15,
             color: "var(--color-text-muted)",
             whiteSpace: "nowrap",
           }}
@@ -107,8 +107,8 @@ export default function InventoryPage() {
               className="card"
               style={{ display: "block" }}
             >
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{s.site_name}</div>
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: 18 }}>{s.site_name}</div>
+              <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 4 }}>
                 {s.address || "주소 미입력"}
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
@@ -120,7 +120,7 @@ export default function InventoryPage() {
               {s.land_use_history && (
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 14,
                     color: "var(--color-text-muted)",
                     marginTop: 10,
                     display: "-webkit-box",
@@ -230,7 +230,7 @@ function AddSiteModal({ onClose, onCreated }) {
         className="card"
         style={{ width: 440, background: "white", maxHeight: "90vh", overflowY: "auto" }}
       >
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>새 부지 등록</div>
+        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>새 부지 등록</div>
 
         {[
           { key: "site_name", label: "부지명 *" },
@@ -239,7 +239,7 @@ function AddSiteModal({ onClose, onCreated }) {
           { key: "land_use", label: "토지이용 현황 (예: 공장, 창고, 나대지)" },
         ].map((field) => (
           <div key={field.key} style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+            <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
               {field.label}
             </label>
             <input
@@ -258,7 +258,7 @@ function AddSiteModal({ onClose, onCreated }) {
         ))}
 
         <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             과거 이용 이력
           </label>
           <textarea
@@ -278,7 +278,7 @@ function AddSiteModal({ onClose, onCreated }) {
         </div>
 
         <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 12, color: "var(--color-text-muted)" }}>메모</label>
+          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>메모</label>
           <textarea
             value={form.notes}
             onChange={(e) => update("notes", e.target.value)}
@@ -296,7 +296,7 @@ function AddSiteModal({ onClose, onCreated }) {
         </div>
 
         {error && (
-          <div style={{ color: "var(--color-badge-red-text)", fontSize: 13, marginBottom: 10 }}>
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 15, marginBottom: 10 }}>
             {error}
           </div>
         )}

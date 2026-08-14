@@ -100,7 +100,7 @@ export default function CaseDetailPage() {
   if (!caseInfo) {
     return (
       <div className="page">
-        <Link href="/cases" style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+        <Link href="/cases" style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
           ← 목록으로
         </Link>
         <div className="card" style={{ marginTop: 16 }}>
@@ -124,11 +124,11 @@ export default function CaseDetailPage() {
         }}
       >
         <div>
-          <Link href="/cases" style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          <Link href="/cases" style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             ← 목록
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-            <span style={{ fontWeight: 700, fontSize: 17 }}>
+            <span style={{ fontWeight: 700, fontSize: 18 }}>
               {caseInfo.case_number} · {caseInfo.company_name}
             </span>
             <span
@@ -139,11 +139,11 @@ export default function CaseDetailPage() {
               {caseInfo.status}
             </span>
           </div>
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 2 }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 2 }}>
             {caseInfo.address} · 담당: {caseInfo.manager || "-"}
           </div>
         </div>
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
           {completedCount}/7 완료
         </div>
       </div>
@@ -178,14 +178,14 @@ export default function CaseDetailPage() {
             >
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: 600,
                   color: isActive ? "var(--color-primary)" : "var(--color-text)",
                 }}
               >
                 {isDone && "✓ "}모듈{m.number}
               </div>
-              <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
                 {m.name}
               </div>
             </button>
@@ -201,7 +201,7 @@ export default function CaseDetailPage() {
           marginBottom: 12,
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 700 }}>
+        <div style={{ fontSize: 17, fontWeight: 700 }}>
           모듈{activeModule} — {activeModuleMeta?.name}
         </div>
         <button

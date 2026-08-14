@@ -153,7 +153,7 @@ export default function AerialMapView({
             background: "var(--color-badge-yellow-bg)",
             border: "1px solid var(--color-badge-yellow-bg)",
             marginBottom: 12,
-            fontSize: 13,
+            fontSize: 15,
           }}
         >
           브이월드 API 키가 아직 설정되지 않아서 위성사진을 불러올 수 없어요.
@@ -211,7 +211,7 @@ export default function AerialMapView({
             {savingImage ? "저장 중..." : "🖼️ 지도 이미지 저장"}
           </button>
         </div>
-        <div style={{ display: "flex", gap: 14, fontSize: 12 }}>
+        <div style={{ display: "flex", gap: 14, fontSize: 14 }}>
           <a href={kakaoUrl} target="_blank" rel="noreferrer" style={{ color: "var(--color-primary)" }}>
             ↗ 카카오맵 항공사진 (2008년~)
           </a>
@@ -233,7 +233,7 @@ export default function AerialMapView({
             alignItems: "center",
             flexWrap: "wrap",
             gap: 8,
-            fontSize: 13,
+            fontSize: 15,
           }}
         >
           <span>
@@ -269,7 +269,7 @@ export default function AerialMapView({
             background: "var(--color-badge-yellow-bg)",
             border: "1px solid var(--color-badge-yellow-bg)",
             marginBottom: 10,
-            fontSize: 13,
+            fontSize: 15,
           }}
         >
           {imageError}
@@ -338,7 +338,7 @@ export default function AerialMapView({
         </MapContainer>
       </div>
 
-      <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 8 }}>
+      <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 8 }}>
         V-World 위성사진 기준이에요. 연도별 과거 항공사진은 위 링크에서 확인하시거나
         &apos;사진 업로드&apos; 탭을 이용하세요.
       </div>

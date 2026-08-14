@@ -38,7 +38,7 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
   return (
     <div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
           <thead>
             <tr style={{ background: "#f6f8f4" }}>
               {fields.map((f) => (
@@ -89,7 +89,7 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
                               border: "none",
                               background: "transparent",
                               padding: "6px 4px",
-                              fontSize: 13,
+                              fontSize: 15,
                             }}
                           />
                         ) : (
@@ -102,7 +102,7 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
                               border: "none",
                               background: "transparent",
                               padding: "6px 4px",
-                              fontSize: 13,
+                              fontSize: 15,
                             }}
                           />
                         )}

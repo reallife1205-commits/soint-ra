@@ -98,7 +98,7 @@ export default function Module6Panel({ caseId }) {
   return (
     <div>
       <div className="card" style={{ marginBottom: 16 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, marginRight: 10 }}>
+        <label style={{ fontSize: 15, fontWeight: 600, marginRight: 10 }}>
           현장조사 일자
         </label>
         <input
@@ -131,7 +131,7 @@ export default function Module6Panel({ caseId }) {
       />
 
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 24 }}>
-        {savedMsg && <span style={{ fontSize: 13, color: "var(--color-primary)" }}>{savedMsg}</span>}
+        {savedMsg && <span style={{ fontSize: 15, color: "var(--color-primary)" }}>{savedMsg}</span>}
         <button className="btn-primary" onClick={handleSave} disabled={saving}>
           {saving ? "저장 중..." : "체크리스트 저장"}
         </button>
@@ -145,8 +145,8 @@ export default function Module6Panel({ caseId }) {
 function ChecklistCard({ title, note, items, onChange }) {
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{title}</div>
-      <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 14 }}>
+      <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 2 }}>{title}</div>
+      <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
         {note}
       </div>
 
@@ -158,7 +158,7 @@ function ChecklistCard({ title, note, items, onChange }) {
             borderBottom: i < items.length - 1 ? "1px solid var(--color-border)" : "none",
           }}
         >
-          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13 }}>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 15 }}>
             <input
               type="checkbox"
               checked={item.checked}
@@ -178,7 +178,7 @@ function ChecklistCard({ title, note, items, onChange }) {
               padding: "6px 10px",
               borderRadius: 8,
               border: "1px solid var(--color-border)",
-              fontSize: 13,
+              fontSize: 15,
               boxSizing: "border-box",
             }}
           />
@@ -258,13 +258,13 @@ function FieldPhotos({ caseId }) {
 
   return (
     <div className="card">
-      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>현장 사진</div>
-      <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 14 }}>
+      <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>현장 사진</div>
+      <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
         항목별로 사진을 찍거나 앨범에서 선택해서 올려주세요.
       </div>
 
       {error && (
-        <div style={{ color: "var(--color-badge-red-text)", fontSize: 12, marginBottom: 10 }}>
+        <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginBottom: 10 }}>
           {error}
         </div>
       )}
@@ -307,7 +307,7 @@ function FieldPhotos({ caseId }) {
               <div style={{ padding: 10 }}>
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 14,
                     textAlign: "center",
                     marginBottom: 8,
                     color: "var(--color-text-muted)",
@@ -337,7 +337,7 @@ function FieldPhotos({ caseId }) {
                       border: "none",
                       background: "transparent",
                       color: "var(--color-badge-red-text)",
-                      fontSize: 12,
+                      fontSize: 14,
                       cursor: "pointer",
                     }}
                   >
@@ -370,7 +370,7 @@ function FieldPhotos({ caseId }) {
       </div>
 
       {loading ? (
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>불러오는 중...</div>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
       ) : (
         <div
           style={{
@@ -387,7 +387,7 @@ function FieldPhotos({ caseId }) {
                   <PhotoThumb doc={doc} />
                 </div>
                 <div style={{ padding: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4 }}>
-                  <span style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {doc.photo_note || doc.file_name}
                   </span>
                   <button
@@ -412,7 +412,7 @@ function UploadButton({ label, capture, disabled, onSelect }) {
       style={{
         flex: 1,
         textAlign: "center",
-        fontSize: 12,
+        fontSize: 14,
         padding: "6px 8px",
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.6 : 1,

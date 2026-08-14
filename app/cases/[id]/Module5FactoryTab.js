@@ -149,7 +149,7 @@ export default function FactorySearchTab({ caseId }) {
           background: "var(--color-badge-blue-bg)",
           border: "1px solid var(--color-badge-blue-bg)",
           marginBottom: 16,
-          fontSize: 13,
+          fontSize: 15,
         }}
       >
         한국산업단지공단의 공장등록(팩토리온) 자료에서 회사명으로 공장 등록 여부와
@@ -157,10 +157,10 @@ export default function FactorySearchTab({ caseId }) {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+        <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>
           모듈3 이력 기반 자동 검색
         </div>
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 12 }}>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginBottom: 12 }}>
           소유·임대차 이력에서 추출된 {ownerNames.length}개 업체명을 조회해요.
         </div>
 
@@ -177,7 +177,7 @@ export default function FactorySearchTab({ caseId }) {
           <div
             style={{
               color: "var(--color-badge-red-text)",
-              fontSize: 13,
+              fontSize: 15,
               marginBottom: 10,
               whiteSpace: "pre-wrap",
             }}
@@ -187,9 +187,9 @@ export default function FactorySearchTab({ caseId }) {
         )}
 
         {loading ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>불러오는 중...</div>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
         ) : ownerNames.length === 0 ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             모듈3에 등록된 소유자/임차인 이력이 없어요. 먼저 모듈3을 채워주세요.
           </div>
         ) : (
@@ -203,7 +203,7 @@ export default function FactorySearchTab({ caseId }) {
                   alignItems: "center",
                   padding: "10px 0",
                   borderBottom: "1px solid var(--color-border)",
-                  fontSize: 13,
+                  fontSize: 15,
                 }}
               >
                 <span>
@@ -220,8 +220,8 @@ export default function FactorySearchTab({ caseId }) {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>추가 검색</div>
-        <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 10 }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>추가 검색</div>
+        <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
           회사명을 직접 입력해서 검색해요.
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
@@ -245,7 +245,7 @@ export default function FactorySearchTab({ caseId }) {
           <div
             style={{
               color: "var(--color-badge-red-text)",
-              fontSize: 13,
+              fontSize: 15,
               marginBottom: 10,
               whiteSpace: "pre-wrap",
             }}
@@ -258,7 +258,7 @@ export default function FactorySearchTab({ caseId }) {
           <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 14 }}>
             {manualResults.map((r) =>
               r.matches.length === 0 ? (
-                <div key={r.source_name} style={{ fontSize: 13 }}>
+                <div key={r.source_name} style={{ fontSize: 15 }}>
                   <span style={{ fontWeight: 600 }}>{r.source_name}</span> — 등록된
                   공장을 찾지 못했어요. <StatusBadge status="없음" />
                 </div>
@@ -274,7 +274,7 @@ export default function FactorySearchTab({ caseId }) {
 
       {savedResults.length > 0 && (
         <div className="card">
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>
             조회된 공장 정보 ({savedResults.length})
           </div>
           {savedResults.map((r) => (
@@ -289,7 +289,7 @@ export default function FactorySearchTab({ caseId }) {
               }}
             >
               {r.status === "없음" ? (
-                <div style={{ fontSize: 13 }}>
+                <div style={{ fontSize: 15 }}>
                   <span style={{ fontWeight: 600 }}>{r.source_name}</span> —{" "}
                   <StatusBadge status="없음" />
                 </div>
@@ -321,7 +321,7 @@ export default function FactorySearchTab({ caseId }) {
 function FactoryResultCard({ match, compact }) {
   const cmpnyNm = match.cmpny_nm || match.cmpnyNm;
   return (
-    <div style={{ fontSize: 13, padding: compact ? 0 : "8px 0" }}>
+    <div style={{ fontSize: 15, padding: compact ? 0 : "8px 0" }}>
       <div style={{ fontWeight: 700, marginBottom: 2 }}>
         {cmpnyNm} <StatusBadge status="완료" />
       </div>

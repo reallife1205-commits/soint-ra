@@ -36,16 +36,16 @@ export default function TopNav() {
             alignItems: "center",
             justifyContent: "center",
             fontWeight: 700,
-            fontSize: 19,
+            fontSize: 20,
           }}
         >
           토
         </div>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>
-            토담 <span style={{ fontWeight: 400, color: "var(--color-text-muted)", fontSize: 14 }}>土潭</span>
+          <div style={{ fontWeight: 700, fontSize: 19 }}>
+            토담 <span style={{ fontWeight: 400, color: "var(--color-text-muted)", fontSize: 16 }}>土潭</span>
           </div>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             토양정화 기술검토 · 인벤토리 플랫폼
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function TopNav() {
             style={{
               padding: "8px 16px",
               borderRadius: 8,
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: 600,
               textDecoration: "none",
               color: active === s.key ? "white" : "var(--color-text)",

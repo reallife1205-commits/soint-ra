@@ -80,7 +80,7 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
 
   return (
     <div>
-      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
         참고 문서 업로드
       </div>
 
@@ -103,21 +103,21 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
       </label>
 
       {error && (
-        <div style={{ color: "var(--color-badge-red-text)", fontSize: 12, marginTop: 8 }}>
+        <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginTop: 8 }}>
           {error}
         </div>
       )}
 
       <div style={{ marginTop: 16 }}>
         {loading ? (
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>불러오는 중...</div>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
         ) : docs.length === 0 ? (
           <div
             style={{
               textAlign: "center",
               padding: "32px 12px",
               color: "var(--color-text-muted)",
-              fontSize: 13,
+              fontSize: 15,
             }}
           >
             업로드된 문서 없음
@@ -133,7 +133,7 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
                   alignItems: "center",
                   padding: "8px 0",
                   borderBottom: "1px solid var(--color-border)",
-                  fontSize: 13,
+                  fontSize: 15,
                 }}
               >
                 <button

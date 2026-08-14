@@ -47,7 +47,7 @@ export default function GenericModuleTable({ caseId, moduleNumber }) {
           background: "var(--color-badge-yellow-bg)",
           border: "1px solid var(--color-badge-yellow-bg)",
           marginBottom: 16,
-          fontSize: 13,
+          fontSize: 15,
         }}
       >
         이 모듈의 표 형태는 아직 정해지지 않아서, 자유롭게 항목을 적을 수 있는
@@ -55,7 +55,7 @@ export default function GenericModuleTable({ caseId, moduleNumber }) {
       </div>
 
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
           <thead>
             <tr style={{ background: "#f6f8f4" }}>
               {DEFAULT_FIELDS.map((f) => (
@@ -104,7 +104,7 @@ export default function GenericModuleTable({ caseId, moduleNumber }) {
                           border: "none",
                           background: "transparent",
                           padding: "6px 4px",
-                          fontSize: 13,
+                          fontSize: 15,
                         }}
                       />
                     </td>

@@ -81,8 +81,8 @@ export default function ReviewOpinionTab({ caseId }) {
     <div className="card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>종합 검토 의견</div>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <div style={{ fontWeight: 700, fontSize: 17 }}>종합 검토 의견</div>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             전 모듈 데이터를 검토해 의견을 작성하세요. AI로 초안을 만든 뒤 직접 다듬으셔도 돼요.
           </div>
         </div>
@@ -92,13 +92,13 @@ export default function ReviewOpinionTab({ caseId }) {
       </div>
 
       {error && (
-        <div style={{ color: "var(--color-badge-red-text)", fontSize: 12, margin: "10px 0" }}>
+        <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, margin: "10px 0" }}>
           {error}
         </div>
       )}
 
       {loading ? (
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 16 }}>불러오는 중...</div>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 16 }}>불러오는 중...</div>
       ) : (
         <>
           <textarea
@@ -113,14 +113,14 @@ export default function ReviewOpinionTab({ caseId }) {
               padding: 14,
               borderRadius: 8,
               border: "1px solid var(--color-border)",
-              fontSize: 13,
+              fontSize: 15,
               fontFamily: "inherit",
               lineHeight: 1.6,
               boxSizing: "border-box",
               resize: "vertical",
             }}
           />
-          <div style={{ fontSize: 12, color: "var(--color-primary)", marginTop: 6, minHeight: 16 }}>
+          <div style={{ fontSize: 14, color: "var(--color-primary)", marginTop: 6, minHeight: 16 }}>
             {savedMsg}
           </div>
         </>

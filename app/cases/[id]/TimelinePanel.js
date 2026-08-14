@@ -152,7 +152,7 @@ export default function TimelinePanel({ caseId, onCountChange }) {
                   padding: "6px 10px",
                   borderRadius: 8,
                   border: "1px solid var(--color-border)",
-                  fontSize: 13,
+                  fontSize: 15,
                 }}
               />
               {item.tagCount > 0 && (
@@ -160,7 +160,7 @@ export default function TimelinePanel({ caseId, onCountChange }) {
               )}
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: 14,
                   color: "var(--color-text-muted)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -183,7 +183,7 @@ export default function TimelinePanel({ caseId, onCountChange }) {
                 padding: "8px 10px",
                 borderRadius: 8,
                 border: "1px solid var(--color-border)",
-                fontSize: 13,
+                fontSize: 15,
                 fontFamily: "inherit",
                 resize: "vertical",
               }}
@@ -191,7 +191,7 @@ export default function TimelinePanel({ caseId, onCountChange }) {
 
             <div
               style={{
-                fontSize: 11,
+                fontSize: 13,
                 color: "var(--color-text-muted)",
                 marginTop: 6,
               }}

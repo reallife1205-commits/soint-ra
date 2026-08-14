@@ -138,8 +138,8 @@ export default function PollutionMappingTab({ caseId }) {
     <div className="card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>오염물질 × 기업 연관성 매트릭스</div>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+          <div style={{ fontWeight: 700, fontSize: 17 }}>오염물질 × 기업 연관성 매트릭스</div>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
             셀 클릭 → 연관성 수준 변경, 하단 텍스트 → 메모 입력
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function PollutionMappingTab({ caseId }) {
           border: "1px solid var(--color-badge-blue-bg)",
           borderRadius: 8,
           padding: 10,
-          fontSize: 12,
+          fontSize: 14,
           marginBottom: 14,
         }}
       >
@@ -171,7 +171,7 @@ export default function PollutionMappingTab({ caseId }) {
         별표1·별표5를 참고해주세요.
       </div>
 
-      <div style={{ display: "flex", gap: 12, fontSize: 11, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 12, fontSize: 13, marginBottom: 12, flexWrap: "wrap" }}>
         {LEVELS.map((l) => (
           <span
             key={l}
@@ -208,17 +208,17 @@ export default function PollutionMappingTab({ caseId }) {
       </div>
 
       {companies.length === 0 ? (
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
           모듈5에서 DART 검색 또는 공장등록 조회로 회사를 먼저 찾아주세요. (모듈3
           소유자만 있어도 표시돼요.)
         </div>
       ) : substances.length === 0 ? (
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
           위에서 오염물질을 추가하면 표가 만들어져요.
         </div>
       ) : (
         <div style={{ overflowX: "auto" }}>
-          <table style={{ borderCollapse: "collapse", fontSize: 12 }}>
+          <table style={{ borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
               <tr>
                 <th
@@ -273,7 +273,7 @@ export default function PollutionMappingTab({ caseId }) {
                           background: "transparent",
                           color: "var(--color-text-muted)",
                           cursor: "pointer",
-                          fontSize: 11,
+                          fontSize: 13,
                         }}
                         title="이 오염물질 행 삭제"
                       >
@@ -304,7 +304,7 @@ export default function PollutionMappingTab({ caseId }) {
                             padding: "6px 4px",
                             borderRadius: 6,
                             cursor: "pointer",
-                            fontSize: 12,
+                            fontSize: 14,
                             marginBottom: 4,
                           }}
                         >
@@ -323,7 +323,7 @@ export default function PollutionMappingTab({ caseId }) {
                           style={{
                             width: "100%",
                             padding: "4px 6px",
-                            fontSize: 11,
+                            fontSize: 13,
                             borderRadius: 4,
                             border: "1px solid var(--color-border)",
                             boxSizing: "border-box",
