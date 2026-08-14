@@ -21,12 +21,33 @@ async function searchOne(apiKey, name) {
     });
     const text = await res.text();
 
+    if (!res.ok) {
+      console.error(
+        `factory-search: HTTP ${res.status}, 원본 응답:`,
+        text.slice(0, 1000)
+      );
+    }
+
     let data;
     try {
       data = JSON.parse(text);
     } catch {
-      // 인증키 문제 등으로 XML 에러 응답이 올 때가 있어요.
+      console.error(
+        "factory-search: JSON 파싱 실패, 원본 응답:",
+        text.slice(0, 1000)
+      );
       throw new Error("공장등록 조회 응답을 이해하지 못했어요 (인증키를 확인해주세요).");
+    }
+
+    const resultCode = data?.response?.header?.resultCode;
+    if (resultCode && resultCode !== "00") {
+      console.error(
+        "factory-search: API 에러 응답:",
+        JSON.stringify(data.response.header)
+      );
+      throw new Error(
+        `공장등록 조회 API 에러: ${data.response.header.resultMsg || resultCode}`
+      );
     }
 
     const body = data?.response?.body;
