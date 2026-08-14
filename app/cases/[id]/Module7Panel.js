@@ -77,7 +77,8 @@ function IntegratedTimeline({ caseId }) {
   const [loading, setLoading] = useState(true);
   const [owners, setOwners] = useState([]);
   const [tenants, setTenants] = useState([]);
-  const [photoYears, setPhotoYears] = useState([]);
+  const [photoDocs, setPhotoDocs] = useState([]);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,22 +114,24 @@ function IntegratedTimeline({ caseId }) {
 
       const { data: docs } = await supabase
         .from("documents")
-        .select("photo_year")
+        .select("*")
         .eq("case_id", caseId)
         .eq("module_number", 4);
 
-      const years = [
-        ...new Set(
-          (docs || [])
-            .map((d) => d.photo_year)
-            .filter((y) => y !== null && y !== undefined && y !== "")
-        ),
-      ].sort((a, b) => a - b);
+      const validDocs = (docs || []).filter(
+        (d) => d.photo_year !== null && d.photo_year !== undefined && d.photo_year !== ""
+      );
+      // 같은 연도에 사진이 여러 장이면 대표로 1장만 타임라인에 표시해요.
+      const byYear = new Map();
+      validDocs.forEach((d) => {
+        if (!byYear.has(d.photo_year)) byYear.set(d.photo_year, d);
+      });
+      const photoList = [...byYear.values()].sort((a, b) => a.photo_year - b.photo_year);
 
       if (!cancelled) {
         setOwners(ownerList);
         setTenants(tenantList);
-        setPhotoYears(years);
+        setPhotoDocs(photoList);
         setLoading(false);
       }
     }
@@ -137,6 +140,13 @@ function IntegratedTimeline({ caseId }) {
       cancelled = true;
     };
   }, [caseId]);
+
+  async function openPhoto(doc) {
+    const { data } = await supabase.storage
+      .from("documents")
+      .createSignedUrl(doc.file_path, 3600);
+    setSelectedPhoto({ ...doc, signedUrl: data?.signedUrl || null });
+  }
 
   const { minYear, maxYear, totalWidth } = useMemo(() => {
     const today = new Date();
@@ -153,7 +163,7 @@ function IntegratedTimeline({ caseId }) {
       if (s) allYears.push(Math.floor(s));
       allYears.push(Math.ceil(e));
     });
-    photoYears.forEach((y) => allYears.push(y));
+    photoDocs.forEach((d) => allYears.push(d.photo_year));
     allYears.push(1996);
 
     const min = Math.min(...allYears) - 2;
@@ -163,7 +173,7 @@ function IntegratedTimeline({ caseId }) {
       maxYear: max,
       totalWidth: (max - min) * PX_PER_YEAR,
     };
-  }, [owners, tenants, photoYears]);
+  }, [owners, tenants, photoDocs]);
 
   function xForYearFraction(yf) {
     return (yf - minYear) * PX_PER_YEAR;
@@ -185,11 +195,6 @@ function IntegratedTimeline({ caseId }) {
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 14 }}>
           소유자·임차인 기간, 항공사진, 법 기준일을 한눈에 확인합니다. 가로 스크롤 가능해요.
-        </div>
-
-        <div style={{ fontSize: 12, color: "orange", marginBottom: 10 }}>
-          [디버그] 찾은 항공사진 연도 개수: {photoYears.length}개
-          {photoYears.length > 0 ? ` (${photoYears.join(", ")})` : ""}
         </div>
 
         <div style={{ overflowX: "auto", paddingBottom: 8 }}>
@@ -219,7 +224,7 @@ function IntegratedTimeline({ caseId }) {
                 top: 24,
                 left: legalX,
                 width: 0,
-                height: (owners.length > 0 ? ROW_HEIGHT : 0) + (photoYears.length > 0 ? ROW_HEIGHT : 0) + 40,
+                height: (owners.length > 0 ? ROW_HEIGHT : 0) + (photoDocs.length > 0 ? ROW_HEIGHT : 0) + 40,
                 borderLeft: "2px dashed #d64545",
                 zIndex: 2,
               }}
@@ -325,20 +330,26 @@ function IntegratedTimeline({ caseId }) {
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>항공사진</div>
               <div style={{ position: "relative", height: 30 }}>
-                {photoYears.map((y) => (
-                  <div
-                    key={y}
+                {photoDocs.map((doc) => (
+                  <button
+                    key={doc.id}
+                    onClick={() => openPhoto(doc)}
+                    title={doc.photo_note || doc.file_name}
                     style={{
                       position: "absolute",
-                      left: xForYearFraction(y) - 10,
+                      left: xForYearFraction(doc.photo_year) - 10,
                       textAlign: "center",
                       fontSize: 10,
                       color: "var(--color-text-muted)",
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      padding: 0,
                     }}
                   >
-                    <div>🖼️</div>
-                    <div>{y}</div>
-                  </div>
+                    <div style={{ fontSize: 16 }}>🖼️</div>
+                    <div>{doc.photo_year}</div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -382,6 +393,58 @@ function IntegratedTimeline({ caseId }) {
           </ul>
         )}
       </div>
+
+      {selectedPhoto && (
+        <div
+          onClick={() => setSelectedPhoto(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "white",
+              borderRadius: 10,
+              padding: 16,
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              overflow: "auto",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>
+                {selectedPhoto.photo_year}년 · {selectedPhoto.photo_note || selectedPhoto.file_name}
+              </div>
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 18 }}
+              >
+                ✕
+              </button>
+            </div>
+            {selectedPhoto.signedUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={selectedPhoto.signedUrl}
+                alt={selectedPhoto.file_name}
+                style={{ maxWidth: "100%", maxHeight: "75vh", display: "block" }}
+              />
+            ) : (
+              <div style={{ padding: 40, textAlign: "center", color: "var(--color-text-muted)" }}>
+                불러오는 중...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
