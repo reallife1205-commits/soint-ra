@@ -251,7 +251,7 @@ export default function CasesPage() {
                       style={{
                         height: 6,
                         borderRadius: 999,
-                        background: "#eef1eb",
+                        background: "var(--color-surface-alt)",
                         overflow: "hidden",
                       }}
                     >

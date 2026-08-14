@@ -19,7 +19,7 @@ const FACILITY_TYPES = [
   { key: "building", label: "건물", color: "#2f5fd6" },
   { key: "road", label: "도로", color: "#a5760b" },
   { key: "storage", label: "저장탱크/야적장", color: "#c23434" },
-  { key: "parking", label: "주차장", color: "#1f8a5f" },
+  { key: "parking", label: "주차장", color: "#5f7048" },
   { key: "etc", label: "기타 시설", color: "#6b7269" },
 ];
 

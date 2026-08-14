@@ -1,19 +1,31 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+
 :root {
-  --color-bg: #eef1eb;
+  /* 토양/흙 팔레트 — 따뜻한 흙빛 배경에 소성토(clay) 악센트 */
+  --color-bg: #f4efe3;
   --color-surface: #ffffff;
-  --color-border: #e2e5df;
-  --color-text: #1f2421;
-  --color-text-muted: #6b7269;
-  --color-primary: #1f8a5f;
-  --color-primary-dark: #17714c;
-  --color-badge-red-bg: #fde8e8;
-  --color-badge-red-text: #c23434;
-  --color-badge-blue-bg: #e8eefc;
-  --color-badge-blue-text: #2f5fd6;
-  --color-badge-yellow-bg: #fdf3d9;
-  --color-badge-yellow-text: #a5760b;
-  --color-badge-green-bg: #e5f5ec;
-  --color-badge-green-text: #1f8a5f;
+  --color-surface-alt: #ede4d1;
+  --color-border: #ddd2b8;
+
+  --color-text: #2c2418;
+  --color-text-muted: #8a7a63;
+
+  --color-primary: #a8562f;
+  --color-primary-dark: #8a4525;
+  --color-secondary: #5f7048;
+
+  --color-badge-red-bg: #f7e3dc;
+  --color-badge-red-text: #a5432a;
+  --color-badge-blue-bg: #e6ecf0;
+  --color-badge-blue-text: #3a5f78;
+  --color-badge-yellow-bg: #f6e6c2;
+  --color-badge-yellow-text: #93691a;
+  --color-badge-green-bg: #e6ecdc;
+  --color-badge-green-text: #4c6136;
+
+  --shadow-sm: 0 1px 2px rgba(44, 36, 24, 0.06);
+  --shadow-md: 0 4px 14px rgba(44, 36, 24, 0.08);
+
   --radius-md: 10px;
   --radius-lg: 16px;
 }
@@ -30,6 +42,7 @@ body {
   color: var(--color-text);
   font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", -apple-system,
     BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -43,7 +56,8 @@ button {
 }
 
 input,
-select {
+select,
+textarea {
   font-family: inherit;
 }
 
@@ -88,6 +102,8 @@ select {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s ease;
 }
 
 .btn-primary {
@@ -101,18 +117,44 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .btn-primary:hover {
   background: var(--color-primary-dark);
 }
 
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .btn-secondary {
-  background: white;
+  background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 9px 14px;
   font-size: 14px;
   font-weight: 500;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-alt);
+  border-color: var(--color-primary);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+::selection {
+  background: #e8c9b4;
+  color: var(--color-text);
 }

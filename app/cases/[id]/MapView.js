@@ -27,7 +27,7 @@ export default function MapView({ center, radiusKm, points }) {
         <Circle
           center={[center.lat, center.lon]}
           radius={radiusKm * 1000}
-          pathOptions={{ color: "#1f8a5f", fillOpacity: 0.05 }}
+          pathOptions={{ color: "#a8562f", fillOpacity: 0.05 }}
         />
         <Marker position={[center.lat, center.lon]}>
           <Popup>대상부지</Popup>

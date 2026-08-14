@@ -111,7 +111,7 @@ export default function TimelinePanel({ caseId, onCountChange }) {
               height: 90,
               borderRadius: 8,
               overflow: "hidden",
-              background: "#eef1eb",
+              background: "var(--color-surface-alt)",
               flexShrink: 0,
             }}
           >

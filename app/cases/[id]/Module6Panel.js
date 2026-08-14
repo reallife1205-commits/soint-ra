@@ -292,7 +292,7 @@ function FieldPhotos({ caseId }) {
               <div
                 style={{
                   height: 110,
-                  background: "#eef1eb",
+                  background: "var(--color-surface-alt)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -383,7 +383,7 @@ function FieldPhotos({ caseId }) {
             .filter((d) => !PHOTO_CATEGORIES.includes(d.photo_note))
             .map((doc) => (
               <div key={doc.id} style={{ borderRadius: 10, overflow: "hidden", border: "1px solid var(--color-border)" }}>
-                <div style={{ height: 100, background: "#eef1eb" }}>
+                <div style={{ height: 100, background: "var(--color-surface-alt)" }}>
                   <PhotoThumb doc={doc} />
                 </div>
                 <div style={{ padding: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4 }}>

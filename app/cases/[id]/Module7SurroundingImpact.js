@@ -6,7 +6,7 @@ import { findSubstanceKey } from "@/lib/substances";
 
 const VERDICTS = ["판단불가", "외부 영향 가능성 낮음", "외부 영향 가능성 있음", "외부 영향 확인 필요"];
 const VERDICT_STYLE = {
-  판단불가: { bg: "#eef1eb", text: "var(--color-text-muted)" },
+  판단불가: { bg: "var(--color-surface-alt)", text: "var(--color-text-muted)" },
   "외부 영향 가능성 낮음": { bg: "#d7f0da", text: "#1a6b2a" },
   "외부 영향 가능성 있음": { bg: "#ffdca8", text: "#8a4b1a" },
   "외부 영향 확인 필요": { bg: "#f6b1ab", text: "#8a1f1a" },

@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 const LEVELS = ["판단불가", "낮음", "보통", "높음"];
 const LEVEL_STYLE = {
-  판단불가: { bg: "#eef1eb", text: "var(--color-text-muted)", label: "─ 판단불가" },
+  판단불가: { bg: "var(--color-surface-alt)", text: "var(--color-text-muted)", label: "─ 판단불가" },
   낮음: { bg: "#fff3cd", text: "#8a6d1a", label: "★☆☆ 낮음" },
   보통: { bg: "#ffdca8", text: "#8a4b1a", label: "★★☆ 보통" },
   높음: { bg: "#f6b1ab", text: "#8a1f1a", label: "★★★ 높음" },

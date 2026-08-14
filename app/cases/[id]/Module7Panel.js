@@ -265,7 +265,7 @@ function IntegratedTimeline({ caseId }) {
                         width,
                         height: 28,
                         top: 4,
-                        background: "#8b6fd6",
+                        background: "#a8562f",
                         color: "white",
                         fontSize: 11,
                         display: "flex",
@@ -306,7 +306,7 @@ function IntegratedTimeline({ caseId }) {
                           width,
                           height: 28,
                           top: 4,
-                          background: "#e0a13c",
+                          background: "#5f7048",
                           color: "white",
                           fontSize: 11,
                           display: "flex",
@@ -359,11 +359,11 @@ function IntegratedTimeline({ caseId }) {
 
         <div style={{ display: "flex", gap: 16, fontSize: 12, marginTop: 12, color: "var(--color-text-muted)" }}>
           <span>
-            <span style={{ display: "inline-block", width: 10, height: 10, background: "#8b6fd6", borderRadius: 2, marginRight: 4 }} />
+            <span style={{ display: "inline-block", width: 10, height: 10, background: "#a8562f", borderRadius: 2, marginRight: 4 }} />
             소유자
           </span>
           <span>
-            <span style={{ display: "inline-block", width: 10, height: 10, background: "#e0a13c", borderRadius: 2, marginRight: 4 }} />
+            <span style={{ display: "inline-block", width: 10, height: 10, background: "#5f7048", borderRadius: 2, marginRight: 4 }} />
             임차인
           </span>
           <span>🖼️ 항공사진</span>
@@ -381,13 +381,13 @@ function IntegratedTimeline({ caseId }) {
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {owners.map((o, i) => (
               <li key={`o${i}`} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
-                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#8b6fd6", marginRight: 8 }} />
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#a8562f", marginRight: 8 }} />
                 소유자 {o.name} ({formatDate(o.start)} ~ {formatDate(o.end)})
               </li>
             ))}
             {tenants.map((t, i) => (
               <li key={`t${i}`} style={{ fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
-                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#e0a13c", marginRight: 8 }} />
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#5f7048", marginRight: 8 }} />
                 임차인 {t.name} ({formatDate(t.start)} ~ {formatDate(t.end)})
               </li>
             ))}

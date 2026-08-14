@@ -26,16 +26,17 @@ export default function TopNav() {
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: "var(--color-primary)",
+            width: 42,
+            height: 42,
+            borderRadius: 12,
+            background: "linear-gradient(155deg, #c06a3f 0%, #a8562f 55%, #7a3f22 100%)",
+            boxShadow: "0 3px 8px rgba(122, 63, 34, 0.35)",
             color: "white",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontWeight: 700,
-            fontSize: 18,
+            fontSize: 19,
           }}
         >
           토
@@ -54,7 +55,7 @@ export default function TopNav() {
         style={{
           display: "flex",
           gap: 4,
-          background: "#eef1eb",
+          background: "var(--color-surface-alt)",
           borderRadius: 10,
           padding: 4,
         }}
