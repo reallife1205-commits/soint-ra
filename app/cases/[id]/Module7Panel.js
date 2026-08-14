@@ -187,6 +187,11 @@ function IntegratedTimeline({ caseId }) {
           소유자·임차인 기간, 항공사진, 법 기준일을 한눈에 확인합니다. 가로 스크롤 가능해요.
         </div>
 
+        <div style={{ fontSize: 12, color: "orange", marginBottom: 10 }}>
+          [디버그] 찾은 항공사진 연도 개수: {photoYears.length}개
+          {photoYears.length > 0 ? ` (${photoYears.join(", ")})` : ""}
+        </div>
+
         <div style={{ overflowX: "auto", paddingBottom: 8 }}>
           <div style={{ position: "relative", width: totalWidth, minWidth: "100%" }}>
             {/* 연도 눈금 */}
