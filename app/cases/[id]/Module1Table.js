@@ -156,6 +156,7 @@ export default function Module1Table({ caseId }) {
                             style={{
                               width: "100%",
                               border: "none",
+                              textAlign: f.key === "contaminant" ? "left" : "center",
                               background:
                                 f.key === "concern_standard" && isConcernExceed
                                   ? "var(--color-badge-yellow-bg)"
