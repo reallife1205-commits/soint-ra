@@ -7,7 +7,8 @@ import { SUBSTANCE_LABELS } from "@/lib/substances";
 const FIELDS = [
   { key: "contaminant", label: "오염물질", width: 120 },
   { key: "depth", label: "심도", width: 80 },
-  { key: "length", label: "깊이(m)", width: 80 },
+  { key: "depth_start", label: "시작 깊이", width: 60, group: "깊이(m)" },
+  { key: "depth_end", label: "끝 깊이", width: 60, group: "깊이(m)" },
   { key: "concern_standard", label: "우려기준 초과", width: 110, group: "초과내역(시료수)" },
   { key: "action_standard", label: "대책기준 초과", width: 110, group: "초과내역(시료수)" },
   { key: "max_concentration", label: "최고농도(mg/kg)", width: 130 },
@@ -143,25 +144,30 @@ export default function Module1Table({ caseId }) {
                   <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
                     {FIELDS.map((f) => (
                       <td key={f.key} style={{ padding: "4px 6px" }}>
-                        <input
-                          value={localRow[f.key] || ""}
-                          onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
-                          onBlur={() => handleBlurSave(row, f.key)}
-                          list={f.key === "contaminant" ? "substance-options" : undefined}
-                          style={{
-                            width: "100%",
-                            border: "none",
-                            background:
-                              f.key === "concern_standard" && isConcernExceed
-                                ? "var(--color-badge-yellow-bg)"
-                                : f.key === "action_standard" && isActionExceed
-                                ? "var(--color-badge-red-bg)"
-                                : "transparent",
-                            padding: "6px 4px",
-                            borderRadius: 4,
-                            fontSize: 15,
-                          }}
-                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          {f.key === "depth_end" && (
+                            <span style={{ color: "var(--color-text-muted)" }}>~</span>
+                          )}
+                          <input
+                            value={localRow[f.key] || ""}
+                            onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
+                            onBlur={() => handleBlurSave(row, f.key)}
+                            list={f.key === "contaminant" ? "substance-options" : undefined}
+                            style={{
+                              width: "100%",
+                              border: "none",
+                              background:
+                                f.key === "concern_standard" && isConcernExceed
+                                  ? "var(--color-badge-yellow-bg)"
+                                  : f.key === "action_standard" && isActionExceed
+                                  ? "var(--color-badge-red-bg)"
+                                  : "transparent",
+                              padding: "6px 4px",
+                              borderRadius: 4,
+                              fontSize: 15,
+                            }}
+                          />
+                        </div>
                       </td>
                     ))}
                     <td>
