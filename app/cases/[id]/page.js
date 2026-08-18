@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { MODULES } from "@/lib/modules";
-import Module1Table from "./Module1Table";
+import Module1Panel from "./Module1Panel";
 import Module2Panel from "./Module2Panel";
 import Module3Panel from "./Module3Panel";
 import Module4Panel from "./Module4Panel";
@@ -219,9 +219,7 @@ export default function CaseDetailPage() {
 
         <div style={{ flex: 1 }}>
           {activeModule === 1 ? (
-            <div className="card">
-              <Module1Table caseId={id} />
-            </div>
+            <Module1Panel caseId={id} />
           ) : activeModule === 2 ? (
             <Module2Panel
               caseInfo={caseInfo}
