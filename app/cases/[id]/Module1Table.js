@@ -8,12 +8,23 @@ const FIELDS = [
   { key: "contaminant", label: "오염물질", width: 120 },
   { key: "depth", label: "심도", width: 80 },
   { key: "length", label: "깊이(m)", width: 80 },
-  { key: "concern_standard", label: "우려기준 초과", width: 110 },
-  { key: "action_standard", label: "대책기준 초과", width: 110 },
+  { key: "concern_standard", label: "우려기준 초과", width: 110, group: "초과내역(시료수)" },
+  { key: "action_standard", label: "대책기준 초과", width: 110, group: "초과내역(시료수)" },
   { key: "max_concentration", label: "최고농도(mg/kg)", width: 130 },
   { key: "area", label: "오염면적(m²)", width: 110 },
   { key: "volume", label: "오염량(m³)", width: 100 },
 ];
+
+// FIELDS를 그룹 단위로 묶어 2단 헤더를 구성하기 위한 헬퍼
+const HEADER_GROUPS = [];
+FIELDS.forEach((f) => {
+  const last = HEADER_GROUPS[HEADER_GROUPS.length - 1];
+  if (f.group && last && last.group === f.group) {
+    last.fields.push(f);
+  } else {
+    HEADER_GROUPS.push({ group: f.group || null, fields: [f] });
+  }
+});
 
 export default function Module1Table({ caseId }) {
   const { rows, loading, addRow, updateRow, deleteRow } = useModuleRows(caseId, 1);
@@ -54,22 +65,60 @@ export default function Module1Table({ caseId }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
           <thead>
             <tr style={{ background: "#f6f8f4" }}>
-              {FIELDS.map((f) => (
-                <th
-                  key={f.key}
-                  style={{
-                    textAlign: "left",
-                    padding: "10px 8px",
-                    borderBottom: "1px solid var(--color-border)",
-                    fontWeight: 600,
-                    color: "var(--color-text-muted)",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {f.label}
-                </th>
-              ))}
-              <th style={{ width: 40 }}></th>
+              {HEADER_GROUPS.map((g) =>
+                g.group ? (
+                  <th
+                    key={g.group}
+                    colSpan={g.fields.length}
+                    style={{
+                      textAlign: "center",
+                      padding: "8px 8px",
+                      borderBottom: "1px solid var(--color-border)",
+                      fontWeight: 600,
+                      color: "var(--color-text-muted)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {g.group}
+                  </th>
+                ) : (
+                  <th
+                    key={g.fields[0].key}
+                    rowSpan={2}
+                    style={{
+                      textAlign: "left",
+                      padding: "10px 8px",
+                      borderBottom: "1px solid var(--color-border)",
+                      fontWeight: 600,
+                      color: "var(--color-text-muted)",
+                      whiteSpace: "nowrap",
+                      verticalAlign: "bottom",
+                    }}
+                  >
+                    {g.fields[0].label}
+                  </th>
+                )
+              )}
+              <th rowSpan={2} style={{ width: 40 }}></th>
+            </tr>
+            <tr style={{ background: "#f6f8f4" }}>
+              {HEADER_GROUPS.filter((g) => g.group).flatMap((g) =>
+                g.fields.map((f) => (
+                  <th
+                    key={f.key}
+                    style={{
+                      textAlign: "left",
+                      padding: "8px 8px 10px",
+                      borderBottom: "1px solid var(--color-border)",
+                      fontWeight: 600,
+                      color: "var(--color-text-muted)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {f.label}
+                  </th>
+                ))
+              )}
             </tr>
           </thead>
           <tbody>
