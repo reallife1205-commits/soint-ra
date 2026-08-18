@@ -16,6 +16,7 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
       .select("*")
       .eq("case_id", caseId)
       .eq("module_number", moduleNumber)
+      .is("category", null)
       .order("uploaded_at", { ascending: false });
     setDocs(data || []);
     setLoading(false);
