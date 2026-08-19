@@ -107,14 +107,8 @@ export default function Module1Table({ caseId }) {
     groups[groupIndex[name]].items.push({ row, data: d });
   });
 
-  const grandTotal = rows.reduce(
-    (acc, row) => {
-      const d = localValues[row.id] || row.row_data;
-      acc.concern += toNum(d.concern_standard);
-      acc.action += toNum(d.action_standard);
-      return acc;
-    },
-    { concern: 0, action: 0 }
+  const grandTotal = summarizeGroup(
+    rows.map((row) => ({ data: localValues[row.id] || row.row_data }))
   );
 
   return (
@@ -314,9 +308,13 @@ export default function Module1Table({ caseId }) {
                 })}
                 <tr style={{ fontWeight: 700 }}>
                   <td colSpan={2} style={{ padding: "8px 6px" }}>
-                    총 합계
+                    종합
                   </td>
-                  <td colSpan={2}></td>
+                  <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center" }}>
+                    {grandTotal.minStart !== null && grandTotal.maxEnd !== null
+                      ? `${grandTotal.minStart}-${grandTotal.maxEnd}`
+                      : "-"}
+                  </td>
                   <td style={{ padding: "8px 6px", textAlign: "center" }}>
                     {formatSum(grandTotal.concern)}
                   </td>
@@ -324,8 +322,12 @@ export default function Module1Table({ caseId }) {
                     {formatSum(grandTotal.action)}
                   </td>
                   <td style={{ textAlign: "center" }}>—</td>
-                  <td style={{ textAlign: "center" }}>—</td>
-                  <td style={{ textAlign: "center" }}>—</td>
+                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                    {formatSum(grandTotal.area)}
+                  </td>
+                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                    {formatSum(grandTotal.volume)}
+                  </td>
                   <td></td>
                 </tr>
               </>
