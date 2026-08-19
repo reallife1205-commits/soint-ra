@@ -27,6 +27,46 @@ FIELDS.forEach((f) => {
   }
 });
 
+function toNum(v) {
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function formatSum(n) {
+  return Number(Math.round(n * 100) / 100).toLocaleString("ko-KR", {
+    maximumFractionDigits: 2,
+  });
+}
+
+function summarizeGroup(items) {
+  let concern = 0;
+  let action = 0;
+  let area = 0;
+  let volume = 0;
+  let maxConc = null;
+  let minStart = null;
+  let maxEnd = null;
+  items.forEach(({ data }) => {
+    concern += toNum(data.concern_standard);
+    action += toNum(data.action_standard);
+    area += toNum(data.area);
+    volume += toNum(data.volume);
+    if (data.max_concentration !== undefined && data.max_concentration !== "") {
+      const c = toNum(data.max_concentration);
+      if (maxConc === null || c > maxConc) maxConc = c;
+    }
+    if (data.depth_start !== undefined && data.depth_start !== "") {
+      const s = toNum(data.depth_start);
+      if (minStart === null || s < minStart) minStart = s;
+    }
+    if (data.depth_end !== undefined && data.depth_end !== "") {
+      const e = toNum(data.depth_end);
+      if (maxEnd === null || e > maxEnd) maxEnd = e;
+    }
+  });
+  return { concern, action, area, volume, maxConc, minStart, maxEnd };
+}
+
 export default function Module1Table({ caseId }) {
   const { rows, loading, addRow, updateRow, deleteRow } = useModuleRows(caseId, 1);
 
@@ -54,6 +94,28 @@ export default function Module1Table({ caseId }) {
       updateRow(row.id, newData);
     }
   }
+
+  const groups = [];
+  const groupIndex = {};
+  rows.forEach((row) => {
+    const d = localValues[row.id] || row.row_data;
+    const name = d.contaminant || "";
+    if (!(name in groupIndex)) {
+      groupIndex[name] = groups.length;
+      groups.push({ name, items: [] });
+    }
+    groups[groupIndex[name]].items.push({ row, data: d });
+  });
+
+  const grandTotal = rows.reduce(
+    (acc, row) => {
+      const d = localValues[row.id] || row.row_data;
+      acc.concern += toNum(d.concern_standard);
+      acc.action += toNum(d.action_standard);
+      return acc;
+    },
+    { concern: 0, action: 0 }
+  );
 
   return (
     <div>
@@ -136,58 +198,116 @@ export default function Module1Table({ caseId }) {
                 </td>
               </tr>
             ) : (
-              rows.map((row) => {
-                const localRow = localValues[row.id] || row.row_data;
-                const isConcernExceed = localRow.concern_standard;
-                const isActionExceed = localRow.action_standard;
-                return (
-                  <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                    {FIELDS.map((f) => (
-                      <td key={f.key} style={{ padding: "4px 6px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          {f.key === "depth_end" && (
-                            <span style={{ color: "var(--color-text-muted)" }}>~</span>
-                          )}
-                          <input
-                            value={localRow[f.key] || ""}
-                            onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
-                            onBlur={() => handleBlurSave(row, f.key)}
-                            list={f.key === "contaminant" ? "substance-options" : undefined}
+              <>
+                {groups.flatMap((group) => {
+                  const itemRows = group.items.map(({ row }) => {
+                    const localRow = localValues[row.id] || row.row_data;
+                    const isConcernExceed = localRow.concern_standard;
+                    const isActionExceed = localRow.action_standard;
+                    return (
+                      <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                        {FIELDS.map((f) => (
+                          <td key={f.key} style={{ padding: "4px 6px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              {f.key === "depth_end" && (
+                                <span style={{ color: "var(--color-text-muted)" }}>~</span>
+                              )}
+                              <input
+                                value={localRow[f.key] || ""}
+                                onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
+                                onBlur={() => handleBlurSave(row, f.key)}
+                                list={f.key === "contaminant" ? "substance-options" : undefined}
+                                style={{
+                                  width: "100%",
+                                  border: "none",
+                                  textAlign: f.key === "contaminant" ? "left" : "center",
+                                  background:
+                                    f.key === "concern_standard" && isConcernExceed
+                                      ? "var(--color-badge-yellow-bg)"
+                                      : f.key === "action_standard" && isActionExceed
+                                      ? "var(--color-badge-red-bg)"
+                                      : "transparent",
+                                  padding: "6px 4px",
+                                  borderRadius: 4,
+                                  fontSize: 15,
+                                }}
+                              />
+                            </div>
+                          </td>
+                        ))}
+                        <td>
+                          <button
+                            onClick={() => deleteRow(row.id)}
                             style={{
-                              width: "100%",
                               border: "none",
-                              textAlign: f.key === "contaminant" ? "left" : "center",
-                              background:
-                                f.key === "concern_standard" && isConcernExceed
-                                  ? "var(--color-badge-yellow-bg)"
-                                  : f.key === "action_standard" && isActionExceed
-                                  ? "var(--color-badge-red-bg)"
-                                  : "transparent",
-                              padding: "6px 4px",
-                              borderRadius: 4,
-                              fontSize: 15,
+                              background: "transparent",
+                              color: "var(--color-text-muted)",
+                              cursor: "pointer",
                             }}
-                          />
-                        </div>
+                            title="삭제"
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  });
+
+                  const s = summarizeGroup(group.items);
+                  const subtotalRow = (
+                    <tr
+                      key={`${group.name}-subtotal`}
+                      style={{
+                        borderBottom: "1px solid var(--color-border)",
+                        background: "var(--color-surface-alt)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <td style={{ padding: "6px 6px" }}>{group.name || "-"}</td>
+                      <td style={{ padding: "6px 6px", textAlign: "center" }}>합계</td>
+                      <td colSpan={2} style={{ padding: "6px 6px", textAlign: "center" }}>
+                        {s.minStart !== null && s.maxEnd !== null
+                          ? `${s.minStart}-${s.maxEnd}`
+                          : "-"}
                       </td>
-                    ))}
-                    <td>
-                      <button
-                        onClick={() => deleteRow(row.id)}
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          color: "var(--color-text-muted)",
-                          cursor: "pointer",
-                        }}
-                        title="삭제"
-                      >
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
+                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                        {formatSum(s.concern)}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                        {formatSum(s.action)}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                        {s.maxConc !== null ? formatSum(s.maxConc) : "-"}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                        {formatSum(s.area)}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                        {formatSum(s.volume)}
+                      </td>
+                      <td></td>
+                    </tr>
+                  );
+
+                  return [...itemRows, subtotalRow];
+                })}
+                <tr style={{ background: "var(--color-surface-alt)", fontWeight: 700 }}>
+                  <td colSpan={2} style={{ padding: "8px 6px" }}>
+                    총 합계
+                  </td>
+                  <td colSpan={2}></td>
+                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                    {formatSum(grandTotal.concern)}
+                  </td>
+                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                    {formatSum(grandTotal.action)}
+                  </td>
+                  <td style={{ textAlign: "center" }}>—</td>
+                  <td style={{ textAlign: "center" }}>—</td>
+                  <td style={{ textAlign: "center" }}>—</td>
+                  <td></td>
+                </tr>
+              </>
             )}
           </tbody>
         </table>
