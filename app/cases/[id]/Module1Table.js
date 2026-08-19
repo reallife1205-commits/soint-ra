@@ -113,6 +113,18 @@ export default function Module1Table({ caseId }) {
     rows.map((row) => ({ data: localValues[row.id] || row.row_data }))
   );
 
+  const depthGroups = [];
+  const depthGroupIndex = {};
+  rows.forEach((row) => {
+    const d = localValues[row.id] || row.row_data;
+    const label = d.depth || "";
+    if (!(label in depthGroupIndex)) {
+      depthGroupIndex[label] = depthGroups.length;
+      depthGroups.push({ label, items: [] });
+    }
+    depthGroups[depthGroupIndex[label]].items.push({ data: d });
+  });
+
   return (
     <div>
       <datalist id="substance-options">
@@ -145,7 +157,7 @@ export default function Module1Table({ caseId }) {
                     key={g.fields[0].key}
                     rowSpan={2}
                     style={{
-                      textAlign: g.fields[0].key === "contaminant" ? "left" : "center",
+                      textAlign: "center",
                       padding: "10px 8px",
                       border: CELL_BORDER,
                       fontWeight: 600,
@@ -310,9 +322,51 @@ export default function Module1Table({ caseId }) {
 
                   return [...itemRows, subtotalRow];
                 })}
+                {depthGroups.map((dg, i) => {
+                  const ds = summarizeGroup(dg.items);
+                  return (
+                    <tr key={`overall-${dg.label}-${i}`} style={{ fontWeight: 600 }}>
+                      {i === 0 && (
+                        <td
+                          rowSpan={depthGroups.length + 1}
+                          style={{
+                            padding: "8px 6px",
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                            border: CELL_BORDER,
+                          }}
+                        >
+                          종합
+                        </td>
+                      )}
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
+                        {dg.label || "-"}
+                      </td>
+                      <td colSpan={2} style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
+                        {ds.minStart !== null && ds.maxEnd !== null
+                          ? `${ds.minStart}-${ds.maxEnd}`
+                          : "-"}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
+                        {formatSum(ds.concern)}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
+                        {formatSum(ds.action)}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>-</td>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
+                        {formatSum(ds.area)}
+                      </td>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
+                        {formatSum(ds.volume)}
+                      </td>
+                      <td style={{ border: CELL_BORDER }}></td>
+                    </tr>
+                  );
+                })}
                 <tr style={{ fontWeight: 700 }}>
-                  <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                    종합
+                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
+                    합계
                   </td>
                   <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                     {grandTotal.minStart !== null && grandTotal.maxEnd !== null
