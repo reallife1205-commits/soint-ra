@@ -200,13 +200,37 @@ export default function Module1Table({ caseId }) {
             ) : (
               <>
                 {groups.flatMap((group) => {
-                  const itemRows = group.items.map(({ row }) => {
+                  const itemRows = group.items.map(({ row }, index) => {
                     const localRow = localValues[row.id] || row.row_data;
                     const isConcernExceed = localRow.concern_standard;
                     const isActionExceed = localRow.action_standard;
+                    const fields = FIELDS.filter((f) => f.key !== "contaminant");
                     return (
                       <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                        {FIELDS.map((f) => (
+                        {index === 0 && (
+                          <td
+                            rowSpan={group.items.length + 1}
+                            style={{ padding: "4px 6px", verticalAlign: "middle" }}
+                          >
+                            <input
+                              value={localRow.contaminant || ""}
+                              onChange={(e) => handleLocalChange(row.id, "contaminant", e.target.value)}
+                              onBlur={() => handleBlurSave(row, "contaminant")}
+                              list="substance-options"
+                              style={{
+                                width: "100%",
+                                border: "none",
+                                textAlign: "left",
+                                background: "transparent",
+                                padding: "6px 4px",
+                                borderRadius: 4,
+                                fontSize: 15,
+                                fontWeight: 600,
+                              }}
+                            />
+                          </td>
+                        )}
+                        {fields.map((f) => (
                           <td key={f.key} style={{ padding: "4px 6px" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                               {f.key === "depth_end" && (
@@ -216,11 +240,10 @@ export default function Module1Table({ caseId }) {
                                 value={localRow[f.key] || ""}
                                 onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
                                 onBlur={() => handleBlurSave(row, f.key)}
-                                list={f.key === "contaminant" ? "substance-options" : undefined}
                                 style={{
                                   width: "100%",
                                   border: "none",
-                                  textAlign: f.key === "contaminant" ? "left" : "center",
+                                  textAlign: "center",
                                   background:
                                     f.key === "concern_standard" && isConcernExceed
                                       ? "var(--color-badge-yellow-bg)"
@@ -259,11 +282,9 @@ export default function Module1Table({ caseId }) {
                       key={`${group.name}-subtotal`}
                       style={{
                         borderBottom: "1px solid var(--color-border)",
-                        background: "var(--color-surface-alt)",
                         fontWeight: 600,
                       }}
                     >
-                      <td style={{ padding: "6px 6px" }}>{group.name || "-"}</td>
                       <td style={{ padding: "6px 6px", textAlign: "center" }}>합계</td>
                       <td colSpan={2} style={{ padding: "6px 6px", textAlign: "center" }}>
                         {s.minStart !== null && s.maxEnd !== null
@@ -291,7 +312,7 @@ export default function Module1Table({ caseId }) {
 
                   return [...itemRows, subtotalRow];
                 })}
-                <tr style={{ background: "var(--color-surface-alt)", fontWeight: 700 }}>
+                <tr style={{ fontWeight: 700 }}>
                   <td colSpan={2} style={{ padding: "8px 6px" }}>
                     총 합계
                   </td>
