@@ -12,8 +12,8 @@ const FIELDS = [
   { key: "concern_standard", label: "우려기준 초과", width: 110, group: "초과내역(시료수)" },
   { key: "action_standard", label: "대책기준 초과", width: 110, group: "초과내역(시료수)" },
   { key: "max_concentration", label: "최고농도", unit: "(mg/kg)", width: 130 },
-  { key: "area", label: "오염면적", unit: "(m²)", width: 110 },
-  { key: "volume", label: "오염량", unit: "(m³)", width: 100 },
+  { key: "area", label: "오염면적", unit: "(m²)", footnote: "1)", width: 110 },
+  { key: "volume", label: "오염량", unit: "(m³)", footnote: "2)", width: 100 },
 ];
 
 // FIELDS를 그룹 단위로 묶어 2단 헤더를 구성하기 위한 헬퍼
@@ -168,7 +168,10 @@ export default function Module1Table({ caseId }) {
                   >
                     {g.fields[0].unit ? (
                       <>
-                        <div>{g.fields[0].label}</div>
+                        <div>
+                          {g.fields[0].label}
+                          {g.fields[0].footnote && <sup>{g.fields[0].footnote}</sup>}
+                        </div>
                         <div style={{ fontWeight: 400 }}>{g.fields[0].unit}</div>
                       </>
                     ) : (
@@ -414,7 +417,7 @@ export default function Module1Table({ caseId }) {
         <span className="badge badge-red">대책기준 초과</span>
       </div>
       <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 6 }}>
-        오염면적(m²)은 각 심도별 중첩부분을 감안한 최대 넓이, 오염량(m³)은 심도별 오염량의 합이에요.
+        1) 오염면적(m²): 각 심도별 중첩부분을 감안한 최대 넓이　2) 오염량(m³): 심도별 오염량의 합
       </div>
     </div>
   );
