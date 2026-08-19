@@ -10,6 +10,12 @@ export default function TimelinePanel({ caseId, onCountChange }) {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
 
+  const [analysisContent, setAnalysisContent] = useState("");
+  const [analysisLoading, setAnalysisLoading] = useState(true);
+  const [analysisGenerating, setAnalysisGenerating] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
+  const [analysisSavedMsg, setAnalysisSavedMsg] = useState("");
+
   async function load() {
     setLoading(true);
 
@@ -62,6 +68,67 @@ export default function TimelinePanel({ caseId, onCountChange }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAnalysis() {
+      setAnalysisLoading(true);
+      const { data } = await supabase
+        .from("timeline_analyses")
+        .select("*")
+        .eq("case_id", caseId)
+        .maybeSingle();
+      if (!cancelled) {
+        setAnalysisContent(data?.content || "");
+        setAnalysisLoading(false);
+      }
+    }
+    loadAnalysis();
+    return () => {
+      cancelled = true;
+    };
+  }, [caseId]);
+
+  async function handleSaveAnalysis(newContent) {
+    await supabase.from("timeline_analyses").upsert(
+      {
+        case_id: caseId,
+        content: newContent,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "case_id" }
+    );
+    setAnalysisSavedMsg("저장했어요");
+    setTimeout(() => setAnalysisSavedMsg(""), 2000);
+  }
+
+  async function handleGenerateAnalysis() {
+    if (
+      analysisContent.trim() &&
+      !confirm("기존에 작성된 분석 내용이 있어요. AI 분석 결과로 덮어쓸까요?")
+    ) {
+      return;
+    }
+    setAnalysisGenerating(true);
+    setAnalysisError("");
+    try {
+      const res = await fetch("/api/generate-timeline-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAnalysisError(data.error || "AI 타임라인 분석에 실패했어요.");
+      } else {
+        setAnalysisContent(data.analysis);
+        await handleSaveAnalysis(data.analysis);
+      }
+    } catch (e) {
+      setAnalysisError("AI 타임라인 분석 중 문제가 발생했어요.");
+    }
+    setAnalysisGenerating(false);
+  }
+
   function updateLocal(id, field, value) {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
@@ -97,8 +164,73 @@ export default function TimelinePanel({ caseId, onCountChange }) {
     );
   }
 
+  const markedCount = items.filter((i) => i.tagCount > 0).length;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="card">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 12,
+            marginBottom: 4,
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 17 }}>✨ AI 타임라인 분석 (Sonnet 5)</div>
+            <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+              마킹 {markedCount}/{items.length}장
+            </div>
+          </div>
+          <button
+            className="btn-primary"
+            onClick={handleGenerateAnalysis}
+            disabled={analysisGenerating || analysisLoading}
+          >
+            {analysisGenerating ? "분석 중..." : "✨ 분석 실행"}
+          </button>
+        </div>
+
+        {analysisError && (
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, margin: "10px 0" }}>
+            {analysisError}
+          </div>
+        )}
+
+        {analysisLoading ? (
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 16 }}>
+            불러오는 중...
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={analysisContent}
+              onChange={(e) => setAnalysisContent(e.target.value)}
+              onBlur={() => handleSaveAnalysis(analysisContent)}
+              placeholder="위 '분석 실행' 버튼을 누르면 AI가 타임라인의 변곡점을 짚어가며 종합의견을 작성해요."
+              rows={10}
+              style={{
+                width: "100%",
+                marginTop: 14,
+                padding: 14,
+                borderRadius: 8,
+                border: "1px solid var(--color-border)",
+                fontSize: 15,
+                fontFamily: "inherit",
+                lineHeight: 1.6,
+                boxSizing: "border-box",
+                resize: "vertical",
+              }}
+            />
+            <div style={{ fontSize: 14, color: "var(--color-primary)", marginTop: 6, minHeight: 16 }}>
+              {analysisSavedMsg}
+            </div>
+          </>
+        )}
+      </div>
+
       {items.map((item) => (
         <div
           key={item.id}
