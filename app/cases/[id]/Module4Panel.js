@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { useAerialTags } from "@/lib/useAerialTags";
+import { FACILITY_TYPES, FACILITY_LABEL, FACILITY_COLOR } from "@/lib/facilityTypes";
 import TimelinePanel from "./TimelinePanel";
 const AerialMapView = dynamic(() => import("./AerialMapView"), { ssr: false });
 
@@ -14,21 +15,6 @@ const TABS = [
   { key: "upload", label: "사진 업로드" },
   { key: "timeline", label: "타임라인" },
 ];
-
-const FACILITY_TYPES = [
-  { key: "building", label: "건물", color: "#2f5fd6" },
-  { key: "road", label: "도로", color: "#a5760b" },
-  { key: "storage", label: "저장탱크/야적장", color: "#c23434" },
-  { key: "parking", label: "주차장", color: "#5f7048" },
-  { key: "etc", label: "기타 시설", color: "#6b7269" },
-];
-
-const FACILITY_LABEL = Object.fromEntries(
-  FACILITY_TYPES.map((f) => [f.key, f.label])
-);
-const FACILITY_COLOR = Object.fromEntries(
-  FACILITY_TYPES.map((f) => [f.key, f.color])
-);
 
 const MIN_BOX_SIZE = 0.01; // 이미지 대비 1% 미만이면 클릭으로 간주하고 무시
 
