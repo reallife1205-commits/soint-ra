@@ -145,7 +145,7 @@ export default function Module1Table({ caseId }) {
                     key={g.fields[0].key}
                     rowSpan={2}
                     style={{
-                      textAlign: "left",
+                      textAlign: g.fields[0].key === "contaminant" ? "left" : "center",
                       padding: "10px 8px",
                       border: CELL_BORDER,
                       fontWeight: 600,
@@ -158,7 +158,13 @@ export default function Module1Table({ caseId }) {
                   </th>
                 )
               )}
-              <th rowSpan={2} style={{ width: 40, border: CELL_BORDER }}></th>
+              <th
+                rowSpan={2}
+                style={{ width: 40, border: CELL_BORDER, textAlign: "center" }}
+                title="삭제"
+              >
+                🗑️
+              </th>
             </tr>
             <tr style={{ background: "#f6f8f4" }}>
               {HEADER_GROUPS.filter((g) => g.group).flatMap((g) =>
@@ -254,7 +260,7 @@ export default function Module1Table({ caseId }) {
                             </div>
                           </td>
                         ))}
-                        <td style={{ border: CELL_BORDER }}>
+                        <td style={{ border: CELL_BORDER, textAlign: "center" }}>
                           <button
                             onClick={() => deleteRow(row.id)}
                             style={{
@@ -305,7 +311,7 @@ export default function Module1Table({ caseId }) {
                   return [...itemRows, subtotalRow];
                 })}
                 <tr style={{ fontWeight: 700 }}>
-                  <td colSpan={2} style={{ padding: "8px 6px", border: CELL_BORDER }}>
+                  <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                     종합
                   </td>
                   <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
