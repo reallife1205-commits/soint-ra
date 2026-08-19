@@ -151,7 +151,7 @@ export default function Module1Table({ caseId }) {
                       fontWeight: 600,
                       color: "var(--color-text-muted)",
                       whiteSpace: "nowrap",
-                      verticalAlign: "bottom",
+                      verticalAlign: "middle",
                     }}
                   >
                     {g.fields[0].label}
@@ -216,7 +216,7 @@ export default function Module1Table({ caseId }) {
                               style={{
                                 width: "100%",
                                 border: "none",
-                                textAlign: "left",
+                                textAlign: "center",
                                 background: "transparent",
                                 padding: "6px 4px",
                                 borderRadius: 4,
