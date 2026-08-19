@@ -27,6 +27,8 @@ FIELDS.forEach((f) => {
   }
 });
 
+const CELL_BORDER = "1px solid var(--color-border)";
+
 function toNum(v) {
   const n = parseFloat(v);
   return isNaN(n) ? 0 : n;
@@ -130,7 +132,7 @@ export default function Module1Table({ caseId }) {
                     style={{
                       textAlign: "center",
                       padding: "8px 8px",
-                      borderBottom: "1px solid var(--color-border)",
+                      border: CELL_BORDER,
                       fontWeight: 600,
                       color: "var(--color-text-muted)",
                       whiteSpace: "nowrap",
@@ -145,7 +147,7 @@ export default function Module1Table({ caseId }) {
                     style={{
                       textAlign: "left",
                       padding: "10px 8px",
-                      borderBottom: "1px solid var(--color-border)",
+                      border: CELL_BORDER,
                       fontWeight: 600,
                       color: "var(--color-text-muted)",
                       whiteSpace: "nowrap",
@@ -156,7 +158,7 @@ export default function Module1Table({ caseId }) {
                   </th>
                 )
               )}
-              <th rowSpan={2} style={{ width: 40 }}></th>
+              <th rowSpan={2} style={{ width: 40, border: CELL_BORDER }}></th>
             </tr>
             <tr style={{ background: "#f6f8f4" }}>
               {HEADER_GROUPS.filter((g) => g.group).flatMap((g) =>
@@ -166,7 +168,7 @@ export default function Module1Table({ caseId }) {
                     style={{
                       textAlign: "left",
                       padding: "8px 8px 10px",
-                      borderBottom: "1px solid var(--color-border)",
+                      border: CELL_BORDER,
                       fontWeight: 600,
                       color: "var(--color-text-muted)",
                       whiteSpace: "nowrap",
@@ -181,13 +183,13 @@ export default function Module1Table({ caseId }) {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={FIELDS.length + 1} style={{ padding: 20, textAlign: "center", color: "var(--color-text-muted)" }}>
+                <td colSpan={FIELDS.length + 1} style={{ padding: 20, textAlign: "center", color: "var(--color-text-muted)", border: CELL_BORDER }}>
                   불러오는 중...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={FIELDS.length + 1} style={{ padding: 20, textAlign: "center", color: "var(--color-text-muted)" }}>
+                <td colSpan={FIELDS.length + 1} style={{ padding: 20, textAlign: "center", color: "var(--color-text-muted)", border: CELL_BORDER }}>
                   오염물질을 추가하세요
                 </td>
               </tr>
@@ -200,11 +202,11 @@ export default function Module1Table({ caseId }) {
                     const isActionExceed = localRow.action_standard;
                     const fields = FIELDS.filter((f) => f.key !== "contaminant");
                     return (
-                      <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                      <tr key={row.id}>
                         {index === 0 && (
                           <td
                             rowSpan={group.items.length + 1}
-                            style={{ padding: "4px 6px", verticalAlign: "middle" }}
+                            style={{ padding: "4px 6px", verticalAlign: "middle", border: CELL_BORDER }}
                           >
                             <input
                               value={localRow.contaminant || ""}
@@ -225,7 +227,7 @@ export default function Module1Table({ caseId }) {
                           </td>
                         )}
                         {fields.map((f) => (
-                          <td key={f.key} style={{ padding: "4px 6px" }}>
+                          <td key={f.key} style={{ padding: "4px 6px", border: CELL_BORDER }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                               {f.key === "depth_end" && (
                                 <span style={{ color: "var(--color-text-muted)" }}>~</span>
@@ -252,7 +254,7 @@ export default function Module1Table({ caseId }) {
                             </div>
                           </td>
                         ))}
-                        <td>
+                        <td style={{ border: CELL_BORDER }}>
                           <button
                             onClick={() => deleteRow(row.id)}
                             style={{
@@ -272,63 +274,59 @@ export default function Module1Table({ caseId }) {
 
                   const s = summarizeGroup(group.items);
                   const subtotalRow = (
-                    <tr
-                      key={`${group.name}-subtotal`}
-                      style={{
-                        borderBottom: "1px solid var(--color-border)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      <td style={{ padding: "6px 6px", textAlign: "center" }}>합계</td>
-                      <td colSpan={2} style={{ padding: "6px 6px", textAlign: "center" }}>
+                    <tr key={`${group.name}-subtotal`} style={{ fontWeight: 600 }}>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
+                        합계
+                      </td>
+                      <td colSpan={2} style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {s.minStart !== null && s.maxEnd !== null
                           ? `${s.minStart}-${s.maxEnd}`
                           : "-"}
                       </td>
-                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {formatSum(s.concern)}
                       </td>
-                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {formatSum(s.action)}
                       </td>
-                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {s.maxConc !== null ? formatSum(s.maxConc) : "-"}
                       </td>
-                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {formatSum(s.area)}
                       </td>
-                      <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {formatSum(s.volume)}
                       </td>
-                      <td></td>
+                      <td style={{ border: CELL_BORDER }}></td>
                     </tr>
                   );
 
                   return [...itemRows, subtotalRow];
                 })}
                 <tr style={{ fontWeight: 700 }}>
-                  <td colSpan={2} style={{ padding: "8px 6px" }}>
+                  <td colSpan={2} style={{ padding: "8px 6px", border: CELL_BORDER }}>
                     종합
                   </td>
-                  <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center" }}>
+                  <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                     {grandTotal.minStart !== null && grandTotal.maxEnd !== null
                       ? `${grandTotal.minStart}-${grandTotal.maxEnd}`
                       : "-"}
                   </td>
-                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                     {formatSum(grandTotal.concern)}
                   </td>
-                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                     {formatSum(grandTotal.action)}
                   </td>
-                  <td style={{ textAlign: "center" }}>—</td>
-                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                  <td style={{ textAlign: "center", border: CELL_BORDER }}>—</td>
+                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                     {formatSum(grandTotal.area)}
                   </td>
-                  <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                     {formatSum(grandTotal.volume)}
                   </td>
-                  <td></td>
+                  <td style={{ border: CELL_BORDER }}></td>
                 </tr>
               </>
             )}
