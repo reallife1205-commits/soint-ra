@@ -15,6 +15,40 @@ const ORDERED_SUBSTANCE_KEYS = SUBSTANCE_GROUPS.flatMap((g) =>
   g.items.map(([key]) => key)
 );
 
+// 토양측정망 표([표2]) 헤더 2줄 표기용: 1번째 줄 한글명, 2번째 줄 (영문/기호)
+const NETWORK_SUBSTANCE_DISPLAY = {
+  cadmium: { ko: "카드뮴", en: "Cd" },
+  copper: { ko: "구리", en: "Cu" },
+  arsenic: { ko: "비소", en: "As" },
+  lead: { ko: "납", en: "Pb" },
+  chromium6: { ko: "6가크롬", en: "Cr6+" },
+  mercury: { ko: "수은", en: "Hg" },
+  zinc: { ko: "아연", en: "Zn" },
+  nickel: { ko: "니켈", en: "Ni" },
+  organophosphorus: { ko: "유기인화합물", en: "Organophosphorus" },
+  cyanide: { ko: "시안", en: "CN" },
+  phenol: { ko: "페놀", en: "Phenol" },
+  benzene: { ko: "벤젠", en: "Benzene" },
+  toluene: { ko: "톨루엔", en: "Toluene" },
+  ethylbenzene: { ko: "에틸벤젠", en: "Ethylbenzene" },
+  xylene: { ko: "크실렌", en: "Xylene" },
+  tph: { ko: "석유계총탄화수소", en: "TPH" },
+  tce: { ko: "트리클로로에틸렌", en: "TCE" },
+  pce: { ko: "테트라클로로에틸렌", en: "PCE" },
+  fluorine: { ko: "불소", en: "F" },
+  pcb: { ko: "폴리클로리네이티드비페닐", en: "PCB" },
+  benzoapyrene: { ko: "벤조(a)피렌", en: "Benzo(a)pyrene" },
+  ph: { ko: "수소이온농도", en: "pH" },
+};
+// 표2는 선택 여부와 무관하게 전 물질(pH 포함 22개)을 항상 11개씩 2줄로 표시
+const NETWORK_SUBSTANCE_KEYS = [...ORDERED_SUBSTANCE_KEYS, "ph"];
+
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 const CELL_BORDER = "1px solid var(--color-border)";
 
 function toNum(v) {
@@ -98,21 +132,13 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
     });
   }
 
-  async function handleSearch() {
-    if (!coords || selected.size === 0) return;
-    setSearching(true);
-    setSearched(true);
-
+  async function queryReferenceSoilData(cols, coords, radius) {
     const latDelta = radius / 111;
-    const lonDelta =
-      radius / (111 * Math.cos((coords.lat * Math.PI) / 180));
-
-    // 토양측정망은 선택 여부와 상관없이 전 항목을 조사하므로, 항상 전체 물질 컬럼을 가져와요
+    const lonDelta = radius / (111 * Math.cos((coords.lat * Math.PI) / 180));
     const selectCols = ["id", "source_type", "address", "lat", "lon", "survey_year", "site_name"]
-      .concat(ORDERED_SUBSTANCE_KEYS)
+      .concat(cols)
       .join(",");
-
-    const { data } = await supabase
+    return supabase
       .from("reference_soil_data")
       .select(selectCols)
       .gte("lat", coords.lat - latDelta)
@@ -120,6 +146,23 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
       .gte("lon", coords.lon - lonDelta)
       .lte("lon", coords.lon + lonDelta)
       .limit(1000);
+  }
+
+  async function handleSearch() {
+    if (!coords || selected.size === 0) return;
+    setSearching(true);
+    setSearched(true);
+
+    // 토양측정망은 선택 여부와 상관없이 전 항목(pH 포함)을 조사하므로 항상 전체 컬럼을 가져와요.
+    // pH 컬럼이 아직 없는 환경이면 실패하니, 그럴 땐 pH 없이 다시 조회해서 나머지는 정상 표시해요.
+    let { data, error } = await queryReferenceSoilData(
+      [...ORDERED_SUBSTANCE_KEYS, "ph"],
+      coords,
+      radius
+    );
+    if (error) {
+      ({ data } = await queryReferenceSoilData(ORDERED_SUBSTANCE_KEYS, coords, radius));
+    }
 
     const withDistance = (data || [])
       .map((row) => ({
@@ -263,11 +306,10 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
   );
 }
 
-// [표2] 토양측정망 조사결과 형태: 전 물질을 열로, 우려기준/최고농도/평균농도를 행으로 피벗
-// (측정망은 선택한 항목만이 아니라 조사 대상 전 물질을 항상 표시)
+// [표2] 토양측정망 조사결과 형태: 전 물질(pH 포함 22개)을 11개씩 2개 표로 나눠, 물질을 열로,
+// 우려기준/최고농도/평균농도를 행으로 피벗 (측정망은 선택 여부와 무관하게 전 물질을 항상 표시)
 function NetworkSummaryTable({ rows, regionGrade }) {
   const zone = parseRegionGrade(regionGrade);
-  const keys = ORDERED_SUBSTANCE_KEYS;
 
   if (rows.length === 0) {
     return (
@@ -278,7 +320,7 @@ function NetworkSummaryTable({ rows, regionGrade }) {
   }
 
   const stats = {};
-  keys.forEach((key) => {
+  NETWORK_SUBSTANCE_KEYS.forEach((key) => {
     const values = rows.map((r) => toNum(r[key])).filter((v) => v !== null);
     stats[key] = {
       max: values.length ? Math.max(...values) : null,
@@ -286,57 +328,64 @@ function NetworkSummaryTable({ rows, regionGrade }) {
     };
   });
 
+  const keyChunks = chunk(NETWORK_SUBSTANCE_KEYS, 11);
+
   return (
     <div className="card" style={{ overflowX: "auto" }}>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
         지점 {rows.length}개 · 우려기준 기준 지역:{" "}
         {zone ? `${zone}지역` : "미지정 (사건 목록에서 지역등급을 입력해주세요)"}
       </div>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
-        <thead>
-          <tr style={{ background: "#f6f8f4" }}>
-            <th style={{ textAlign: "left", padding: 8, border: CELL_BORDER }}>구분</th>
-            {keys.map((key) => (
-              <th
-                key={key}
-                style={{ textAlign: "center", padding: 8, border: CELL_BORDER, whiteSpace: "nowrap" }}
-              >
-                {SUBSTANCE_LABEL[key]}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>
-              {zone ? `${zone}지역(우려기준)` : "우려기준"}
-            </td>
-            {keys.map((key) => (
-              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
-                {zone && CONCERN_STANDARDS[key]?.[zone] !== undefined
-                  ? formatNum(CONCERN_STANDARDS[key][zone])
-                  : "-"}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>최고농도</td>
-            {keys.map((key) => (
-              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
-                {stats[key].max !== null ? formatNum(stats[key].max) : "-"}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>평균농도</td>
-            {keys.map((key) => (
-              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
-                {stats[key].avg !== null ? formatNum(stats[key].avg) : "-"}
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {keyChunks.map((keys, i) => (
+          <table key={i} style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
+            <thead>
+              <tr style={{ background: "#f6f8f4" }}>
+                <th style={{ textAlign: "left", padding: 8, border: CELL_BORDER }}>구분</th>
+                {keys.map((key) => (
+                  <th
+                    key={key}
+                    style={{ textAlign: "center", padding: 8, border: CELL_BORDER, whiteSpace: "nowrap" }}
+                  >
+                    <div>{NETWORK_SUBSTANCE_DISPLAY[key].ko}</div>
+                    <div style={{ fontWeight: 400 }}>({NETWORK_SUBSTANCE_DISPLAY[key].en})</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>
+                  {zone ? `${zone}지역(우려기준)` : "우려기준"}
+                </td>
+                {keys.map((key) => (
+                  <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    {zone && CONCERN_STANDARDS[key]?.[zone] !== undefined
+                      ? formatNum(CONCERN_STANDARDS[key][zone])
+                      : "-"}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>최고농도</td>
+                {keys.map((key) => (
+                  <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    {stats[key].max !== null ? formatNum(stats[key].max) : "-"}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>평균농도</td>
+                {keys.map((key) => (
+                  <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    {stats[key].avg !== null ? formatNum(stats[key].avg) : "-"}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        ))}
+      </div>
       <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 8 }}>
         우려기준 근거: 「토양환경보전법 시행규칙」 제1조의5 및 별표3(토양오염우려기준)
       </div>
