@@ -10,7 +10,7 @@ const TABS = [
   { key: "pollution_map", label: "오염분포도" },
 ];
 
-export default function Module1Panel({ caseId }) {
+export default function Module1Panel({ caseId, caseInfo }) {
   const [tab, setTab] = useState("table");
 
   return (
@@ -48,7 +48,7 @@ export default function Module1Panel({ caseId }) {
 
       {tab === "table" && (
         <div className="card">
-          <Module1Table caseId={caseId} />
+          <Module1Table caseId={caseId} caseInfo={caseInfo} />
         </div>
       )}
       {tab === "sample_points" && (

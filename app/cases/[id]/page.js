@@ -219,7 +219,7 @@ export default function CaseDetailPage() {
 
         <div style={{ flex: 1 }}>
           {activeModule === 1 ? (
-            <Module1Panel caseId={id} />
+            <Module1Panel caseId={id} caseInfo={caseInfo} />
           ) : activeModule === 2 ? (
             <Module2Panel
               caseInfo={caseInfo}

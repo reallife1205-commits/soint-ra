@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useModuleRows } from "@/lib/useModuleRows";
-import { SUBSTANCE_LABELS } from "@/lib/substances";
+import { SUBSTANCE_LABELS, findSubstanceKey } from "@/lib/substances";
+import { CONCERN_STANDARDS, ACTION_STANDARDS, parseRegionGrade } from "@/lib/soilStandards";
 
 const FIELDS = [
   { key: "contaminant", label: "오염물질", width: 120 },
@@ -40,6 +41,19 @@ function formatSum(n) {
   });
 }
 
+// 최고농도가 법정 우려기준/대책기준을 초과하는지 판단 ("action" > "concern" > null 순)
+function exceedLevel(contaminant, maxConcentration, zone) {
+  const val = parseFloat(maxConcentration);
+  if (!zone || isNaN(val) || val <= 0) return null;
+  const key = findSubstanceKey(contaminant);
+  if (!key) return null;
+  const action = ACTION_STANDARDS[key]?.[zone];
+  const concern = CONCERN_STANDARDS[key]?.[zone];
+  if (action !== undefined && val > action) return "action";
+  if (concern !== undefined && val > concern) return "concern";
+  return null;
+}
+
 function summarizeGroup(items) {
   let concern = 0;
   let action = 0;
@@ -69,8 +83,9 @@ function summarizeGroup(items) {
   return { concern, action, area, volume, maxConc, minStart, maxEnd };
 }
 
-export default function Module1Table({ caseId }) {
+export default function Module1Table({ caseId, caseInfo }) {
   const { rows, loading, addRow, updateRow, deleteRow } = useModuleRows(caseId, 1);
+  const zone = parseRegionGrade(caseInfo?.region_grade);
 
   // 타이핑 중에는 화면에만 반영하고, 창고 저장은 나중에(포커스 벗어날 때) 하기 위한 임시 상태
   const [localValues, setLocalValues] = useState({});
@@ -228,6 +243,7 @@ export default function Module1Table({ caseId }) {
                     const localRow = localValues[row.id] || row.row_data;
                     const isConcernExceed = localRow.concern_standard;
                     const isActionExceed = localRow.action_standard;
+                    const concExceed = exceedLevel(localRow.contaminant, localRow.max_concentration, zone);
                     const fields = FIELDS.filter((f) => f.key !== "contaminant");
                     return (
                       <tr key={row.id}>
@@ -273,6 +289,10 @@ export default function Module1Table({ caseId }) {
                                       ? "var(--color-badge-yellow-bg)"
                                       : f.key === "action_standard" && isActionExceed
                                       ? "var(--color-badge-red-bg)"
+                                      : f.key === "max_concentration" && concExceed === "action"
+                                      ? "var(--color-badge-red-bg)"
+                                      : f.key === "max_concentration" && concExceed === "concern"
+                                      ? "var(--color-badge-yellow-bg)"
                                       : "transparent",
                                   padding: "6px 4px",
                                   borderRadius: 4,
@@ -415,6 +435,10 @@ export default function Module1Table({ caseId }) {
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 12 }}>
         셀 색상: <span className="badge badge-yellow" style={{ marginRight: 6 }}>우려기준 초과</span>
         <span className="badge badge-red">대책기준 초과</span>
+      </div>
+      <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>
+        최고농도는 오염물질명·지역등급(사건 정보)을 기준으로 「토양환경보전법 시행규칙」 별표3(우려기준)·별표7(대책기준)과
+        자동 비교해 색이 표시돼요. {zone ? "" : "지역등급이 입력되지 않아 지금은 자동 판정이 꺼져 있어요."}
       </div>
       <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 6 }}>
         1) 오염면적(m²): 각 심도별 중첩부분을 감안한 최대 넓이　2) 오염량(m³): 심도별 오염량의 합

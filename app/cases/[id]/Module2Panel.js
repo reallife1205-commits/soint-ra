@@ -1,58 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
+import { SUBSTANCE_GROUPS } from "@/lib/substances";
+import { CONCERN_STANDARDS, parseRegionGrade } from "@/lib/soilStandards";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
-
-const SUBSTANCE_GROUPS = [
-  {
-    label: "중금속류",
-    items: [
-      ["cadmium", "카드뮴(Cd)"],
-      ["copper", "구리(Cu)"],
-      ["arsenic", "비소(As)"],
-      ["lead", "납(Pb)"],
-      ["chromium6", "6가크롬(Cr6+)"],
-      ["mercury", "수은(Hg)"],
-      ["zinc", "아연(Zn)"],
-      ["nickel", "니켈(Ni)"],
-    ],
-  },
-  {
-    label: "유기물질",
-    items: [
-      ["organophosphorus", "유기인"],
-      ["cyanide", "시안(CN)"],
-      ["phenol", "페놀류"],
-      ["benzene", "벤젠"],
-      ["toluene", "톨루엔"],
-      ["ethylbenzene", "에틸벤젠"],
-      ["xylene", "크실렌"],
-      ["tph", "TPH"],
-    ],
-  },
-  {
-    label: "휘발성 유기화합물",
-    items: [
-      ["tce", "TCE"],
-      ["pce", "PCE"],
-    ],
-  },
-  {
-    label: "기타",
-    items: [
-      ["fluorine", "불소(F)"],
-      ["pcb", "PCB"],
-      ["benzoapyrene", "벤조(a)피렌"],
-    ],
-  },
-];
 
 const SUBSTANCE_LABEL = Object.fromEntries(
   SUBSTANCE_GROUPS.flatMap((g) => g.items)
 );
+const ORDERED_SUBSTANCE_KEYS = SUBSTANCE_GROUPS.flatMap((g) =>
+  g.items.map(([key]) => key)
+);
+
+const CELL_BORDER = "1px solid var(--color-border)";
+
+function toNum(v) {
+  const n = parseFloat(v);
+  return v === null || v === undefined || v === "" || isNaN(n) ? null : n;
+}
+
+function formatNum(n) {
+  return Number(Math.round(n * 100) / 100).toLocaleString("ko-KR", {
+    maximumFractionDigits: 2,
+  });
+}
 
 function haversineKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
@@ -276,11 +250,15 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
           )}
 
           {activeTab === "토양측정망" && (
-            <ResultTable rows={networkResults} substances={Array.from(selected)} />
+            <NetworkSummaryTable
+              rows={networkResults}
+              substances={Array.from(selected)}
+              regionGrade={caseInfo?.region_grade}
+            />
           )}
 
           {activeTab === "실태조사" && (
-            <ResultTable rows={surveyResults} substances={Array.from(selected)} />
+            <SurveySummaryTable rows={surveyResults} substances={Array.from(selected)} />
           )}
         </>
       )}
@@ -288,51 +266,191 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
   );
 }
 
-function ResultTable({ rows, substances }) {
-  if (rows.length === 0) {
+// [표2] 토양측정망 조사결과 형태: 물질을 열로, 우려기준/최고농도/평균농도를 행으로 피벗
+function NetworkSummaryTable({ rows, substances, regionGrade }) {
+  const zone = parseRegionGrade(regionGrade);
+  const keys = ORDERED_SUBSTANCE_KEYS.filter((k) => substances.includes(k));
+
+  if (keys.length === 0) {
     return (
       <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
-        반경 안에 데이터가 없어요
+        측정항목을 선택해주세요
       </div>
     );
   }
+  if (rows.length === 0) {
+    return (
+      <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
+        반경 안에 토양측정망 데이터가 없어요
+      </div>
+    );
+  }
+
+  const stats = {};
+  keys.forEach((key) => {
+    const values = rows.map((r) => toNum(r[key])).filter((v) => v !== null);
+    stats[key] = {
+      max: values.length ? Math.max(...values) : null,
+      avg: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null,
+    };
+  });
+
   return (
     <div className="card" style={{ overflowX: "auto" }}>
+      <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
+        지점 {rows.length}개 · 우려기준 기준 지역:{" "}
+        {zone ? `${zone}지역` : "미지정 (사건 목록에서 지역등급을 입력해주세요)"}
+      </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
         <thead>
           <tr style={{ background: "#f6f8f4" }}>
-            <th style={{ textAlign: "left", padding: 8 }}>지점명</th>
-            <th style={{ textAlign: "left", padding: 8 }}>주소</th>
-            <th style={{ textAlign: "left", padding: 8 }}>거리</th>
-            <th style={{ textAlign: "left", padding: 8 }}>연도</th>
-            {substances.map((s) => (
-              <th key={s} style={{ textAlign: "left", padding: 8 }}>
-                {SUBSTANCE_LABEL[s]}
+            <th style={{ textAlign: "left", padding: 8, border: CELL_BORDER }}>구분</th>
+            {keys.map((key) => (
+              <th
+                key={key}
+                style={{ textAlign: "center", padding: 8, border: CELL_BORDER, whiteSpace: "nowrap" }}
+              >
+                {SUBSTANCE_LABEL[key]}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.slice(0, 200).map((row) => (
-            <tr key={row.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
-              <td style={{ padding: 8 }}>{row.site_name || "-"}</td>
-              <td style={{ padding: 8 }}>{row.address}</td>
-              <td style={{ padding: 8 }}>{row.distance.toFixed(2)}km</td>
-              <td style={{ padding: 8 }}>{row.survey_year}</td>
-              {substances.map((s) => (
-                <td key={s} style={{ padding: 8 }}>
-                  {row[s] ?? "-"}
-                </td>
-              ))}
-            </tr>
-          ))}
+          <tr>
+            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>
+              {zone ? `${zone}지역(우려기준)` : "우려기준"}
+            </td>
+            {keys.map((key) => (
+              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                {zone && CONCERN_STANDARDS[key]?.[zone] !== undefined
+                  ? formatNum(CONCERN_STANDARDS[key][zone])
+                  : "-"}
+              </td>
+            ))}
+          </tr>
+          <tr>
+            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>최고농도</td>
+            {keys.map((key) => (
+              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                {stats[key].max !== null ? formatNum(stats[key].max) : "-"}
+              </td>
+            ))}
+          </tr>
+          <tr>
+            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>평균농도</td>
+            {keys.map((key) => (
+              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                {stats[key].avg !== null ? formatNum(stats[key].avg) : "-"}
+              </td>
+            ))}
+          </tr>
         </tbody>
       </table>
-      {rows.length > 200 && (
-        <div style={{ fontSize: 14, color: "var(--color-text-muted)", padding: 8 }}>
-          너무 많아서 가까운 200건만 표시 중이에요 (전체 {rows.length}건)
-        </div>
-      )}
+      <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 8 }}>
+        우려기준 근거: 「토양환경보전법 시행규칙」 제1조의5 및 별표3(토양오염우려기준)
+      </div>
+    </div>
+  );
+}
+
+// [표3] 토양오염실태조사 결과 형태: 물질별로 최저/최고농도를 연도별 열로 피벗
+function SurveySummaryTable({ rows, substances }) {
+  const keys = ORDERED_SUBSTANCE_KEYS.filter((k) => substances.includes(k));
+
+  if (keys.length === 0) {
+    return (
+      <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
+        측정항목을 선택해주세요
+      </div>
+    );
+  }
+
+  const years = Array.from(new Set(rows.map((r) => r.survey_year).filter((y) => y != null))).sort(
+    (a, b) => Number(a) - Number(b)
+  );
+
+  if (years.length === 0) {
+    return (
+      <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
+        반경 안에 토양오염실태조사 데이터가 없어요
+      </div>
+    );
+  }
+
+  function statsFor(key, year) {
+    const values = rows
+      .filter((r) => r.survey_year === year)
+      .map((r) => toNum(r[key]))
+      .filter((v) => v !== null);
+    return {
+      min: values.length ? Math.min(...values) : null,
+      max: values.length ? Math.max(...values) : null,
+    };
+  }
+
+  return (
+    <div className="card" style={{ overflowX: "auto" }}>
+      <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
+        지점 {rows.length}개
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
+        <thead>
+          <tr style={{ background: "#f6f8f4" }}>
+            <th style={{ textAlign: "center", padding: 8, border: CELL_BORDER }} colSpan={2}>
+              구분
+            </th>
+            {years.map((y) => (
+              <th
+                key={y}
+                style={{ textAlign: "center", padding: 8, border: CELL_BORDER, whiteSpace: "nowrap" }}
+              >
+                &apos;{String(y).slice(-2)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {keys.map((key) => {
+            const yearStats = years.map((y) => statsFor(key, y));
+            return (
+              <Fragment key={key}>
+                <tr>
+                  <td
+                    rowSpan={2}
+                    style={{
+                      padding: 8,
+                      border: CELL_BORDER,
+                      textAlign: "center",
+                      fontWeight: 600,
+                      verticalAlign: "middle",
+                    }}
+                  >
+                    {SUBSTANCE_LABEL[key]}
+                  </td>
+                  <td style={{ padding: 8, border: CELL_BORDER, color: "var(--color-text-muted)" }}>
+                    최저농도
+                  </td>
+                  {yearStats.map((s, i) => (
+                    <td key={years[i]} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                      {s.min !== null ? formatNum(s.min) : "-"}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td style={{ padding: 8, border: CELL_BORDER, color: "var(--color-text-muted)" }}>
+                    최고농도
+                  </td>
+                  {yearStats.map((s, i) => (
+                    <td key={years[i]} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                      {s.max !== null ? formatNum(s.max) : "-"}
+                    </td>
+                  ))}
+                </tr>
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
