@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, Circle, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Circle, CircleMarker, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -27,19 +27,29 @@ export default function MapView({ center, radiusKm, points }) {
         <Circle
           center={[center.lat, center.lon]}
           radius={radiusKm * 1000}
-          pathOptions={{ color: "#a8562f", fillOpacity: 0.05 }}
+          pathOptions={{ color: "#a8562f", weight: 1, fillColor: "#a8562f", fillOpacity: 0.12 }}
         />
         <Marker position={[center.lat, center.lon]}>
           <Popup>대상부지</Popup>
         </Marker>
         {points.slice(0, 300).map((p) => (
-          <Marker key={p.id} position={[p.lat, p.lon]}>
+          <CircleMarker
+            key={p.id}
+            center={[p.lat, p.lon]}
+            radius={5}
+            pathOptions={{
+              color: p.source_type === "측정망" ? "#2563eb" : "#d97706",
+              weight: 1,
+              fillColor: p.source_type === "측정망" ? "#2563eb" : "#d97706",
+              fillOpacity: 0.7,
+            }}
+          >
             <Popup>
               {p.site_name || p.address}
               <br />
               {p.source_type} · {p.survey_year}
             </Popup>
-          </Marker>
+          </CircleMarker>
         ))}
       </MapContainer>
     </div>
