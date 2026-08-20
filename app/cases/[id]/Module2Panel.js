@@ -170,6 +170,17 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
     setSearching(false);
   }
 
+  // 이미 한 번 검색한 뒤에는 반경 슬라이더를 움직일 때마다(디바운스 후) 자동으로 다시 검색해요.
+  // 그전에는 버튼을 눌러야만 검색됐어서 슬라이더를 옮겨도 측정망/실태조사 건수가 안 바뀌어 보였어요.
+  useEffect(() => {
+    if (!searched) return;
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [radius]);
+
   const networkResults = results.filter((r) => r.source_type === "측정망");
   const surveyResults = results.filter((r) => r.source_type === "실태조사");
 
