@@ -15,33 +15,33 @@ const ORDERED_SUBSTANCE_KEYS = SUBSTANCE_GROUPS.flatMap((g) =>
   g.items.map(([key]) => key)
 );
 
-// 토양측정망 표([표2]) 헤더 2줄 표기용: 1번째 줄 한글명, 2번째 줄 (영문/기호)
-const NETWORK_SUBSTANCE_DISPLAY = {
-  cadmium: { ko: "카드뮴", en: "Cd" },
-  copper: { ko: "구리", en: "Cu" },
-  arsenic: { ko: "비소", en: "As" },
-  lead: { ko: "납", en: "Pb" },
-  chromium6: { ko: "6가크롬", en: "Cr6+" },
-  mercury: { ko: "수은", en: "Hg" },
-  zinc: { ko: "아연", en: "Zn" },
-  nickel: { ko: "니켈", en: "Ni" },
-  organophosphorus: { ko: "유기인화합물", en: "Organophosphorus" },
-  cyanide: { ko: "시안", en: "CN" },
-  phenol: { ko: "페놀", en: "Phenol" },
-  benzene: { ko: "벤젠", en: "Benzene" },
-  toluene: { ko: "톨루엔", en: "Toluene" },
-  ethylbenzene: { ko: "에틸벤젠", en: "Ethylbenzene" },
-  xylene: { ko: "크실렌", en: "Xylene" },
-  tph: { ko: "석유계총탄화수소", en: "TPH" },
-  tce: { ko: "트리클로로에틸렌", en: "TCE" },
-  pce: { ko: "테트라클로로에틸렌", en: "PCE" },
-  fluorine: { ko: "불소", en: "F" },
-  pcb: { ko: "폴리클로리네이티드비페닐", en: "PCB" },
-  benzoapyrene: { ko: "벤조(a)피렌", en: "Benzo(a)pyrene" },
-  ph: { ko: "수소이온농도", en: "pH" },
+// 토양측정망 표([표2]) 헤더 표기: 샘플 보고서와 동일한 물질명(영문 병기 없이 단일 줄)
+const NETWORK_SUBSTANCE_LABEL = {
+  cadmium: "카드뮴",
+  copper: "구리",
+  arsenic: "비소",
+  mercury: "수은",
+  lead: "납",
+  chromium6: "6가크롬",
+  zinc: "아연",
+  nickel: "니켈",
+  organophosphorus: "유기인",
+  cyanide: "시안",
+  ph: "pH",
+  fluorine: "불소",
+  pcb: "PCB",
+  phenol: "페놀류",
+  benzene: "벤젠",
+  toluene: "톨루엔",
+  ethylbenzene: "에틸벤젠",
+  xylene: "크실렌",
+  tph: "TPH",
+  tce: "TCE",
+  pce: "PCE",
+  benzoapyrene: "벤조(a)피렌",
 };
-// 표2는 선택 여부와 무관하게 전 물질(pH 포함 22개)을 항상 11개씩 2줄로 표시
-const NETWORK_SUBSTANCE_KEYS = [...ORDERED_SUBSTANCE_KEYS, "ph"];
+// 표2는 선택 여부와 무관하게 전 물질(pH 포함 22개)을 항상 표시. 순서는 샘플 보고서와 동일하게 맞춤
+const NETWORK_SUBSTANCE_KEYS = Object.keys(NETWORK_SUBSTANCE_LABEL);
 
 function chunk(arr, size) {
   const out = [];
@@ -341,14 +341,13 @@ function NetworkSummaryTable({ rows, regionGrade }) {
           <table key={i} style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
             <thead>
               <tr style={{ background: "#f6f8f4" }}>
-                <th style={{ textAlign: "left", padding: 8, border: CELL_BORDER }}>구분</th>
+                <th style={{ textAlign: "left", padding: 8, border: CELL_BORDER }}>측정항목</th>
                 {keys.map((key) => (
                   <th
                     key={key}
                     style={{ textAlign: "center", padding: 8, border: CELL_BORDER, whiteSpace: "nowrap" }}
                   >
-                    <div>{NETWORK_SUBSTANCE_DISPLAY[key].ko}</div>
-                    <div style={{ fontWeight: 400 }}>({NETWORK_SUBSTANCE_DISPLAY[key].en})</div>
+                    {NETWORK_SUBSTANCE_LABEL[key]}
                   </th>
                 ))}
               </tr>
@@ -356,7 +355,7 @@ function NetworkSummaryTable({ rows, regionGrade }) {
             <tbody>
               <tr>
                 <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>
-                  {zone ? `${zone}지역(우려기준)` : "우려기준"}
+                  {zone ? `‘${zone}지역(우려기준)` : "우려기준"}
                 </td>
                 {keys.map((key) => (
                   <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
@@ -444,7 +443,7 @@ function SurveySummaryTable({ rows, substances }) {
                 key={y}
                 style={{ textAlign: "center", padding: 8, border: CELL_BORDER, whiteSpace: "nowrap" }}
               >
-                &apos;{String(y).slice(-2)}
+                ‘{String(y).slice(-2)}
               </th>
             ))}
           </tr>
