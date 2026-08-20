@@ -300,8 +300,9 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
   );
 }
 
-// [표2] 토양측정망 조사결과 형태: 전 물질(pH 포함 22개)을 한 표에 열로, 우려기준/최고농도/평균농도를
-// 행으로 피벗 (측정망은 선택 여부와 무관하게 전 물질을 항상 표시). 첫 열은 조금 넓게, 나머지 물질 열은 모두 동일한 넓이.
+// [표2] 토양측정망 조사결과 형태: 전 물질(pH 포함 22개)을 표 하나 안에서 11개씩 위/아래 두 블록으로
+// 나눠 표시 (샘플 보고서와 동일한 구조: 표는 1개, 물질 열 블록이 위 11개·아래 11개로 8줄 구성).
+// 측정망은 선택 여부와 무관하게 전 물질을 항상 표시하고, 첫 열 외 물질 열은 모두 동일한 넓이로 맞춤.
 function NetworkSummaryTable({ rows, regionGrade }) {
   const zone = parseRegionGrade(regionGrade);
 
@@ -322,8 +323,9 @@ function NetworkSummaryTable({ rows, regionGrade }) {
     };
   });
 
+  const keyBlocks = [NETWORK_SUBSTANCE_KEYS.slice(0, 11), NETWORK_SUBSTANCE_KEYS.slice(11)];
   const labelColWidth = 130;
-  const substanceColWidth = `calc((100% - ${labelColWidth}px) / ${NETWORK_SUBSTANCE_KEYS.length})`;
+  const substanceColWidth = `calc((100% - ${labelColWidth}px) / 11)`;
 
   return (
     <div className="card" style={{ overflowX: "auto" }}>
@@ -334,7 +336,7 @@ function NetworkSummaryTable({ rows, regionGrade }) {
       <table
         style={{
           width: "100%",
-          minWidth: 1000,
+          minWidth: 900,
           tableLayout: "fixed",
           borderCollapse: "collapse",
           fontSize: 15,
@@ -342,57 +344,62 @@ function NetworkSummaryTable({ rows, regionGrade }) {
       >
         <colgroup>
           <col style={{ width: labelColWidth }} />
-          {NETWORK_SUBSTANCE_KEYS.map((key) => (
+          {keyBlocks[0].map((key) => (
             <col key={key} style={{ width: substanceColWidth }} />
           ))}
         </colgroup>
-        <thead>
-          <tr style={{ background: "#f6f8f4" }}>
-            <th style={{ textAlign: "left", padding: 8, border: CELL_BORDER }}>측정항목</th>
-            {NETWORK_SUBSTANCE_KEYS.map((key) => (
-              <th
-                key={key}
-                style={{
-                  textAlign: "center",
-                  padding: 8,
-                  border: CELL_BORDER,
-                  wordBreak: "keep-all",
-                }}
-              >
-                {NETWORK_SUBSTANCE_LABEL[key]}
-              </th>
-            ))}
-          </tr>
-        </thead>
         <tbody>
-          <tr>
-            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>
-              {zone ? `‘${zone}지역(우려기준)` : "우려기준"}
-            </td>
-            {NETWORK_SUBSTANCE_KEYS.map((key) => (
-              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
-                {zone && CONCERN_STANDARDS[key]?.[zone] !== undefined
-                  ? formatNum(CONCERN_STANDARDS[key][zone])
-                  : "-"}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>최고농도</td>
-            {NETWORK_SUBSTANCE_KEYS.map((key) => (
-              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
-                {stats[key].max !== null ? formatNum(stats[key].max) : "-"}
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>평균농도</td>
-            {NETWORK_SUBSTANCE_KEYS.map((key) => (
-              <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
-                {stats[key].avg !== null ? formatNum(stats[key].avg) : "-"}
-              </td>
-            ))}
-          </tr>
+          {keyBlocks.map((keys, blockIndex) => (
+            <Fragment key={blockIndex}>
+              <tr style={{ background: "#f6f8f4" }}>
+                <td style={{ textAlign: "left", padding: 8, border: CELL_BORDER, fontWeight: 600 }}>
+                  측정항목
+                </td>
+                {keys.map((key) => (
+                  <td
+                    key={key}
+                    style={{
+                      textAlign: "center",
+                      padding: 8,
+                      border: CELL_BORDER,
+                      fontWeight: 600,
+                      wordBreak: "keep-all",
+                    }}
+                  >
+                    {NETWORK_SUBSTANCE_LABEL[key]}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>
+                  {zone ? `‘${zone}지역(우려기준)` : "우려기준"}
+                </td>
+                {keys.map((key) => (
+                  <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    {zone && CONCERN_STANDARDS[key]?.[zone] !== undefined
+                      ? formatNum(CONCERN_STANDARDS[key][zone])
+                      : "-"}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>최고농도</td>
+                {keys.map((key) => (
+                  <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    {stats[key].max !== null ? formatNum(stats[key].max) : "-"}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td style={{ padding: 8, border: CELL_BORDER, fontWeight: 600 }}>평균농도</td>
+                {keys.map((key) => (
+                  <td key={key} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    {stats[key].avg !== null ? formatNum(stats[key].avg) : "-"}
+                  </td>
+                ))}
+              </tr>
+            </Fragment>
+          ))}
         </tbody>
       </table>
       <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 8 }}>
