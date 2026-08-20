@@ -107,8 +107,9 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
     const lonDelta =
       radius / (111 * Math.cos((coords.lat * Math.PI) / 180));
 
+    // 토양측정망은 선택 여부와 상관없이 전 항목을 조사하므로, 항상 전체 물질 컬럼을 가져와요
     const selectCols = ["id", "source_type", "address", "lat", "lon", "survey_year", "site_name"]
-      .concat(Array.from(selected))
+      .concat(ORDERED_SUBSTANCE_KEYS)
       .join(",");
 
     const { data } = await supabase
@@ -250,11 +251,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
           )}
 
           {activeTab === "토양측정망" && (
-            <NetworkSummaryTable
-              rows={networkResults}
-              substances={Array.from(selected)}
-              regionGrade={caseInfo?.region_grade}
-            />
+            <NetworkSummaryTable rows={networkResults} regionGrade={caseInfo?.region_grade} />
           )}
 
           {activeTab === "실태조사" && (
@@ -266,18 +263,12 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
   );
 }
 
-// [표2] 토양측정망 조사결과 형태: 물질을 열로, 우려기준/최고농도/평균농도를 행으로 피벗
-function NetworkSummaryTable({ rows, substances, regionGrade }) {
+// [표2] 토양측정망 조사결과 형태: 전 물질을 열로, 우려기준/최고농도/평균농도를 행으로 피벗
+// (측정망은 선택한 항목만이 아니라 조사 대상 전 물질을 항상 표시)
+function NetworkSummaryTable({ rows, regionGrade }) {
   const zone = parseRegionGrade(regionGrade);
-  const keys = ORDERED_SUBSTANCE_KEYS.filter((k) => substances.includes(k));
+  const keys = ORDERED_SUBSTANCE_KEYS;
 
-  if (keys.length === 0) {
-    return (
-      <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
-        측정항목을 선택해주세요
-      </div>
-    );
-  }
   if (rows.length === 0) {
     return (
       <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
