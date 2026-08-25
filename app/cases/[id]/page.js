@@ -144,8 +144,13 @@ export default function CaseDetailPage() {
             {caseInfo.address} · 담당: {caseInfo.manager || "-"}
           </div>
         </div>
-        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-          {completedCount}/{MODULES.length} 완료
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
+            {completedCount}/{MODULES.length} 완료
+          </div>
+          <a href={`/api/cases/${id}/export-report`} className="btn-secondary">
+            📄 보고서 초안 내보내기
+          </a>
         </div>
       </div>
 
