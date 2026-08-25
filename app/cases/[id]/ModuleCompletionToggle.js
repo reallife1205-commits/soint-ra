@@ -53,7 +53,7 @@ export default function ModuleCompletionToggle({
   }
 
   return (
-    <button className={isCompleted ? "btn-secondary" : "btn-primary"} onClick={toggleComplete}>
+    <button className={isCompleted ? "btn-complete-done" : "btn-complete"} onClick={toggleComplete}>
       {isCompleted ? "✓ 완료 취소" : "완료 처리"}
     </button>
   );
