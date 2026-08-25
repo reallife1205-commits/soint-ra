@@ -200,12 +200,12 @@ export default function CaseDetailPage() {
                 background: "transparent",
                 padding: "10px 14px",
                 cursor: "pointer",
-                borderBottom: isActive ? "2px solid var(--color-primary)" : "2px solid transparent",
+                borderBottom: isActive ? "2px solid var(--color-chapter-active)" : "2px solid transparent",
                 textAlign: "left",
-                fontSize: 15,
-                fontWeight: 600,
+                fontSize: 17,
+                fontWeight: 700,
                 whiteSpace: "nowrap",
-                color: isActive ? "var(--color-primary)" : "var(--color-text)",
+                color: isActive ? "var(--color-chapter-active)" : "var(--color-secondary)",
               }}
             >
               {c.label}
