@@ -3,12 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import FactorySearchTab from "./Module5FactoryTab";
+import CategorizedRowsTable from "./CategorizedRowsTable";
 
 const TABS = [
   { key: "dart", label: "DART 검색" },
   { key: "factory", label: "공장등록 조회" },
   { key: "manual", label: "수동 추가" },
   { key: "results", label: "수집 결과" },
+  { key: "factory_history", label: "공장등록 이력(표5)" },
+];
+
+const FACTORY_HISTORY_FIELDS = [
+  { key: "approved_date", label: "승인일", type: "date" },
+  { key: "cancelled_date", label: "취소일", type: "date" },
+  { key: "company_name", label: "회사명" },
+  { key: "holding_type", label: "보유구분" },
+  { key: "business_type", label: "업종" },
 ];
 
 export default function Module5Panel({ caseId }) {
@@ -60,6 +70,25 @@ export default function Module5Panel({ caseId }) {
       {tab === "manual" && <ManualAddTab caseId={caseId} onResultsChanged={setResultCount} />}
       {tab === "results" && (
         <ResultsTab caseId={caseId} onResultsChanged={setResultCount} />
+      )}
+      {tab === "factory_history" && (
+        <div className="card">
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>
+            공장등록 이력 (표5 — 팩토리온에서 직접 조회한 결과를 입력)
+          </div>
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
+            팩토리온(factoryon.go.kr)의 &quot;공장(기업)조회 서비스&quot;는 로그인이 필요해서 자동 연동이
+            안 돼요. 직접 로그인해서 조회한 결과를 아래 표에 입력해주세요. 연번은 입력 순서대로
+            자동으로 매겨져요.
+          </div>
+          <CategorizedRowsTable
+            caseId={caseId}
+            moduleNumber={5}
+            category="factory_history_item"
+            fields={FACTORY_HISTORY_FIELDS}
+            emptyText="공장등록 이력 없음 — 아래 버튼으로 추가하세요"
+          />
+        </div>
       )}
     </div>
   );
