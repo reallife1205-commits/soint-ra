@@ -144,6 +144,17 @@ export default function Module0Overview({ caseId }) {
 
       <hr style={{ margin: "20px 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
 
+      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>1.2 추진 경과</div>
+      <CategorizedRowsTable
+        caseId={caseId}
+        moduleNumber={0}
+        category="progress"
+        fields={PROGRESS_FIELDS}
+        emptyText="추진 경과 없음 — 아래 버튼으로 추가하세요"
+      />
+
+      <hr style={{ margin: "20px 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
+
       <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>
         1.3 정화책임자에 대한 시·도지사 검토의견서
       </div>
@@ -201,17 +212,6 @@ export default function Module0Overview({ caseId }) {
         placeholder="정화책임자 의견 내용을 입력하세요."
         rows={4}
         style={{ ...inputStyle, resize: "vertical" }}
-      />
-
-      <hr style={{ margin: "20px 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
-
-      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>1.2 추진 경과</div>
-      <CategorizedRowsTable
-        caseId={caseId}
-        moduleNumber={0}
-        category="progress"
-        fields={PROGRESS_FIELDS}
-        emptyText="추진 경과 없음 — 아래 버튼으로 추가하세요"
       />
 
       {saving && (
