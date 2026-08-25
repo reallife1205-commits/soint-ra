@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import { buildReportDocx } from "@/lib/reportExport";
+import fs from "fs";
+import path from "path";
+import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -10,7 +12,7 @@ const supabaseAdmin = createClient(
 );
 
 const DEFAULT_RADIUS_KM = 4;
-const MAX_AERIAL_IMAGES = 4;
+const MAX_PHOTOS = 4;
 const IMAGE_TYPE_BY_EXT = { png: "png", jpg: "jpg", jpeg: "jpg", gif: "gif", bmp: "bmp" };
 
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -45,14 +47,14 @@ function judgmentByCategory(rowDataList, category) {
   return rowDataList.find((d) => d.category === category) || null;
 }
 
-async function fetchAerialImages(caseId) {
+async function fetchImages(caseId, moduleNumber, limit) {
   const { data: docs } = await supabaseAdmin
     .from("documents")
     .select("*")
     .eq("case_id", caseId)
-    .eq("module_number", 4)
+    .eq("module_number", moduleNumber)
     .order("uploaded_at", { ascending: false })
-    .limit(MAX_AERIAL_IMAGES);
+    .limit(limit);
 
   if (!docs?.length) return [];
 
@@ -77,21 +79,22 @@ async function fetchCaseData(caseId) {
     { data: overviewRows },
     { data: contaminationRows },
     { data: ownershipRows },
+    { data: factoryHistoryRows },
     { data: fieldSurvey },
-    { data: reviewOpinion },
   ] = await Promise.all([
     supabaseAdmin.from("cases").select("*").eq("id", caseId).single(),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 0),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 1),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3),
+    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 5),
     supabaseAdmin.from("field_surveys").select("*").eq("case_id", caseId).maybeSingle(),
-    supabaseAdmin.from("review_opinions").select("content").eq("case_id", caseId).maybeSingle(),
   ]);
 
   if (!caseInfo) return null;
 
   const m0 = (overviewRows || []).map((r) => r.row_data);
   const m3 = (ownershipRows || []).map((r) => r.row_data);
+  const m5 = (factoryHistoryRows || []).map((r) => r.row_data);
 
   const overviewData = m0.find((d) => d.category === "overview") || {};
   const progressItems = m0
@@ -103,12 +106,15 @@ async function fetchCaseData(caseId) {
     .map((d) => d.owner_name)
     .filter(Boolean);
 
-  const [soilDataRows, aerialImages] = await Promise.all([
+  const [soilDataRows, aerialImages, fieldPhotoImages] = await Promise.all([
     fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
-    fetchAerialImages(caseId),
+    fetchImages(caseId, 4, 8),
+    fetchImages(caseId, 6, MAX_PHOTOS),
   ]);
   const networkRows = soilDataRows.filter((r) => r.source_type === "측정망");
   const surveyRows = soilDataRows.filter((r) => r.source_type === "실태조사");
+
+  const legalJudgment = judgmentByCategory(m3, "legal");
 
   return {
     caseInfo,
@@ -130,6 +136,7 @@ async function fetchCaseData(caseId) {
       ownershipRows: m3.filter((d) => d.category === "ownership"),
       leaseRows: m3.filter((d) => d.category === "lease"),
     },
+    factoryHistoryItems: m5.filter((d) => d.category === "factory_history_item"),
     judgments: {
       soil_assessment: judgmentByCategory(m3, "soil_assessment"),
       cost_capacity: judgmentByCategory(m3, "cost_capacity"),
@@ -137,10 +144,11 @@ async function fetchCaseData(caseId) {
       agreement: judgmentByCategory(m3, "agreement"),
       management_history: judgmentByCategory(m3, "management_history"),
     },
+    legalSummary: legalJudgment?.summary || "",
     costCapacityItems: m3.filter((d) => d.category === "cost_capacity_item"),
     aerialImages,
+    fieldPhotoImages,
     fieldSurvey,
-    reviewOpinion: reviewOpinion?.content || null,
   };
 }
 
@@ -156,15 +164,17 @@ export async function GET(req, { params }) {
       return Response.json({ error: "해당 안건을 찾을 수 없어요" }, { status: 404 });
     }
 
-    const buffer = await buildReportDocx(payload);
+    const templatePath = path.join(process.cwd(), "templates", "report-template.hwpx");
+    const templateBuffer = fs.readFileSync(templatePath);
+    const buffer = await buildReportHwpx(templateBuffer, payload);
     const fileName = encodeURIComponent(
-      `기술검토보고서_초안_${payload.caseInfo.case_number || caseId}.docx`
+      `기술검토보고서_초안_${payload.caseInfo.case_number || caseId}.hwpx`
     );
 
     return new Response(buffer, {
       status: 200,
       headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Type": "application/octet-stream",
         "Content-Disposition": `attachment; filename*=UTF-8''${fileName}`,
       },
     });
