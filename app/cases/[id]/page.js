@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { MODULES } from "@/lib/modules";
+import Module0Overview from "./Module0Overview";
 import Module1Panel from "./Module1Panel";
 import Module2Panel from "./Module2Panel";
 import Module3Panel from "./Module3Panel";
@@ -19,7 +20,7 @@ export default function CaseDetailPage() {
   const { id } = useParams();
   const [caseInfo, setCaseInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeModule, setActiveModule] = useState(1);
+  const [activeModule, setActiveModule] = useState(0);
   const [moduleStatus, setModuleStatus] = useState({});
 
   const loadCase = useCallback(async () => {
@@ -144,7 +145,7 @@ export default function CaseDetailPage() {
           </div>
         </div>
         <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-          {completedCount}/7 완료
+          {completedCount}/{MODULES.length} 완료
         </div>
       </div>
 
@@ -218,7 +219,9 @@ export default function CaseDetailPage() {
         </div>
 
         <div style={{ flex: 1 }}>
-          {activeModule === 1 ? (
+          {activeModule === 0 ? (
+            <Module0Overview caseId={id} />
+          ) : activeModule === 1 ? (
             <Module1Panel caseId={id} caseInfo={caseInfo} />
           ) : activeModule === 2 ? (
             <Module2Panel
