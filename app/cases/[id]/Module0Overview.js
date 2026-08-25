@@ -96,7 +96,7 @@ export default function Module0Overview({ caseId }) {
         <input
           value={form.application_number}
           onChange={(e) => updateField("application_number", e.target.value)}
-          onBlur={handleBlurSave}
+          onBlur={() => handleBlurSave()}
           placeholder="예: 안산시청 산단환경과-10784 (2025.7.24.)"
           style={inputStyle}
         />
@@ -109,7 +109,7 @@ export default function Module0Overview({ caseId }) {
             type="date"
             value={form.investigation_start}
             onChange={(e) => updateField("investigation_start", e.target.value)}
-            onBlur={handleBlurSave}
+            onBlur={() => handleBlurSave()}
             style={inputStyle}
           />
         </div>
@@ -119,7 +119,7 @@ export default function Module0Overview({ caseId }) {
             type="date"
             value={form.investigation_end}
             onChange={(e) => updateField("investigation_end", e.target.value)}
-            onBlur={handleBlurSave}
+            onBlur={() => handleBlurSave()}
             style={inputStyle}
           />
         </div>
@@ -161,7 +161,7 @@ export default function Module0Overview({ caseId }) {
       <textarea
         value={form.sido_opinion}
         onChange={(e) => updateField("sido_opinion", e.target.value)}
-        onBlur={handleBlurSave}
+        onBlur={() => handleBlurSave()}
         placeholder="시·도지사 또는 시·군·구의 검토의견을 입력하세요."
         rows={4}
         style={{ ...inputStyle, resize: "vertical" }}
@@ -199,7 +199,7 @@ export default function Module0Overview({ caseId }) {
           <input
             value={form.responsible_party_opinion_other}
             onChange={(e) => updateField("responsible_party_opinion_other", e.target.value)}
-            onBlur={handleBlurSave}
+            onBlur={() => handleBlurSave()}
             placeholder="기타 내용"
             style={{ ...inputStyle, marginTop: 0, flex: 1 }}
           />
@@ -208,7 +208,7 @@ export default function Module0Overview({ caseId }) {
       <textarea
         value={form.responsible_party_opinion_text}
         onChange={(e) => updateField("responsible_party_opinion_text", e.target.value)}
-        onBlur={handleBlurSave}
+        onBlur={() => handleBlurSave()}
         placeholder="정화책임자 의견 내용을 입력하세요."
         rows={4}
         style={{ ...inputStyle, resize: "vertical" }}
