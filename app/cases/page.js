@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
-import { MODULES } from "@/lib/modules";
+import { OLD_MODULES } from "@/lib/modules";
 import TopNav from "@/app/components/TopNav";
 import SoilBanner from "@/app/components/SoilBanner";
 
@@ -367,7 +367,7 @@ function AddCaseModal({ onClose, onCreated }) {
       return;
     }
 
-    const moduleRows = MODULES.map((m) => ({
+    const moduleRows = OLD_MODULES.map((m) => ({
       case_id: newCase.id,
       module_number: m.number,
       module_name: m.name,

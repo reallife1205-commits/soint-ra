@@ -2,65 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import PollutionMappingTab from "./Module7PollutionMapping";
-import SurroundingImpactTab from "./Module7SurroundingImpact";
-import ReviewOpinionTab from "./Module7ReviewOpinion";
 
 const LEGAL_REFERENCE_DATE = "1996-01-06"; // 토양환경보전법 시행일 기준
 const PX_PER_YEAR = 50;
 const ROW_HEIGHT = 40;
-
-const TABS = [
-  { key: "timeline", label: "통합 타임라인" },
-  { key: "mapping", label: "오염물질 × 기업 매핑" },
-  { key: "surrounding", label: "주변부지 영향" },
-  { key: "opinion", label: "검토 의견" },
-];
-
-export default function Module7Panel({ caseId, caseInfo }) {
-  const [tab, setTab] = useState("timeline");
-
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          borderBottom: "1px solid var(--color-border)",
-          marginBottom: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            style={{
-              border: "none",
-              background: "transparent",
-              padding: "8px 14px",
-              fontSize: 15,
-              cursor: "pointer",
-              fontWeight: tab === t.key ? 700 : 400,
-              borderBottom:
-                tab === t.key
-                  ? "2px solid var(--color-primary)"
-                  : "2px solid transparent",
-              color: tab === t.key ? "var(--color-primary)" : "var(--color-text)",
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "timeline" && <IntegratedTimeline caseId={caseId} />}
-      {tab === "mapping" && <PollutionMappingTab caseId={caseId} />}
-      {tab === "surrounding" && <SurroundingImpactTab caseId={caseId} caseInfo={caseInfo} />}
-      {tab === "opinion" && <ReviewOpinionTab caseId={caseId} />}
-    </div>
-  );
-}
 
 function yearFraction(dateStr) {
   if (!dateStr) return null;
@@ -74,7 +19,7 @@ function formatDate(dateStr) {
   return dateStr;
 }
 
-function IntegratedTimeline({ caseId }) {
+export default function IntegratedTimeline({ caseId }) {
   const [loading, setLoading] = useState(true);
   const [owners, setOwners] = useState([]);
   const [tenants, setTenants] = useState([]);

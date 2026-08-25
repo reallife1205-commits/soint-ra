@@ -4,23 +4,46 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { MODULES } from "@/lib/modules";
+import { CHAPTERS } from "@/lib/modules";
 import Module0Overview from "./Module0Overview";
 import Module1Panel from "./Module1Panel";
 import Module2Panel from "./Module2Panel";
-import Module3Panel from "./Module3Panel";
+import { OwnershipLeaseSection, SoilAssessmentSection, CostCapacitySection, AccessSection, AgreementSection, ManagementHistorySection } from "./Module3Panel";
 import Module4Panel from "./Module4Panel";
 import Module5Panel from "./Module5Panel";
 import Module6Panel from "./Module6Panel";
-import Module7Panel from "./Module7Panel";
-import GenericModuleTable from "./GenericModuleTable";
+import LegalJudgmentForm from "./LegalJudgmentForm";
+import IntegratedTimeline from "./Module7IntegratedTimeline";
+import PollutionMappingTab from "./Module7PollutionMapping";
+import SurroundingImpactTab from "./Module7SurroundingImpact";
+import ReviewOpinionTab from "./Module7ReviewOpinion";
+import ModuleCompletionToggle from "./ModuleCompletionToggle";
 import DocumentUpload from "./DocumentUpload";
+
+const SUB_TAB_31 = [
+  { key: "ownership", label: "소유·임대차 이력", moduleNumber: 3 },
+  { key: "aerial", label: "항공사진", moduleNumber: 4 },
+  { key: "dart", label: "DART·공장조회", moduleNumber: 5 },
+];
+
+const SUB_TAB_22 = [
+  { key: "surrounding_data", label: "주변부지 조사", moduleNumber: 2 },
+  { key: "surrounding_impact", label: "주변부지 영향 판단", moduleNumber: 7 },
+];
+
+const SUB_TAB_6 = [
+  { key: "legal", label: "법적 판단", moduleNumber: 3 },
+  { key: "timeline", label: "통합 타임라인", moduleNumber: 7 },
+  { key: "opinion", label: "검토 의견", moduleNumber: 7 },
+];
 
 export default function CaseDetailPage() {
   const { id } = useParams();
   const [caseInfo, setCaseInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeModule, setActiveModule] = useState(0);
+  const [activeChapter, setActiveChapter] = useState("1");
+  const [activeSubTab, setActiveSubTab] = useState(null);
+  const [activeTool, setActiveTool] = useState(null);
   const [moduleStatus, setModuleStatus] = useState({});
 
   const loadCase = useCallback(async () => {
@@ -49,45 +72,23 @@ export default function CaseDetailPage() {
     init();
   }, [loadCase, loadModuleStatus]);
 
-  const completedCount = Object.values(moduleStatus).filter(
-    (m) => m.is_completed
-  ).length;
+  const completedCount = Object.values(moduleStatus).filter((m) => m.is_completed).length;
 
-  async function toggleComplete() {
-    const current = moduleStatus[activeModule];
-    const newValue = !current?.is_completed;
+  function selectChapter(chapterKey) {
+    setActiveChapter(chapterKey);
+    const chapter = CHAPTERS.find((c) => c.key === chapterKey);
+    setActiveSubTab(chapter?.subTabs ? chapter.subTabs[0].key : null);
+    if (chapterKey === "3" && chapter?.subTabs?.[0]?.key === "3.1") setActiveTool("ownership");
+    else if (chapterKey === "2") setActiveTool("surrounding_data");
+    else if (chapterKey === "6") setActiveTool("legal");
+    else setActiveTool(null);
+  }
 
-    if (current) {
-      await supabase
-        .from("module_status")
-        .update({
-          is_completed: newValue,
-          completed_at: newValue ? new Date().toISOString() : null,
-        })
-        .eq("id", current.id);
-    } else {
-      await supabase.from("module_status").insert([
-        {
-          case_id: id,
-          module_number: activeModule,
-          module_name: MODULES.find((m) => m.number === activeModule)?.name,
-          is_completed: newValue,
-          completed_at: newValue ? new Date().toISOString() : null,
-        },
-      ]);
-    }
-    await loadModuleStatus();
-
-    const allDone = MODULES.every((m) =>
-      m.number === activeModule ? newValue : moduleStatus[m.number]?.is_completed
-    );
-    if (allDone) {
-      await supabase.from("cases").update({ status: "완료" }).eq("id", id);
-      loadCase();
-    } else if (caseInfo?.status === "완료") {
-      await supabase.from("cases").update({ status: "작성중" }).eq("id", id);
-      loadCase();
-    }
+  function selectSubTab(subTabKey) {
+    setActiveSubTab(subTabKey);
+    if (subTabKey === "3.1") setActiveTool("ownership");
+    else if (subTabKey === "2.2") setActiveTool("surrounding_data");
+    else setActiveTool(null);
   }
 
   if (loading) {
@@ -111,8 +112,34 @@ export default function CaseDetailPage() {
     );
   }
 
-  const activeInfo = moduleStatus[activeModule];
-  const activeModuleMeta = MODULES.find((m) => m.number === activeModule);
+  const activeChapterMeta = CHAPTERS.find((c) => c.key === activeChapter);
+  const activeSubTabMeta = activeChapterMeta?.subTabs?.find((s) => s.key === activeSubTab);
+
+  // 현재 화면에 표시할 제목 + 완료토글에 쓸 옛 module_number 결정
+  let headingLabel = activeChapterMeta?.label;
+  let effectiveModuleNumber = activeChapterMeta?.oldModuleNumbers?.[0];
+
+  if (activeChapter === "2" && activeSubTab === "2.2") {
+    headingLabel = SUB_TAB_22.find((t) => t.key === activeTool)?.label
+      ? `${activeSubTabMeta.label} — ${SUB_TAB_22.find((t) => t.key === activeTool).label}`
+      : activeSubTabMeta.label;
+    effectiveModuleNumber = SUB_TAB_22.find((t) => t.key === activeTool)?.moduleNumber ?? 2;
+  } else if (activeSubTabMeta) {
+    headingLabel = activeSubTabMeta.label;
+    effectiveModuleNumber = activeSubTabMeta.oldModuleNumbers?.[0];
+  }
+
+  if (activeChapter === "3" && activeSubTab === "3.1") {
+    const tool = SUB_TAB_31.find((t) => t.key === activeTool);
+    headingLabel = tool ? `3.1 소유·점유·운영 — ${tool.label}` : "3.1 소유·점유·운영";
+    effectiveModuleNumber = tool?.moduleNumber ?? 3;
+  }
+
+  if (activeChapter === "6") {
+    const tool = SUB_TAB_6.find((t) => t.key === activeTool);
+    headingLabel = tool ? `6. 기술검토 결과(종합) — ${tool.label}` : "6. 기술검토 결과(종합)";
+    effectiveModuleNumber = tool?.moduleNumber ?? 3;
+  }
 
   return (
     <div className="page">
@@ -146,7 +173,7 @@ export default function CaseDetailPage() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-            {completedCount}/{MODULES.length} 완료
+            {completedCount}/8 완료
           </div>
           <a href={`/api/cases/${id}/export-report`} className="btn-secondary">
             📄 보고서 초안 내보내기
@@ -159,45 +186,70 @@ export default function CaseDetailPage() {
           display: "flex",
           gap: 4,
           borderBottom: "1px solid var(--color-border)",
-          marginBottom: 20,
           overflowX: "auto",
         }}
       >
-        {MODULES.map((m) => {
-          const isActive = activeModule === m.number;
-          const isDone = moduleStatus[m.number]?.is_completed;
+        {CHAPTERS.map((c) => {
+          const isActive = activeChapter === c.key;
           return (
             <button
-              key={m.number}
-              onClick={() => setActiveModule(m.number)}
+              key={c.key}
+              onClick={() => selectChapter(c.key)}
               style={{
                 border: "none",
                 background: "transparent",
                 padding: "10px 14px",
                 cursor: "pointer",
-                borderBottom: isActive
-                  ? "2px solid var(--color-primary)"
-                  : "2px solid transparent",
+                borderBottom: isActive ? "2px solid var(--color-primary)" : "2px solid transparent",
                 textAlign: "left",
-                minWidth: 100,
+                fontSize: 15,
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                color: isActive ? "var(--color-primary)" : "var(--color-text)",
               }}
             >
-              <div
-                style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: isActive ? "var(--color-primary)" : "var(--color-text)",
-                }}
-              >
-                {isDone && "✓ "}챕터 {String(m.number).padStart(2, "0")}
-              </div>
-              <div style={{ fontSize: 13, color: "var(--color-secondary)", fontWeight: 600 }}>
-                {m.name}
-              </div>
+              {c.label}
             </button>
           );
         })}
       </div>
+
+      {activeChapterMeta?.subTabs && (
+        <div
+          style={{
+            display: "flex",
+            gap: 4,
+            borderBottom: "1px solid var(--color-border)",
+            marginBottom: 20,
+            overflowX: "auto",
+            background: "#f6f8f4",
+          }}
+        >
+          {activeChapterMeta.subTabs.map((s) => {
+            const isActive = activeSubTab === s.key;
+            return (
+              <button
+                key={s.key}
+                onClick={() => selectSubTab(s.key)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                  borderBottom: isActive ? "2px solid var(--color-secondary)" : "2px solid transparent",
+                  fontSize: 14,
+                  fontWeight: isActive ? 700 : 400,
+                  whiteSpace: "nowrap",
+                  color: isActive ? "var(--color-secondary)" : "var(--color-text-muted)",
+                }}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {!activeChapterMeta?.subTabs && <div style={{ marginBottom: 20 }} />}
 
       <div
         style={{
@@ -207,53 +259,134 @@ export default function CaseDetailPage() {
           marginBottom: 12,
         }}
       >
-        <div style={{ fontSize: 17, fontWeight: 700 }}>
-          챕터 {String(activeModule).padStart(2, "0")} — {activeModuleMeta?.name}
-        </div>
-        <button
-          className={activeInfo?.is_completed ? "btn-secondary" : "btn-primary"}
-          onClick={toggleComplete}
-        >
-          {activeInfo?.is_completed ? "완료 취소" : "완료 처리"}
-        </button>
+        <div style={{ fontSize: 17, fontWeight: 700 }}>{headingLabel}</div>
+        {effectiveModuleNumber !== undefined && (
+          <ModuleCompletionToggle
+            caseId={id}
+            moduleNumber={effectiveModuleNumber}
+            moduleStatus={moduleStatus}
+            caseStatus={caseInfo.status}
+            reloadModuleStatus={loadModuleStatus}
+            reloadCase={loadCase}
+          />
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 20 }}>
-        <div className="card" style={{ width: 260, flexShrink: 0 }}>
-          <DocumentUpload caseId={id} moduleNumber={activeModule} />
-        </div>
+        {effectiveModuleNumber !== undefined && (
+          <div className="card" style={{ width: 260, flexShrink: 0 }}>
+            <DocumentUpload caseId={id} moduleNumber={effectiveModuleNumber} />
+          </div>
+        )}
 
         <div style={{ flex: 1 }}>
-          {activeModule === 0 ? (
-            <Module0Overview caseId={id} />
-          ) : activeModule === 1 ? (
+          {activeChapter === "1" && <Module0Overview caseId={id} />}
+
+          {activeChapter === "2" && activeSubTab === "2.1" && (
             <Module1Panel caseId={id} caseInfo={caseInfo} />
-          ) : activeModule === 2 ? (
-            <Module2Panel
-              caseInfo={caseInfo}
-              onCoordsUpdated={(lat, lon) =>
-                setCaseInfo((c) => ({ ...c, lat, lon }))
-              }
-            />
-          ) : activeModule === 3 ? (
+          )}
+
+          {activeChapter === "2" && activeSubTab === "2.2" && (
+            <>
+              <ToolTabs tabs={SUB_TAB_22} active={activeTool} onSelect={setActiveTool} />
+              {activeTool === "surrounding_data" && (
+                <Module2Panel
+                  caseInfo={caseInfo}
+                  onCoordsUpdated={(lat, lon) => setCaseInfo((c) => ({ ...c, lat, lon }))}
+                />
+              )}
+              {activeTool === "surrounding_impact" && (
+                <div className="card">
+                  <SurroundingImpactTab caseId={id} caseInfo={caseInfo} />
+                </div>
+              )}
+            </>
+          )}
+
+          {activeChapter === "3" && activeSubTab === "3.1" && (
+            <>
+              <ToolTabs tabs={SUB_TAB_31} active={activeTool} onSelect={setActiveTool} />
+              {activeTool === "ownership" && (
+                <div className="card">
+                  <OwnershipLeaseSection caseId={id} />
+                </div>
+              )}
+              {activeTool === "aerial" && <Module4Panel caseId={id} caseInfo={caseInfo} />}
+              {activeTool === "dart" && <Module5Panel caseId={id} />}
+            </>
+          )}
+          {activeChapter === "3" && activeSubTab === "3.2" && (
             <div className="card">
-              <Module3Panel caseId={id} />
+              <SoilAssessmentSection caseId={id} />
             </div>
-          ) : activeModule === 4 ? (
-            <Module4Panel caseId={id} caseInfo={caseInfo} />
-          ) : activeModule === 5 ? (
-            <Module5Panel caseId={id} />
-          ) : activeModule === 6 ? (
-            <Module6Panel caseId={id} />
-          ) : activeModule === 7 ? (
-            <Module7Panel caseId={id} caseInfo={caseInfo} />
-          ) : (
+          )}
+          {activeChapter === "3" && activeSubTab === "3.3" && (
             <div className="card">
-              <GenericModuleTable caseId={id} moduleNumber={activeModule} />
+              <CostCapacitySection caseId={id} />
             </div>
+          )}
+          {activeChapter === "3" && activeSubTab === "3.4" && (
+            <div className="card">
+              <AccessSection caseId={id} />
+            </div>
+          )}
+          {activeChapter === "3" && activeSubTab === "3.5" && (
+            <div className="card">
+              <AgreementSection caseId={id} />
+            </div>
+          )}
+          {activeChapter === "3" && activeSubTab === "3.6" && (
+            <div className="card">
+              <ManagementHistorySection caseId={id} />
+              <hr style={{ margin: "20px 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
+              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>오염물질 × 기업 매핑</div>
+              <PollutionMappingTab caseId={id} />
+            </div>
+          )}
+
+          {activeChapter === "4" && <Module6Panel caseId={id} />}
+
+          {activeChapter === "5" && (
+            <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
+              ※ 추후 작성 예정 — 아직 입력 항목이 없어요.
+            </div>
+          )}
+
+          {activeChapter === "6" && (
+            <>
+              <ToolTabs tabs={SUB_TAB_6} active={activeTool} onSelect={setActiveTool} />
+              {activeTool === "legal" && (
+                <div className="card">
+                  <LegalJudgmentForm caseId={id} />
+                </div>
+              )}
+              {activeTool === "timeline" && <IntegratedTimeline caseId={id} />}
+              {activeTool === "opinion" && (
+                <div className="card">
+                  <ReviewOpinionTab caseId={id} />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ToolTabs({ tabs, active, onSelect }) {
+  return (
+    <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          onClick={() => onSelect(t.key)}
+          className={active === t.key ? "btn-primary" : "btn-secondary"}
+          style={{ fontSize: 14 }}
+        >
+          {t.label}
+        </button>
+      ))}
     </div>
   );
 }
