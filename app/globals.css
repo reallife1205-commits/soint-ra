@@ -1,17 +1,17 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 
 :root {
-  /* 토양/흙 팔레트 — 따뜻한 흙빛이지만 채도를 낮춰 눈이 덜 피로하게 */
-  --color-bg: #f6f2e9;
+  /* 토양/흙 팔레트 — 따뜻한 흙빛이지만 채도를 한 번 더 낮춰 갈색 느낌을 줄임 */
+  --color-bg: #f8f6f2;
   --color-surface: #ffffff;
-  --color-surface-alt: #f0e9dc;
-  --color-border: #e3d8c3;
+  --color-surface-alt: #f2efe8;
+  --color-border: #e0dcd0;
 
-  --color-text: #3a3226;
-  --color-text-muted: #948671;
+  --color-text: #332f28;
+  --color-text-muted: #8a8479;
 
-  --color-primary: #b3673f;
-  --color-primary-dark: #96532f;
+  --color-primary: #a8724f;
+  --color-primary-dark: #8f5f40;
   --color-secondary: #5f7048;
   --color-chapter-active: #2f6b3f;
 

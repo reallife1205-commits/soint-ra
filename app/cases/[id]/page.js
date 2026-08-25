@@ -102,7 +102,7 @@ export default function CaseDetailPage() {
   if (!caseInfo) {
     return (
       <div className="page">
-        <Link href="/cases" style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
+        <Link href="/cases" style={{ fontSize: 17, fontWeight: 700, color: "var(--color-text-muted)" }}>
           ← 목록으로
         </Link>
         <div className="card" style={{ marginTop: 16 }}>
@@ -152,7 +152,7 @@ export default function CaseDetailPage() {
         }}
       >
         <div>
-          <Link href="/cases" style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
+          <Link href="/cases" style={{ fontSize: 17, fontWeight: 700, color: "var(--color-text-muted)" }}>
             ← 목록
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
