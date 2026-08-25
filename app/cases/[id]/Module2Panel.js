@@ -78,10 +78,47 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
   const [geocodeError, setGeocodeError] = useState("");
   const [radius, setRadius] = useState(4);
   const [selected, setSelected] = useState(new Set(["arsenic", "lead"]));
+  const [settingsRowId, setSettingsRowId] = useState(null);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [activeTab, setActiveTab] = useState("지도");
+
+  // 보고서 내보내기에서 "체크한 항목만" 표시하려면 선택 상태가 저장돼 있어야 해서, 여기서 불러오고 저장함
+  useEffect(() => {
+    if (!caseInfo?.id) return;
+    supabase
+      .from("module_rows")
+      .select("*")
+      .eq("case_id", caseInfo.id)
+      .eq("module_number", 2)
+      .contains("row_data", { category: "settings" })
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setSettingsRowId(data.id);
+          if (Array.isArray(data.row_data.selected)) {
+            setSelected(new Set(data.row_data.selected));
+          }
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseInfo?.id]);
+
+  async function persistSelected(nextSet) {
+    if (!caseInfo?.id) return;
+    const row_data = { category: "settings", selected: Array.from(nextSet) };
+    if (settingsRowId) {
+      await supabase.from("module_rows").update({ row_data, updated_at: new Date().toISOString() }).eq("id", settingsRowId);
+    } else {
+      const { data } = await supabase
+        .from("module_rows")
+        .insert([{ case_id: caseInfo.id, module_number: 2, row_order: 0, row_data }])
+        .select()
+        .single();
+      if (data) setSettingsRowId(data.id);
+    }
+  }
 
   async function handleGeocode() {
     if (!caseInfo?.address) return;
@@ -122,6 +159,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
+      persistSelected(next);
       return next;
     });
   }

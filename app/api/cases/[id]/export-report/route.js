@@ -78,6 +78,7 @@ async function fetchCaseData(caseId) {
     { data: caseInfo },
     { data: overviewRows },
     { data: contaminationRows },
+    { data: module2Rows },
     { data: ownershipRows },
     { data: factoryHistoryRows },
     { data: fieldSurvey },
@@ -85,6 +86,7 @@ async function fetchCaseData(caseId) {
     supabaseAdmin.from("cases").select("*").eq("id", caseId).single(),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 0),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 1),
+    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 2),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 5),
     supabaseAdmin.from("field_surveys").select("*").eq("case_id", caseId).maybeSingle(),
@@ -93,8 +95,11 @@ async function fetchCaseData(caseId) {
   if (!caseInfo) return null;
 
   const m0 = (overviewRows || []).map((r) => r.row_data);
+  const m2 = (module2Rows || []).map((r) => r.row_data);
   const m3 = (ownershipRows || []).map((r) => r.row_data);
   const m5 = (factoryHistoryRows || []).map((r) => r.row_data);
+  const module2Settings = m2.find((d) => d.category === "settings");
+  const selectedSubstances = module2Settings ? module2Settings.selected || [] : null;
 
   const overviewData = m0.find((d) => d.category === "overview") || {};
   const progressItems = m0
@@ -132,6 +137,7 @@ async function fetchCaseData(caseId) {
     contaminationRows: (contaminationRows || []).map((r) => r.row_data).filter((d) => d.contaminant),
     networkRows,
     surveyRows,
+    selectedSubstances,
     ownership: {
       ownershipRows: m3.filter((d) => d.category === "ownership"),
       leaseRows: m3.filter((d) => d.category === "lease"),
