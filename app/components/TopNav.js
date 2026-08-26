@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const SECTIONS = [
   { key: "report", label: "기술검토 리포트", href: "/cases" },
@@ -10,7 +10,14 @@ const SECTIONS = [
 
 export default function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const active = pathname?.startsWith("/inventory") ? "inventory" : "report";
+
+  async function handleLogout() {
+    await fetch("/api/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <header
@@ -90,6 +97,14 @@ export default function TopNav() {
           </Link>
         ))}
       </nav>
+
+      <button
+        onClick={handleLogout}
+        className="btn-secondary"
+        style={{ fontSize: 14, padding: "8px 14px" }}
+      >
+        로그아웃
+      </button>
     </header>
   );
 }
