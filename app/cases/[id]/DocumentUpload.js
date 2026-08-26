@@ -3,11 +3,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+function isImageFile(fileName) {
+  return /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName || "");
+}
+
 export default function DocumentUpload({ caseId, moduleNumber }) {
   const [docs, setDocs] = useState([]);
+  const [urlMap, setUrlMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -26,6 +32,33 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId, moduleNumber]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchUrls() {
+      const imageDocs = docs.filter((d) => isImageFile(d.file_name));
+      if (imageDocs.length === 0) {
+        setUrlMap({});
+        return;
+      }
+      const { data } = await supabase.storage
+        .from("documents")
+        .createSignedUrls(
+          imageDocs.map((d) => d.file_path),
+          3600
+        );
+      if (cancelled || !data) return;
+      const map = {};
+      data.forEach((r, i) => {
+        if (r.signedUrl) map[imageDocs[i].id] = r.signedUrl;
+      });
+      setUrlMap(map);
+    }
+    fetchUrls();
+    return () => {
+      cancelled = true;
+    };
+  }, [docs]);
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
@@ -132,53 +165,135 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
           </div>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {docs.map((doc) => (
-              <li
-                key={doc.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "8px 0",
-                  borderBottom: "1px solid var(--color-border)",
-                  fontSize: 15,
-                }}
-              >
-                <button
-                  onClick={() => handleDownload(doc)}
+            {docs.map((doc) => {
+              const isImage = isImageFile(doc.file_name);
+              return (
+                <li
+                  key={doc.id}
                   style={{
-                    border: "none",
-                    background: "transparent",
-                    color: "var(--color-primary)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    padding: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    maxWidth: 160,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 0",
+                    borderBottom: "1px solid var(--color-border)",
+                    fontSize: 15,
+                    gap: 6,
                   }}
-                  title={doc.file_name}
                 >
-                  📄 {doc.file_name}
-                </button>
-                <button
-                  onClick={() => handleDelete(doc)}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    color: "var(--color-text-muted)",
-                    cursor: "pointer",
-                  }}
-                  title="삭제"
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
+                  <button
+                    onClick={() =>
+                      isImage && urlMap[doc.id]
+                        ? setPreviewDoc(doc)
+                        : handleDownload(doc)
+                    }
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--color-primary)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      padding: 0,
+                      overflow: "hidden",
+                      minWidth: 0,
+                    }}
+                    title={doc.file_name}
+                  >
+                    {isImage ? (
+                      urlMap[doc.id] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={urlMap[doc.id]}
+                          alt={doc.file_name}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            objectFit: "cover",
+                            borderRadius: 4,
+                            flexShrink: 0,
+                          }}
+                        />
+                      ) : (
+                        <span style={{ flexShrink: 0 }}>🖼️</span>
+                      )
+                    ) : (
+                      <span style={{ flexShrink: 0 }}>📄</span>
+                    )}
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {doc.file_name}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(doc)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--color-text-muted)",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                    title="삭제"
+                  >
+                    ✕
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
+      {previewDoc && (
+        <div
+          onClick={() => setPreviewDoc(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "white",
+              borderRadius: 10,
+              padding: 16,
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              overflow: "auto",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, gap: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>{previewDoc.file_name}</div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 19 }}
+              >
+                ✕
+              </button>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={urlMap[previewDoc.id]}
+              alt={previewDoc.file_name}
+              style={{ maxWidth: "100%", maxHeight: "75vh", display: "block" }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
