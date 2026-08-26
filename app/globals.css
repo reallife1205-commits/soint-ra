@@ -114,14 +114,14 @@ textarea {
 }
 
 .link-edit {
-  color: #2f6690;
+  color: var(--color-badge-red-text);
   font-weight: 700;
   font-size: 15px;
   text-decoration: underline;
 }
 
 .link-edit:hover {
-  color: #244f70;
+  color: #9c2d20;
 }
 
 .card {
