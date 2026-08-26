@@ -231,7 +231,7 @@ function FieldPhotos({ caseId }) {
       return;
     }
 
-    await supabase.from("documents").insert([
+    const { error: insertError } = await supabase.from("documents").insert([
       {
         case_id: caseId,
         module_number: 6,
@@ -241,6 +241,13 @@ function FieldPhotos({ caseId }) {
         photo_note: caption,
       },
     ]);
+
+    if (insertError) {
+      await supabase.storage.from("documents").remove([filePath]);
+      setError(`업로드에 실패했어요: ${insertError.message}`);
+      setUploadingKey("");
+      return;
+    }
 
     setUploadingKey("");
     load();

@@ -81,7 +81,7 @@ export default function Module1ImageGallery({ caseId, category, title }) {
       return;
     }
 
-    await supabase.from("documents").insert([
+    const { error: insertError } = await supabase.from("documents").insert([
       {
         case_id: caseId,
         module_number: 1,
@@ -91,6 +91,13 @@ export default function Module1ImageGallery({ caseId, category, title }) {
         file_size: file.size,
       },
     ]);
+
+    if (insertError) {
+      await supabase.storage.from("documents").remove([filePath]);
+      setError(`업로드에 실패했어요: ${insertError.message}`);
+      setUploading(false);
+      return;
+    }
 
     setUploading(false);
     e.target.value = "";
