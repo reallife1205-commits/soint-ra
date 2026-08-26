@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { CHAPTERS } from "@/lib/modules";
+import { ddayInfo } from "@/lib/dday";
 import Module0Overview from "./Module0Overview";
 import Module1Panel from "./Module1Panel";
 import Module2Panel from "./Module2Panel";
@@ -45,6 +46,9 @@ export default function CaseDetailPage() {
   const [activeSubTab, setActiveSubTab] = useState(null);
   const [activeTool, setActiveTool] = useState(null);
   const [moduleStatus, setModuleStatus] = useState({});
+  const [editingMeta, setEditingMeta] = useState(false);
+  const [metaForm, setMetaForm] = useState({ manager: "", due_date: "" });
+  const [savingMeta, setSavingMeta] = useState(false);
 
   const loadCase = useCallback(async () => {
     const { data } = await supabase.from("cases").select("*").eq("id", id).single();
@@ -72,7 +76,31 @@ export default function CaseDetailPage() {
     init();
   }, [loadCase, loadModuleStatus]);
 
+  useEffect(() => {
+    if (caseInfo && !editingMeta) {
+      setMetaForm({
+        manager: caseInfo.manager || "",
+        due_date: caseInfo.due_date || "",
+      });
+    }
+  }, [caseInfo, editingMeta]);
+
+  async function saveMeta() {
+    setSavingMeta(true);
+    await supabase
+      .from("cases")
+      .update({
+        manager: metaForm.manager || null,
+        due_date: metaForm.due_date || null,
+      })
+      .eq("id", id);
+    await loadCase();
+    setSavingMeta(false);
+    setEditingMeta(false);
+  }
+
   const completedCount = Object.values(moduleStatus).filter((m) => m.is_completed).length;
+  const dday = ddayInfo(caseInfo?.due_date);
 
   function selectChapter(chapterKey) {
     setActiveChapter(chapterKey);
@@ -166,10 +194,78 @@ export default function CaseDetailPage() {
             >
               {caseInfo.status}
             </span>
+            {dday && (
+              <span className={`badge ${dday.badgeClass}`}>{dday.label}</span>
+            )}
           </div>
-          <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 2 }}>
-            {caseInfo.address} · 담당: {caseInfo.manager || "-"}
-          </div>
+          {editingMeta ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+              <span style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
+                {caseInfo.address}
+              </span>
+              <input
+                value={metaForm.manager}
+                onChange={(e) =>
+                  setMetaForm((f) => ({ ...f, manager: e.target.value }))
+                }
+                placeholder="담당자"
+                style={{
+                  width: 100,
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "1px solid var(--color-border)",
+                  fontSize: 14,
+                }}
+              />
+              <input
+                type="date"
+                value={metaForm.due_date}
+                onChange={(e) =>
+                  setMetaForm((f) => ({ ...f, due_date: e.target.value }))
+                }
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "1px solid var(--color-border)",
+                  fontSize: 14,
+                }}
+              />
+              <button
+                className="btn-primary"
+                onClick={saveMeta}
+                disabled={savingMeta}
+                style={{ padding: "4px 10px", fontSize: 14 }}
+              >
+                {savingMeta ? "저장 중..." : "저장"}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => setEditingMeta(false)}
+                style={{ padding: "4px 10px", fontSize: 14 }}
+              >
+                취소
+              </button>
+            </div>
+          ) : (
+            <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 2 }}>
+              {caseInfo.address} · 담당: {caseInfo.manager || "-"}
+              {caseInfo.due_date ? ` · 마감: ${caseInfo.due_date}` : ""}{" "}
+              <button
+                onClick={() => setEditingMeta(true)}
+                style={{
+                  border: "none",
+                  background: "none",
+                  color: "var(--color-primary)",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  padding: 0,
+                  marginLeft: 4,
+                }}
+              >
+                수정
+              </button>
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>

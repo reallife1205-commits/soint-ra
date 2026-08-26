@@ -6,19 +6,9 @@ import { supabase } from "@/lib/supabaseClient";
 import { OLD_MODULES } from "@/lib/modules";
 import TopNav from "@/app/components/TopNav";
 import SoilBanner from "@/app/components/SoilBanner";
+import { ddayInfo } from "@/lib/dday";
 
 const STATUS_OPTIONS = ["전체", "작성중", "완료"];
-
-function ddayInfo(dueDateStr) {
-  if (!dueDateStr) return null;
-  const due = new Date(dueDateStr + "T00:00:00");
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.round((due - today) / (1000 * 60 * 60 * 24));
-  const label = diff === 0 ? "D-day" : diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
-  const badgeClass = diff < 0 ? "badge-red" : diff <= 3 ? "badge-yellow" : "badge-blue";
-  return { label, badgeClass };
-}
 
 export default function CasesPage() {
   const [cases, setCases] = useState([]);
@@ -193,7 +183,7 @@ export default function CasesPage() {
             >
               {filteredCases.map((c) => {
                 const progress = progressByCase[c.id] || { done: 0, total: 7 };
-                const dday = ddayInfo(c.registered_date);
+                const dday = ddayInfo(c.due_date);
                 return (
                   <Link
                     key={c.id}
@@ -238,7 +228,8 @@ export default function CasesPage() {
                       {c.contaminants}
                     </div>
                     <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 4 }}>
-                      담당자 {c.manager || "-"} · {c.registered_date || "-"}
+                      담당자 {c.manager || "-"} · 등록 {c.registered_date || "-"}
+                      {c.due_date ? ` · 마감 ${c.due_date}` : ""}
                     </div>
 
                     <div
@@ -343,6 +334,7 @@ function AddCaseModal({ onClose, onCreated }) {
     region_grade: "",
     contaminants: "",
     registered_date: new Date().toISOString().slice(0, 10),
+    due_date: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -362,7 +354,7 @@ function AddCaseModal({ onClose, onCreated }) {
 
     const { data: newCase, error: insertError } = await supabase
       .from("cases")
-      .insert([{ ...form, status: "작성중" }])
+      .insert([{ ...form, due_date: form.due_date || null, status: "작성중" }])
       .select()
       .single();
 
@@ -431,22 +423,41 @@ function AddCaseModal({ onClose, onCreated }) {
           </div>
         ))}
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
-            등록일
-          </label>
-          <input
-            type="date"
-            value={form.registered_date}
-            onChange={(e) => update("registered_date", e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              borderRadius: 8,
-              border: "1px solid var(--color-border)",
-              marginTop: 4,
-            }}
-          />
+        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+              등록일
+            </label>
+            <input
+              type="date"
+              value={form.registered_date}
+              onChange={(e) => update("registered_date", e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid var(--color-border)",
+                marginTop: 4,
+              }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+              마감일 (D-day 기준)
+            </label>
+            <input
+              type="date"
+              value={form.due_date}
+              onChange={(e) => update("due_date", e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid var(--color-border)",
+                marginTop: 4,
+              }}
+            />
+          </div>
         </div>
 
         {error && (
