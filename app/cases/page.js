@@ -9,12 +9,15 @@ import SoilBanner from "@/app/components/SoilBanner";
 
 const STATUS_OPTIONS = ["전체", "작성중", "완료"];
 
-function daysSince(dateStr) {
-  if (!dateStr) return null;
-  const start = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-  return diff >= 0 ? diff : 0;
+function ddayInfo(dueDateStr) {
+  if (!dueDateStr) return null;
+  const due = new Date(dueDateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((due - today) / (1000 * 60 * 60 * 24));
+  const label = diff === 0 ? "D-day" : diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
+  const badgeClass = diff < 0 ? "badge-red" : diff <= 3 ? "badge-yellow" : "badge-blue";
+  return { label, badgeClass };
 }
 
 export default function CasesPage() {
@@ -190,7 +193,7 @@ export default function CasesPage() {
             >
               {filteredCases.map((c) => {
                 const progress = progressByCase[c.id] || { done: 0, total: 7 };
-                const dday = daysSince(c.registered_date);
+                const dday = ddayInfo(c.registered_date);
                 return (
                   <Link
                     key={c.id}
@@ -210,7 +213,9 @@ export default function CasesPage() {
                       </div>
                       <div style={{ display: "flex", gap: 6 }}>
                         {dday !== null && (
-                          <span className="badge badge-red">{dday}일</span>
+                          <span className={`badge ${dday.badgeClass}`}>
+                            {dday.label}
+                          </span>
                         )}
                         <span
                           className={`badge ${
