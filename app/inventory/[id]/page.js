@@ -139,7 +139,7 @@ export default function InventorySiteDetailPage() {
       <TopNav />
 
       <div style={{ marginBottom: 16 }}>
-        <Link href="/inventory" style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
+        <Link href="/inventory" className="link-back" style={{ fontSize: 15 }}>
           ← 인벤토리 목록으로
         </Link>
       </div>

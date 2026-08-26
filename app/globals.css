@@ -104,6 +104,26 @@ textarea {
   color: var(--color-badge-green-text);
 }
 
+.link-back {
+  color: #2f6690;
+  font-weight: 700;
+}
+
+.link-back:hover {
+  color: #244f70;
+}
+
+.link-edit {
+  color: #2f6690;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: underline;
+}
+
+.link-edit:hover {
+  color: #244f70;
+}
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

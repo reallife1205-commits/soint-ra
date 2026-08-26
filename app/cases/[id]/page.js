@@ -130,7 +130,7 @@ export default function CaseDetailPage() {
   if (!caseInfo) {
     return (
       <div className="page">
-        <Link href="/cases" style={{ fontSize: 17, fontWeight: 700, color: "var(--color-text-muted)" }}>
+        <Link href="/cases" className="link-back" style={{ fontSize: 17 }}>
           ← 목록으로
         </Link>
         <div className="card" style={{ marginTop: 16 }}>
@@ -180,7 +180,7 @@ export default function CaseDetailPage() {
         }}
       >
         <div>
-          <Link href="/cases" style={{ fontSize: 17, fontWeight: 700, color: "var(--color-text-muted)" }}>
+          <Link href="/cases" className="link-back" style={{ fontSize: 17 }}>
             ← 목록
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
@@ -252,12 +252,11 @@ export default function CaseDetailPage() {
               {caseInfo.due_date ? ` · 마감: ${caseInfo.due_date}` : ""}{" "}
               <button
                 onClick={() => setEditingMeta(true)}
+                className="link-edit"
                 style={{
                   border: "none",
                   background: "none",
-                  color: "var(--color-primary)",
                   cursor: "pointer",
-                  fontSize: 14,
                   padding: 0,
                   marginLeft: 4,
                 }}
