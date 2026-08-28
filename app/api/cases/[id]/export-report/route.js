@@ -124,6 +124,7 @@ async function fetchCaseData(caseId) {
   return {
     caseInfo,
     overview: {
+      advisory_subject: overviewData.advisory_subject || "",
       application_number: overviewData.application_number || "",
       investigation_start: overviewData.investigation_start || "",
       investigation_end: overviewData.investigation_end || "",
