@@ -6,7 +6,7 @@ import { useModuleRows } from "@/lib/useModuleRows";
 import CategorizedRowsTable from "./CategorizedRowsTable";
 
 const PROGRESS_FIELDS = [
-  { key: "date", label: "일자", placeholder: "예: '24.6월 ~ '25.12월" },
+  { key: "date", label: "일자", placeholder: "예: '24.6월 ~ '25.12월", width: 160 },
   { key: "description", label: "내용" },
 ];
 

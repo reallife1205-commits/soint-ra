@@ -38,13 +38,21 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
   return (
     <div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
+        <table
+          style={{
+            width: "100%",
+            tableLayout: fields.some((f) => f.width) ? "fixed" : "auto",
+            borderCollapse: "collapse",
+            fontSize: 15,
+          }}
+        >
           <thead>
             <tr style={{ background: "#f6f8f4" }}>
               {fields.map((f) => (
                 <th
                   key={f.key}
                   style={{
+                    width: f.width,
                     textAlign: "left",
                     padding: "10px 8px",
                     borderBottom: "1px solid var(--color-border)",
