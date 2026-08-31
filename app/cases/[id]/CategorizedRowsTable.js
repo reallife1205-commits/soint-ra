@@ -97,6 +97,7 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
                             value={localRow[f.key] || ""}
                             onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
                             onBlur={() => handleBlurSave(row, f.key)}
+                            placeholder={f.placeholder || ""}
                             style={{
                               width: "100%",
                               border: "none",
