@@ -6,9 +6,13 @@ import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
+// Next.js App Router가 supabase-js 내부 fetch 호출까지 캐시해버려서(라우트의
+// dynamic = "force-dynamic"이 SDK 내부 fetch에는 적용되지 않음), 오래된 데이터 스냅샷이
+// 배포가 바뀌어도 계속 서빙되는 문제가 있었다. fetch를 명시적으로 no-store로 강제한다.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  { global: { fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }) } }
 );
 
 const DEFAULT_RADIUS_KM = 4;
