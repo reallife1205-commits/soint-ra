@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { SUBSTANCE_GROUPS } from "@/lib/substances";
@@ -76,15 +76,18 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
   );
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState("");
-  const [radius, setRadius] = useState(4);
+  const [radius, setRadius] = useState(2);
   const [selected, setSelected] = useState(new Set(["arsenic", "lead"]));
   const [settingsRowId, setSettingsRowId] = useState(null);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [activeTab, setActiveTab] = useState("지도");
+  const [pendingRestore, setPendingRestore] = useState(false);
+  const autoSearchTriggered = useRef(false);
 
-  // 보고서 내보내기에서 "체크한 항목만" 표시하려면 선택 상태가 저장돼 있어야 해서, 여기서 불러오고 저장함
+  // 선택한 측정항목·조사반경·검색 여부를 저장해뒀다가, 다시 들어왔을 때
+  // "반경 내 데이터 검색" 결과가 그대로 남아있도록 복원함
   useEffect(() => {
     if (!caseInfo?.id) return;
     supabase
@@ -100,14 +103,25 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
           if (Array.isArray(data.row_data.selected)) {
             setSelected(new Set(data.row_data.selected));
           }
+          if (typeof data.row_data.radius === "number") {
+            setRadius(data.row_data.radius);
+          }
+          if (data.row_data.searched) {
+            setPendingRestore(true);
+          }
         }
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseInfo?.id]);
 
-  async function persistSelected(nextSet) {
+  async function persistSettings(patch = {}) {
     if (!caseInfo?.id) return;
-    const row_data = { category: "settings", selected: Array.from(nextSet) };
+    const row_data = {
+      category: "settings",
+      selected: Array.from(patch.selected ?? selected),
+      radius: patch.radius ?? radius,
+      searched: patch.searched ?? searched,
+    };
     if (settingsRowId) {
       await supabase.from("module_rows").update({ row_data, updated_at: new Date().toISOString() }).eq("id", settingsRowId);
     } else {
@@ -119,6 +133,15 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
       if (data) setSettingsRowId(data.id);
     }
   }
+
+  // 설정에서 검색 이력을 복원했으면 좌표가 준비되는 대로 한 번 자동으로 재검색해서
+  // "반경 내 데이터 검색" 버튼을 다시 누르지 않아도 결과가 그대로 보이게 함
+  useEffect(() => {
+    if (autoSearchTriggered.current || !pendingRestore || !coords) return;
+    autoSearchTriggered.current = true;
+    handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingRestore, coords]);
 
   async function handleGeocode() {
     if (!caseInfo?.address) return;
@@ -159,7 +182,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      persistSelected(next);
+      persistSettings({ selected: next });
       return next;
     });
   }
@@ -206,6 +229,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
 
     setResults(withDistance);
     setSearching(false);
+    persistSettings({ radius, searched: true });
   }
 
   // 이미 한 번 검색한 뒤에는 반경 슬라이더를 움직일 때마다(디바운스 후) 자동으로 다시 검색해요.
