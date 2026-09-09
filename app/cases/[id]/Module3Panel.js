@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CategorizedRowsTable from "./CategorizedRowsTable";
 import ChecklistJudgmentForm from "./ChecklistJudgmentForm";
+import OwnershipTableUpload from "./OwnershipTableUpload";
 
 const OWNERSHIP_FIELDS = [
   { key: "owner_name", label: "소유자명" },
@@ -31,6 +32,7 @@ const COST_CAPACITY_FIELDS = [
 const OWNERSHIP_SUB_TABS = [
   { key: "ownership", label: "소유 이력" },
   { key: "lease", label: "임대차 이력" },
+  { key: "table", label: "증빙 표" },
 ];
 
 // 3.1 소유·점유·운영 안의 "소유·임대차 이력" 도구. (항공사진/DART는 별도 컴포넌트를 그대로 씀)
@@ -39,7 +41,19 @@ export function OwnershipLeaseSection({ caseId }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--color-border)", marginBottom: 16 }}>
+      <ChecklistJudgmentForm
+        caseId={caseId}
+        moduleNumber={3}
+        category="ownership_lease"
+        checklistOptions={[
+          { key: "lease_contract", label: "임대차계약서" },
+          { key: "land_registry", label: "토지대장" },
+        ]}
+        summaryLabel="토양오염관리대상시설(또는 부지)의 소유·점유 또는 운영"
+        summaryPlaceholder="예: 토지대장 상 자문부지는 '89년 소유권이 이전되었고..."
+      />
+
+      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--color-border)", margin: "18px 0 16px" }}>
         {OWNERSHIP_SUB_TABS.map((t) => (
           <button
             key={t.key}
@@ -92,6 +106,8 @@ export function OwnershipLeaseSection({ caseId }) {
           />
         </>
       )}
+
+      {subTab === "table" && <OwnershipTableUpload caseId={caseId} />}
     </div>
   );
 }
