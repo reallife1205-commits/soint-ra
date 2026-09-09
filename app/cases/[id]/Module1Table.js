@@ -368,7 +368,7 @@ export default function Module1Table({ caseId, caseInfo }) {
 
                   return [...itemRows, subtotalRow];
                 })}
-                {depthGroups.map((dg, i) => {
+                {groups.length > 1 && depthGroups.map((dg, i) => {
                   const ds = summarizeGroup(dg.items);
                   return (
                     <tr key={`overall-${dg.label}-${i}`} style={{ fontWeight: 600 }}>
