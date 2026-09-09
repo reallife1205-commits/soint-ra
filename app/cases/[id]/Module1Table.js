@@ -268,6 +268,22 @@ export default function Module1Table({ caseId, caseInfo }) {
                                 fontWeight: 600,
                               }}
                             />
+                            <button
+                              onClick={() => addRow({ contaminant: group.name })}
+                              title="이 오염물질에 심도 행 추가"
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                marginTop: 4,
+                                border: "none",
+                                background: "transparent",
+                                color: "var(--color-primary)",
+                                cursor: "pointer",
+                                fontSize: 13,
+                              }}
+                            >
+                              + 심도 추가
+                            </button>
                           </td>
                         )}
                         {fields.map((f) => (
@@ -429,7 +445,7 @@ export default function Module1Table({ caseId, caseInfo }) {
         style={{ marginTop: 12 }}
         onClick={() => addRow({})}
       >
-        + 심도 행 추가
+        + 새 오염물질 추가
       </button>
 
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 12 }}>
