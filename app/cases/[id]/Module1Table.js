@@ -8,11 +8,11 @@ import { CONCERN_STANDARDS, ACTION_STANDARDS, parseRegionGrade } from "@/lib/soi
 const FIELDS = [
   { key: "contaminant", label: "오염물질", width: 120 },
   { key: "depth", label: "심도", width: 80 },
-  { key: "depth_start", label: "시작 깊이", width: 60, group: "깊이(m)" },
-  { key: "depth_end", label: "끝 깊이", width: 60, group: "깊이(m)" },
-  { key: "concern_standard", label: "우려기준 초과", width: 85, group: "초과내역(시료수)" },
-  { key: "action_standard", label: "대책기준 초과", width: 85, group: "초과내역(시료수)" },
-  { key: "max_concentration", label: "최고농도", unit: "(mg/kg)", width: 150 },
+  { key: "depth_start", label: "시작 깊이", width: 72, group: "깊이(m)" },
+  { key: "depth_end", label: "끝 깊이", width: 72, group: "깊이(m)" },
+  { key: "concern_standard", label: "우려기준 초과", width: 100, group: "초과내역(시료수)" },
+  { key: "action_standard", label: "대책기준 초과", width: 100, group: "초과내역(시료수)" },
+  { key: "max_concentration", label: "최고농도", unit: "(mg/kg)", width: 125 },
   { key: "area", label: "오염면적", unit: "(m²)", footnote: "1)", width: 110 },
   { key: "volume", label: "오염량", unit: "(m³)", footnote: "2)", width: 100 },
 ];
@@ -127,6 +127,12 @@ export default function Module1Table({ caseId, caseInfo }) {
   const grandTotal = summarizeGroup(
     rows.map((row) => ({ data: localValues[row.id] || row.row_data }))
   );
+  // 오염면적은 심도별 중첩이 있어 단순 합산이 아니라 물질별로 직접 입력받고,
+  // 전체 합계는 그 입력값들을 더한 값으로 계산한다(오염량은 기존대로 단순 합산 유지).
+  const grandAreaTotal = groups.reduce(
+    (sum, g) => sum + toNum(g.items[0]?.data?.area_total),
+    0
+  );
 
   const depthGroups = [];
   const depthGroupIndex = {};
@@ -219,11 +225,7 @@ export default function Module1Table({ caseId, caseInfo }) {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {f.label.includes(" ")
-                      ? f.label.split(" ").map((part, i) => (
-                          <div key={i}>{part}</div>
-                        ))
-                      : f.label}
+                    {f.label}
                   </th>
                 ))
               )}
@@ -343,6 +345,8 @@ export default function Module1Table({ caseId, caseInfo }) {
                   });
 
                   const s = summarizeGroup(group.items);
+                  const firstRow = group.items[0].row;
+                  const firstRowData = localValues[firstRow.id] || firstRow.row_data;
                   const subtotalRow = (
                     <tr key={`${group.name}-subtotal`} style={{ fontWeight: 600 }}>
                       <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
@@ -362,8 +366,24 @@ export default function Module1Table({ caseId, caseInfo }) {
                       <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {s.maxConc !== null ? formatSum(s.maxConc) : "-"}
                       </td>
-                      <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
-                        {formatSum(s.area)}
+                      <td style={{ padding: "2px 6px", border: CELL_BORDER }}>
+                        <input
+                          value={firstRowData.area_total || ""}
+                          onChange={(e) => handleLocalChange(firstRow.id, "area_total", e.target.value)}
+                          onBlur={() => handleBlurSave(firstRow, "area_total")}
+                          placeholder="직접 입력"
+                          title="심도별 중첩을 감안한 실제 오염면적을 직접 입력"
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            textAlign: "center",
+                            background: "var(--color-badge-blue-bg)",
+                            padding: "6px 4px",
+                            borderRadius: 4,
+                            fontSize: 15,
+                            fontWeight: 600,
+                          }}
+                        />
                       </td>
                       <td style={{ padding: "6px 6px", textAlign: "center", border: CELL_BORDER }}>
                         {formatSum(s.volume)}
@@ -434,7 +454,7 @@ export default function Module1Table({ caseId, caseInfo }) {
                     </td>
                     <td style={{ textAlign: "center", border: CELL_BORDER }}>—</td>
                     <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                      {formatSum(grandTotal.area)}
+                      {formatSum(grandAreaTotal)}
                     </td>
                     <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
                       {formatSum(grandTotal.volume)}
@@ -465,7 +485,7 @@ export default function Module1Table({ caseId, caseInfo }) {
         자동 비교해 색이 표시돼요. {zone ? "" : "지역등급이 입력되지 않아 지금은 자동 판정이 꺼져 있어요."}
       </div>
       <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 6 }}>
-        1) 오염면적(m²): 각 심도별 중첩부분을 감안한 최대 넓이　2) 오염량(m³): 심도별 오염량의 합
+        1) 오염면적(m²): 각 심도별 중첩부분을 감안한 넓이로, 물질별 합계 칸에 직접 입력　2) 오염량(m³): 심도별 오염량의 합
       </div>
     </div>
   );
