@@ -40,7 +40,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
-  const [radius, setRadius] = useState(4);
+  const [radius, setRadius] = useState(2);
   const [infoMsg, setInfoMsg] = useState("");
 
   const load = useCallback(async () => {
