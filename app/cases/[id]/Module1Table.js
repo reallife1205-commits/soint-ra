@@ -10,9 +10,9 @@ const FIELDS = [
   { key: "depth", label: "심도", width: 80 },
   { key: "depth_start", label: "시작 깊이", width: 60, group: "깊이(m)" },
   { key: "depth_end", label: "끝 깊이", width: 60, group: "깊이(m)" },
-  { key: "concern_standard", label: "우려기준 초과", width: 110, group: "초과내역(시료수)" },
-  { key: "action_standard", label: "대책기준 초과", width: 110, group: "초과내역(시료수)" },
-  { key: "max_concentration", label: "최고농도", unit: "(mg/kg)", width: 130 },
+  { key: "concern_standard", label: "우려기준 초과", width: 85, group: "초과내역(시료수)" },
+  { key: "action_standard", label: "대책기준 초과", width: 85, group: "초과내역(시료수)" },
+  { key: "max_concentration", label: "최고농도", unit: "(mg/kg)", width: 150 },
   { key: "area", label: "오염면적", unit: "(m²)", footnote: "1)", width: 110 },
   { key: "volume", label: "오염량", unit: "(m³)", footnote: "2)", width: 100 },
 ];
@@ -148,7 +148,7 @@ export default function Module1Table({ caseId, caseInfo }) {
         ))}
       </datalist>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
+        <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 15 }}>
           <thead>
             <tr style={{ background: "#f6f8f4" }}>
               {HEADER_GROUPS.map((g) =>
@@ -172,6 +172,7 @@ export default function Module1Table({ caseId, caseInfo }) {
                     key={g.fields[0].key}
                     rowSpan={2}
                     style={{
+                      width: g.fields[0].width,
                       textAlign: "center",
                       padding: "10px 8px",
                       border: CELL_BORDER,
@@ -209,7 +210,8 @@ export default function Module1Table({ caseId, caseInfo }) {
                   <th
                     key={f.key}
                     style={{
-                      textAlign: "left",
+                      width: f.width,
+                      textAlign: "center",
                       padding: "8px 8px 10px",
                       border: CELL_BORDER,
                       fontWeight: 600,
@@ -217,7 +219,11 @@ export default function Module1Table({ caseId, caseInfo }) {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {f.label}
+                    {f.label.includes(" ")
+                      ? f.label.split(" ").map((part, i) => (
+                          <div key={i}>{part}</div>
+                        ))
+                      : f.label}
                   </th>
                 ))
               )}
