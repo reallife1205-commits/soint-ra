@@ -410,30 +410,32 @@ export default function Module1Table({ caseId, caseInfo }) {
                     </tr>
                   );
                 })}
-                <tr style={{ fontWeight: 700 }}>
-                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                    합계
-                  </td>
-                  <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                    {grandTotal.minStart !== null && grandTotal.maxEnd !== null
-                      ? `${grandTotal.minStart}-${grandTotal.maxEnd}`
-                      : "-"}
-                  </td>
-                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                    {formatSum(grandTotal.concern)}
-                  </td>
-                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                    {formatSum(grandTotal.action)}
-                  </td>
-                  <td style={{ textAlign: "center", border: CELL_BORDER }}>—</td>
-                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                    {formatSum(grandTotal.area)}
-                  </td>
-                  <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
-                    {formatSum(grandTotal.volume)}
-                  </td>
-                  <td style={{ border: CELL_BORDER }}></td>
-                </tr>
+                {groups.length > 1 && (
+                  <tr style={{ fontWeight: 700 }}>
+                    <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
+                      합계
+                    </td>
+                    <td colSpan={2} style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
+                      {grandTotal.minStart !== null && grandTotal.maxEnd !== null
+                        ? `${grandTotal.minStart}-${grandTotal.maxEnd}`
+                        : "-"}
+                    </td>
+                    <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
+                      {formatSum(grandTotal.concern)}
+                    </td>
+                    <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
+                      {formatSum(grandTotal.action)}
+                    </td>
+                    <td style={{ textAlign: "center", border: CELL_BORDER }}>—</td>
+                    <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
+                      {formatSum(grandTotal.area)}
+                    </td>
+                    <td style={{ padding: "8px 6px", textAlign: "center", border: CELL_BORDER }}>
+                      {formatSum(grandTotal.volume)}
+                    </td>
+                    <td style={{ border: CELL_BORDER }}></td>
+                  </tr>
+                )}
               </>
             )}
           </tbody>
