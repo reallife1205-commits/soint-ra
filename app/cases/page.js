@@ -19,6 +19,7 @@ export default function CasesPage() {
   const [statusFilter, setStatusFilter] = useState("전체");
   const [showAddForm, setShowAddForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   async function loadData() {
     setLoading(true);
@@ -59,17 +60,19 @@ export default function CasesPage() {
     loadData();
   }, []);
 
+  // 공유 비밀번호 하나로 누구나 들어오는 사이트라 실수로 삭제 버튼을 누르는 걸 막기 위해,
+  // window.confirm 대신 안건번호를 정확히 타이핑해야만 삭제가 실행되는 모달을 띄운다.
+  function handleDeleteCase(e, c) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeleteTarget(c);
+  }
+
   // 안건과 그 아래 딸린 모든 자료(표 입력값, 문서, 항공사진 태그 등)를 완전히 삭제한다.
   // 대부분 테이블에 on delete cascade가 걸려 있지만, 스토리지 파일은 DB cascade로 안 지워지므로
   // 먼저 documents의 file_path들을 스토리지에서 지운 다음 관련 테이블을 명시적으로 정리한다.
-  async function handleDeleteCase(e, c) {
-    e.preventDefault();
-    e.stopPropagation();
-    const ok = window.confirm(
-      `"${c.case_number} · ${c.company_name}" 안건을 삭제할까요?\n입력된 모든 자료(표, 업로드한 문서·사진 등)가 함께 영구 삭제되며 되돌릴 수 없어요.`
-    );
-    if (!ok) return;
-
+  async function confirmDeleteCase(c) {
+    setDeleteTarget(null);
     setDeletingId(c.id);
 
     const { data: docs } = await supabase
@@ -385,6 +388,77 @@ export default function CasesPage() {
           }}
         />
       )}
+
+      {deleteTarget && (
+        <DeleteCaseModal
+          caseInfo={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => confirmDeleteCase(deleteTarget)}
+        />
+      )}
+    </div>
+  );
+}
+
+// 안건번호를 정확히 타이핑해야만 삭제 버튼이 눌리는 확인 모달.
+// 공유 비밀번호로 누구나 들어오는 사이트라 실수 클릭 방지가 목적.
+function DeleteCaseModal({ caseInfo, onClose, onConfirm }) {
+  const [input, setInput] = useState("");
+  const matched = input === caseInfo.case_number;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.35)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+      }}
+    >
+      <div className="card" style={{ width: 420, background: "white" }}>
+        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
+          안건 삭제
+        </div>
+        <div style={{ fontSize: 15, marginBottom: 14 }}>
+          <strong>{caseInfo.case_number} · {caseInfo.company_name}</strong> 안건을
+          삭제합니다. 입력된 모든 자료(표, 업로드한 문서·사진 등)가 함께
+          영구 삭제되며 되돌릴 수 없어요.
+        </div>
+        <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+          확인을 위해 안건번호 <strong>{caseInfo.case_number}</strong>를 정확히
+          입력해주세요
+        </label>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={caseInfo.case_number}
+          style={{
+            width: "100%",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid var(--color-border)",
+            marginTop: 4,
+            marginBottom: 16,
+          }}
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            취소
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!matched}
+            onClick={onConfirm}
+            style={!matched ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+          >
+            영구 삭제
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
