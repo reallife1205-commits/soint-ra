@@ -51,7 +51,7 @@ export default function CaseDetailPage() {
   const [activeTool, setActiveTool] = useState(null);
   const [moduleStatus, setModuleStatus] = useState({});
   const [editingMeta, setEditingMeta] = useState(false);
-  const [metaForm, setMetaForm] = useState({ manager: "", due_date: "" });
+  const [metaForm, setMetaForm] = useState({ address: "", manager: "", due_date: "" });
   const [savingMeta, setSavingMeta] = useState(false);
 
   const loadCase = useCallback(async () => {
@@ -83,6 +83,7 @@ export default function CaseDetailPage() {
   useEffect(() => {
     if (caseInfo && !editingMeta) {
       setMetaForm({
+        address: caseInfo.address || "",
         manager: caseInfo.manager || "",
         due_date: caseInfo.due_date || "",
       });
@@ -94,6 +95,7 @@ export default function CaseDetailPage() {
     await supabase
       .from("cases")
       .update({
+        address: metaForm.address || null,
         manager: metaForm.manager || null,
         due_date: metaForm.due_date || null,
       })
@@ -211,9 +213,20 @@ export default function CaseDetailPage() {
           </div>
           {editingMeta ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-              <span style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-                {caseInfo.address}
-              </span>
+              <input
+                value={metaForm.address}
+                onChange={(e) =>
+                  setMetaForm((f) => ({ ...f, address: e.target.value }))
+                }
+                placeholder="주소"
+                style={{
+                  width: 260,
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  border: "1px solid var(--color-border)",
+                  fontSize: 14,
+                }}
+              />
               <input
                 value={metaForm.manager}
                 onChange={(e) =>
