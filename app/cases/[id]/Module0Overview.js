@@ -22,7 +22,7 @@ function formatSum(n) {
   return Number(Math.round(n * 100) / 100).toLocaleString("ko-KR", { maximumFractionDigits: 2 });
 }
 
-export default function Module0Overview({ caseId }) {
+export default function Module0Overview({ caseId, onAddressUpdated }) {
   const [rowId, setRowId] = useState(null);
   const [form, setForm] = useState({
     advisory_subject: "",
@@ -92,6 +92,14 @@ export default function Module0Overview({ caseId }) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  // 자문대상에 부지 주소를 적어 쓰는 경우가 많아서, 저장할 때 안건의 실제 주소(상단 헤더,
+  // 지도/좌표 계산에 쓰이는 cases.address)도 같은 값으로 함께 맞춰준다.
+  async function handleAdvisorySubjectBlur() {
+    await handleBlurSave();
+    await supabase.from("cases").update({ address: form.advisory_subject || null }).eq("id", caseId);
+    onAddressUpdated?.(form.advisory_subject);
+  }
+
   async function handleBlurSave(overrides = {}) {
     setSaving(true);
     const newData = { category: "overview", ...form, ...overrides };
@@ -140,11 +148,11 @@ export default function Module0Overview({ caseId }) {
       <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>1.1 안건 개요</div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>자문대상</label>
+        <label style={labelStyle}>자문대상 (여기 적은 내용이 상단 헤더의 주소로도 함께 저장돼요)</label>
         <input
           value={form.advisory_subject}
           onChange={(e) => updateField("advisory_subject", e.target.value)}
-          onBlur={() => handleBlurSave()}
+          onBlur={handleAdvisorySubjectBlur}
           placeholder="예: ○○ 토양정화 계획서(안)에 대한 자문"
           style={inputStyle}
         />

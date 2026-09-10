@@ -399,7 +399,12 @@ export default function CaseDetailPage() {
         )}
 
         <div style={{ flex: 1 }}>
-          {activeChapter === "1" && <Module0Overview caseId={id} />}
+          {activeChapter === "1" && (
+            <Module0Overview
+              caseId={id}
+              onAddressUpdated={(address) => setCaseInfo((c) => ({ ...c, address }))}
+            />
+          )}
 
           {activeChapter === "2" && activeSubTab === "2.1" && (
             <Module1Panel caseId={id} caseInfo={caseInfo} />
