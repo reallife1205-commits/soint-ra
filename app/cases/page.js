@@ -18,6 +18,7 @@ export default function CasesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("전체");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   async function loadData() {
     setLoading(true);
@@ -57,6 +58,50 @@ export default function CasesPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // 안건과 그 아래 딸린 모든 자료(표 입력값, 문서, 항공사진 태그 등)를 완전히 삭제한다.
+  // 대부분 테이블에 on delete cascade가 걸려 있지만, 스토리지 파일은 DB cascade로 안 지워지므로
+  // 먼저 documents의 file_path들을 스토리지에서 지운 다음 관련 테이블을 명시적으로 정리한다.
+  async function handleDeleteCase(e, c) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ok = window.confirm(
+      `"${c.case_number} · ${c.company_name}" 안건을 삭제할까요?\n입력된 모든 자료(표, 업로드한 문서·사진 등)가 함께 영구 삭제되며 되돌릴 수 없어요.`
+    );
+    if (!ok) return;
+
+    setDeletingId(c.id);
+
+    const { data: docs } = await supabase
+      .from("documents")
+      .select("file_path")
+      .eq("case_id", c.id);
+    if (docs && docs.length > 0) {
+      await supabase.storage.from("documents").remove(docs.map((d) => d.file_path));
+    }
+
+    const relatedTables = [
+      "aerial_photo_tags",
+      "module_rows",
+      "module_status",
+      "documents",
+      "dart_search_results",
+      "factory_search_results",
+      "field_surveys",
+      "pollution_mappings",
+      "surrounding_impacts",
+      "review_opinions",
+      "timeline_analyses",
+    ];
+    for (const table of relatedTables) {
+      await supabase.from(table).delete().eq("case_id", c.id);
+    }
+
+    await supabase.from("cases").delete().eq("id", c.id);
+
+    setDeletingId(null);
+    loadData();
+  }
 
   const filteredCases = useMemo(() => {
     return cases.filter((c) => {
@@ -189,13 +234,32 @@ export default function CasesPage() {
                     key={c.id}
                     href={`/cases/${c.id}`}
                     className="card"
-                    style={{ display: "block" }}
+                    style={{ display: "block", position: "relative" }}
                   >
+                    <button
+                      onClick={(e) => handleDeleteCase(e, c)}
+                      disabled={deletingId === c.id}
+                      title="안건 삭제"
+                      style={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        border: "none",
+                        background: "transparent",
+                        color: "var(--color-text-muted)",
+                        cursor: "pointer",
+                        fontSize: 15,
+                        padding: 4,
+                      }}
+                    >
+                      {deletingId === c.id ? "삭제 중..." : "🗑️"}
+                    </button>
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "flex-start",
+                        paddingRight: 28,
                       }}
                     >
                       <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
