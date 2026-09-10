@@ -75,18 +75,68 @@ export default function Module4Panel({ caseId, caseInfo }) {
       </div>
 
       {tab === "map" && (
-        <AerialMapView
-          coords={coords}
-          address={caseInfo?.address}
-          boundary={caseInfo?.boundary_points}
-          boundaryEditable={true}
-          onBoundarySave={handleBoundarySave}
-        />
+        <>
+          <ExternalAerialLinks coords={coords} address={caseInfo?.address} />
+          <AerialMapView
+            coords={coords}
+            address={caseInfo?.address}
+            boundary={caseInfo?.boundary_points}
+            boundaryEditable={true}
+            onBoundarySave={handleBoundarySave}
+          />
+        </>
       )}
       {tab === "upload" && <UploadTaggingSection caseId={caseId} />}
       {tab === "timeline" && (
         <TimelinePanel caseId={caseId} onCountChange={setTimelineCount} />
       )}
+    </div>
+  );
+}
+
+// 과거 항공사진을 찾을 때 쓰는 외부 서비스로 바로 연결하는 버튼들.
+// 카카오맵은 URL에 좌표를 실으면 정확한 위치로 바로 이동해서 변곡점 스크리닝(스카이뷰)에 좋고,
+// 국토지리정보원은 위치를 URL로 못 넘겨서(내부 검색 상태라) 주소를 클립보드에 복사해주는 정도만 도와줌.
+function ExternalAerialLinks({ coords, address }) {
+  const [copied, setCopied] = useState(false);
+
+  function openKakaoSkyview() {
+    const name = encodeURIComponent(address || "대상부지");
+    window.open(`https://map.kakao.com/link/map/${name},${coords.lat},${coords.lon}`, "_blank");
+  }
+
+  function openNgii() {
+    // 팝업 차단을 피하려면 클립보드 복사(비동기) 전에 새 탭부터 동기적으로 열어야 함
+    window.open("https://map.ngii.go.kr/ms/map/NlipMap.do?tabGb=total", "_blank");
+    if (address) {
+      navigator.clipboard
+        .writeText(address)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+        })
+        .catch(() => {
+          // 클립보드 권한이 없어도 새 탭은 이미 열렸으니 그냥 무시
+        });
+    }
+  }
+
+  if (!coords) return null;
+
+  return (
+    <div
+      className="card"
+      style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}
+    >
+      <span style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+        과거 항공사진 찾기:
+      </span>
+      <button className="btn-secondary" onClick={openKakaoSkyview}>
+        🛰️ 카카오맵에서 정확한 위치 바로 보기
+      </button>
+      <button className="btn-secondary" onClick={openNgii}>
+        📍 국토지리정보원 항공사진 찾기 {copied && "(주소 복사됨!)"}
+      </button>
     </div>
   );
 }
