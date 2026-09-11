@@ -7,11 +7,18 @@ const LEGAL_REFERENCE_DATE = "1996-01-06"; // 토양환경보전법 시행일 �
 const PX_PER_YEAR = 50;
 const ROW_HEIGHT = 40;
 
+// 취득일/처분일 등이 이제 날짜선택기가 아니라 수기 텍스트라 "1989.9", "2008-01-10",
+// "2008" 등 형식이 제각각이다. 정확한 날짜 파싱 대신 연도(필수)와 있으면 월까지만
+// 관대하게 뽑아서 타임라인 위치를 근사한다. 연도를 못 찾으면(예: "현재") null 반환.
 function yearFraction(dateStr) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  return d.getFullYear() + d.getMonth() / 12 + d.getDate() / 365;
+  const yearMatch = dateStr.match(/(19|20)\d{2}/);
+  if (!yearMatch) return null;
+  const year = parseInt(yearMatch[0], 10);
+  const rest = dateStr.slice(yearMatch.index + yearMatch[0].length);
+  const monthMatch = rest.match(/\d{1,2}/);
+  const month = monthMatch ? Math.min(Math.max(parseInt(monthMatch[0], 10), 1), 12) : 1;
+  return year + (month - 1) / 12;
 }
 
 function formatDate(dateStr) {

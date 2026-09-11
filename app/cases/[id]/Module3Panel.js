@@ -7,8 +7,8 @@ import OwnershipTableUpload from "./OwnershipTableUpload";
 
 const OWNERSHIP_FIELDS = [
   { key: "owner_name", label: "소유자명" },
-  { key: "acquired_date", label: "취득일", type: "date" },
-  { key: "disposed_date", label: "처분일", type: "date" },
+  { key: "acquired_date", label: "취득일", placeholder: "예: 1989.9 또는 1989-09-08" },
+  { key: "disposed_date", label: "처분일", placeholder: "예: 2008 또는 현재" },
   { key: "acquisition_reason", label: "취득원인" },
   { key: "business_type", label: "업종" },
   { key: "note", label: "비고" },
@@ -17,8 +17,8 @@ const OWNERSHIP_FIELDS = [
 const LEASE_FIELDS = [
   { key: "tenant_name", label: "임차인명" },
   { key: "business_type", label: "업종" },
-  { key: "lease_start", label: "임차 시작", type: "date" },
-  { key: "lease_end", label: "임차 종료", type: "date" },
+  { key: "lease_start", label: "임차 시작", placeholder: "예: 2015.4 또는 2015-04-28" },
+  { key: "lease_end", label: "임차 종료", placeholder: "예: 2020 또는 현재" },
   { key: "lease_type", label: "유형" },
   { key: "note", label: "비고" },
 ];

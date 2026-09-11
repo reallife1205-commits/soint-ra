@@ -105,8 +105,11 @@ function InflectionYearsHint({ caseId }) {
   const byYear = {};
   function addEvent(dateStr, label) {
     if (!dateStr) return;
-    const year = dateStr.slice(0, 4);
-    if (!/^\d{4}$/.test(year)) return;
+    // 취득일/처분일 등이 날짜선택기가 아니라 수기 텍스트라 "1989.9", "2008" 등
+    // 형식이 제각각이라, 문자열 어디에 있든 4자리 연도를 찾아서 사용한다.
+    const match = dateStr.match(/(19|20)\d{2}/);
+    if (!match) return;
+    const year = match[0];
     if (!byYear[year]) byYear[year] = [];
     byYear[year].push(label);
   }
