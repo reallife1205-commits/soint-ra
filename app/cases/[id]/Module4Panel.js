@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
+import { useModuleRows } from "@/lib/useModuleRows";
 import { useAerialTags } from "@/lib/useAerialTags";
 import { FACILITY_TYPES, FACILITY_LABEL, FACILITY_COLOR } from "@/lib/facilityTypes";
 import TimelinePanel from "./TimelinePanel";
@@ -76,6 +77,7 @@ export default function Module4Panel({ caseId, caseInfo }) {
 
       {tab === "map" && (
         <>
+          <InflectionYearsHint caseId={caseId} />
           <ExternalAerialLinks coords={coords} address={caseInfo?.address} />
           <AerialMapView
             coords={coords}
@@ -90,6 +92,58 @@ export default function Module4Panel({ caseId, caseInfo }) {
       {tab === "timeline" && (
         <TimelinePanel caseId={caseId} onCountChange={setTimelineCount} />
       )}
+    </div>
+  );
+}
+
+// 3.1 소유·임대차 이력(취득일/처분일, 임차 시작/종료)에서 변동 시점의 연도를 뽑아
+// "이 연도들의 항공사진을 찾아보면 좋다"고 추천해주는 카드. 실제 항공사진 데이터를
+// 갖고 판단하는 게 아니라 소유·점유 변동 이력만 근거로 하는 참고용 추천이다.
+function InflectionYearsHint({ caseId }) {
+  const { rows } = useModuleRows(caseId, 3);
+
+  const byYear = {};
+  function addEvent(dateStr, label) {
+    if (!dateStr) return;
+    const year = dateStr.slice(0, 4);
+    if (!/^\d{4}$/.test(year)) return;
+    if (!byYear[year]) byYear[year] = [];
+    byYear[year].push(label);
+  }
+
+  rows.forEach((r) => {
+    const d = r.row_data;
+    if (d.category === "ownership") {
+      const who = d.owner_name || "소유자 미상";
+      const biz = d.business_type ? ` (${d.business_type})` : "";
+      addEvent(d.acquired_date, `${who} 소유 시작${biz}`);
+      addEvent(d.disposed_date, `${who} 소유 종료`);
+    } else if (d.category === "lease") {
+      const who = d.tenant_name || "임차인 미상";
+      const biz = d.business_type ? ` (${d.business_type})` : "";
+      addEvent(d.lease_start, `${who} 임차 시작${biz}`);
+      addEvent(d.lease_end, `${who} 임차 종료`);
+    }
+  });
+
+  const years = Object.keys(byYear).sort();
+  if (years.length === 0) return null;
+
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
+        📅 항공사진 변곡점 연도 추천 (3.1 소유·임대차 이력 기준)
+      </div>
+      <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
+        아래 연도 전후로 항공사진을 찾아보시면 부지 용도가 바뀐 시점을 확인하기 좋아요.
+      </div>
+      <ul style={{ margin: 0, paddingLeft: 20 }}>
+        {years.map((y) => (
+          <li key={y} style={{ fontSize: 15, marginBottom: 4 }}>
+            <strong>{y}년</strong> — {byYear[y].join(", ")}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
