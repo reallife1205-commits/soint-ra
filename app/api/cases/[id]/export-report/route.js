@@ -86,6 +86,7 @@ async function fetchCaseData(caseId) {
     { data: ownershipRows },
     { data: factoryHistoryRows },
     { data: fieldSurvey },
+    { data: scientificRows },
   ] = await Promise.all([
     supabaseAdmin.from("cases").select("*").eq("id", caseId).single(),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 0),
@@ -94,6 +95,7 @@ async function fetchCaseData(caseId) {
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 5),
     supabaseAdmin.from("field_surveys").select("*").eq("case_id", caseId).maybeSingle(),
+    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 8),
   ]);
 
   if (!caseInfo) return null;
@@ -102,6 +104,8 @@ async function fetchCaseData(caseId) {
   const m2 = (module2Rows || []).map((r) => r.row_data);
   const m3 = (ownershipRows || []).map((r) => r.row_data);
   const m5 = (factoryHistoryRows || []).map((r) => r.row_data);
+  const m8 = (scientificRows || []).map((r) => r.row_data);
+  const scientificAnalysis = m8.find((d) => d.category === "scientific_analysis")?.content || "";
   const module2Settings = m2.find((d) => d.category === "settings");
   const selectedSubstances = module2Settings ? module2Settings.selected || [] : null;
 
@@ -160,6 +164,7 @@ async function fetchCaseData(caseId) {
     aerialImages,
     fieldPhotoImages,
     fieldSurvey,
+    scientificAnalysis,
   };
 }
 
