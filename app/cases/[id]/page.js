@@ -20,6 +20,7 @@ import SurroundingImpactTab from "./Module7SurroundingImpact";
 import ReviewOpinionTab from "./Module7ReviewOpinion";
 import ModuleCompletionToggle from "./ModuleCompletionToggle";
 import DocumentUpload from "./DocumentUpload";
+import Module8ScientificAnalysis from "./Module8ScientificAnalysis";
 
 const SUB_TAB_31 = [
   { key: "ownership", label: "소유·임대차 이력", moduleNumber: 3 },
@@ -475,11 +476,7 @@ export default function CaseDetailPage() {
 
           {activeChapter === "4" && <Module6Panel caseId={id} />}
 
-          {activeChapter === "5" && (
-            <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
-              ※ 추후 작성 예정 — 아직 입력 항목이 없어요.
-            </div>
-          )}
+          {activeChapter === "5" && <Module8ScientificAnalysis caseId={id} />}
 
           {activeChapter === "6" && (
             <>
