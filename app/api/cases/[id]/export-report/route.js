@@ -192,7 +192,10 @@ async function fetchCaseData(caseId) {
     costCapacityItems: m3.filter((d) => d.category === "cost_capacity_item"),
     aerialImages,
     fieldPhotoImages,
+    // 2.1엔 그림이 두 장 있음: "그림 시료채취지점"엔 sample_points 사진, "[표1] 오염면적"엔
+    // pollution_map 사진(둘 중 하나가 비면 서로 대신 쓴다).
     samplePointImages: samplePointImages.length ? samplePointImages : pollutionMapImages,
+    pollutionMapImages: pollutionMapImages.length ? pollutionMapImages : samplePointImages,
     surroundingImages,
     sitePlanImages,
     fieldSurvey,
