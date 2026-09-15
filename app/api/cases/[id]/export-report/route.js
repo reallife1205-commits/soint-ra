@@ -153,6 +153,7 @@ async function fetchCaseData(caseId) {
     },
     factoryHistoryItems: m5.filter((d) => d.category === "factory_history_item"),
     judgments: {
+      ownership_lease: judgmentByCategory(m3, "ownership_lease"),
       soil_assessment: judgmentByCategory(m3, "soil_assessment"),
       cost_capacity: judgmentByCategory(m3, "cost_capacity"),
       access: judgmentByCategory(m3, "access"),
