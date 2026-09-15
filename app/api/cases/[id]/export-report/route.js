@@ -16,7 +16,7 @@ const supabaseAdmin = createClient(
 );
 
 const DEFAULT_RADIUS_KM = 4;
-const MAX_PHOTOS = 4;
+const MAX_PHOTOS = 9;
 const IMAGE_TYPE_BY_EXT = { png: "png", jpg: "jpg", jpeg: "jpg", gif: "gif", bmp: "bmp" };
 
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -51,14 +51,18 @@ function judgmentByCategory(rowDataList, category) {
   return rowDataList.find((d) => d.category === category) || null;
 }
 
-async function fetchImages(caseId, moduleNumber, limit) {
-  const { data: docs } = await supabaseAdmin
+// category: 생략하면 카테고리 무관하게(현장사진처럼 photo_note를 자유 캡션으로 쓰는 경우),
+// null이면 category가 비어있는 문서만(사이드바 "참고 문서" 업로드), 문자열이면 그 카테고리만
+// (예: 1번 모듈의 "sample_points") 가져온다.
+async function fetchImages(caseId, moduleNumber, limit, category) {
+  let query = supabaseAdmin
     .from("documents")
     .select("*")
     .eq("case_id", caseId)
-    .eq("module_number", moduleNumber)
-    .order("uploaded_at", { ascending: false })
-    .limit(limit);
+    .eq("module_number", moduleNumber);
+  if (category === null) query = query.is("category", null);
+  else if (category !== undefined) query = query.eq("category", category);
+  const { data: docs } = await query.order("uploaded_at", { ascending: false }).limit(limit);
 
   if (!docs?.length) return [];
 
@@ -70,7 +74,7 @@ async function fetchImages(caseId, moduleNumber, limit) {
       const { data: blob, error } = await supabaseAdmin.storage.from("documents").download(doc.file_path);
       if (error || !blob) return null;
       const buf = Buffer.from(await blob.arrayBuffer());
-      return { data: buf, type };
+      return { data: buf, type, caption: doc.photo_note || "" };
     })
   );
 
@@ -119,11 +123,21 @@ async function fetchCaseData(caseId) {
     .map((d) => d.owner_name)
     .filter(Boolean);
 
-  const [soilDataRows, aerialImages, fieldPhotoImages] = await Promise.all([
-    fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
-    fetchImages(caseId, 4, 8),
-    fetchImages(caseId, 6, MAX_PHOTOS),
-  ]);
+  const [soilDataRows, aerialImages, fieldPhotoImages, samplePointImages, surroundingImages, sitePlanImages] =
+    await Promise.all([
+      fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
+      fetchImages(caseId, 4, 8),
+      fetchImages(caseId, 6, MAX_PHOTOS),
+      // 2.1 "시료채취지점" 사진(챕터01 이미지 갤러리, category=sample_points)
+      fetchImages(caseId, 1, 1, "sample_points"),
+      // 2.2는 전용 업로드가 없어서, 그 화면(모듈2)에서 사이드바로 올린 일반 참고 문서(category
+      // 없음) 중 첫 장을 쓴다.
+      fetchImages(caseId, 2, 1, null),
+      // 3.4 배치도면도 전용 업로드가 없어서, 그 화면(모듈3 체크리스트 탭)에서 사이드바로 올린
+      // 일반 참고 문서(category 없음, 소유이력 증빙표 업로드는 category="ownership_table"이라
+      // 안 섞임) 중 첫 장을 쓴다.
+      fetchImages(caseId, 3, 1, null),
+    ]);
   const networkRows = soilDataRows.filter((r) => r.source_type === "측정망");
   const surveyRows = soilDataRows.filter((r) => r.source_type === "실태조사");
 
@@ -164,6 +178,9 @@ async function fetchCaseData(caseId) {
     costCapacityItems: m3.filter((d) => d.category === "cost_capacity_item"),
     aerialImages,
     fieldPhotoImages,
+    samplePointImages,
+    surroundingImages,
+    sitePlanImages,
     fieldSurvey,
     scientificAnalysis,
   };
