@@ -123,21 +123,35 @@ async function fetchCaseData(caseId) {
     .map((d) => d.owner_name)
     .filter(Boolean);
 
-  const [soilDataRows, aerialImages, fieldPhotoImages, samplePointImages, surroundingImages, sitePlanImages] =
-    await Promise.all([
-      fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
-      fetchImages(caseId, 4, 8),
-      fetchImages(caseId, 6, MAX_PHOTOS),
-      // 2.1 "시료채취지점" 사진(챕터01 이미지 갤러리, category=sample_points)
-      fetchImages(caseId, 1, 1, "sample_points"),
-      // 2.2는 전용 업로드가 없어서, 그 화면(모듈2)에서 사이드바로 올린 일반 참고 문서(category
-      // 없음) 중 첫 장을 쓴다.
-      fetchImages(caseId, 2, 1, null),
-      // 3.4 배치도면도 전용 업로드가 없어서, 그 화면(모듈3 체크리스트 탭)에서 사이드바로 올린
-      // 일반 참고 문서(category 없음, 소유이력 증빙표 업로드는 category="ownership_table"이라
-      // 안 섞임) 중 첫 장을 쓴다.
-      fetchImages(caseId, 3, 1, null),
-    ]);
+  const [
+    soilDataRows,
+    aerialImages,
+    fieldPhotoImages,
+    samplePointImages,
+    pollutionMapImages,
+    surroundingImages2,
+    surroundingImages7,
+    sitePlanImages,
+  ] = await Promise.all([
+    fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
+    fetchImages(caseId, 4, 8),
+    fetchImages(caseId, 6, MAX_PHOTOS),
+    // 2.1 "시료채취지점" 사진(챕터01 이미지 갤러리, category=sample_points)
+    fetchImages(caseId, 1, 5, "sample_points"),
+    // 2.1에 "오염분포도"로 올린 사진도 있으면 시료채취지점 사진이 없을 때 대신 쓴다
+    fetchImages(caseId, 1, 5, "pollution_map"),
+    // 2.2는 전용 업로드가 없어서, 그 화면(모듈2 "주변부지 조사" 탭)에서 사이드바로 올린 일반
+    // 참고 문서(category 없음) 중 이미지를 쓴다. "주변부지 영향 판단" 탭(모듈7)에서 올렸을
+    // 수도 있어 그쪽도 같이 확인한다. limit을 5로 넉넉히 잡는 건, 가장 최근 업로드가 이미지가
+    // 아닌 파일(pdf 등)이면 그 다음 걸 찾아야 하기 때문.
+    fetchImages(caseId, 2, 5, null),
+    fetchImages(caseId, 7, 5, null),
+    // 3.4 배치도면도 전용 업로드가 없어서, 그 화면(모듈3 체크리스트 탭)에서 사이드바로 올린
+    // 일반 참고 문서(category 없음, 소유이력 증빙표 업로드는 category="ownership_table"이라
+    // 안 섞임) 중 이미지를 쓴다.
+    fetchImages(caseId, 3, 5, null),
+  ]);
+  const surroundingImages = [...surroundingImages2, ...surroundingImages7];
   const networkRows = soilDataRows.filter((r) => r.source_type === "측정망");
   const surveyRows = soilDataRows.filter((r) => r.source_type === "실태조사");
 
@@ -178,7 +192,7 @@ async function fetchCaseData(caseId) {
     costCapacityItems: m3.filter((d) => d.category === "cost_capacity_item"),
     aerialImages,
     fieldPhotoImages,
-    samplePointImages,
+    samplePointImages: samplePointImages.length ? samplePointImages : pollutionMapImages,
     surroundingImages,
     sitePlanImages,
     fieldSurvey,
