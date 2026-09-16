@@ -225,6 +225,7 @@ export async function GET(req, { params }) {
       headers: {
         "Content-Type": "application/octet-stream",
         "Content-Disposition": `attachment; filename*=UTF-8''${fileName}`,
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (e) {
