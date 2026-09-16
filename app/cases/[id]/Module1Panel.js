@@ -20,18 +20,27 @@ export default function Module1Panel({ caseId, caseInfo }) {
   const [captureError, setCaptureError] = useState("");
   const [galleryRefreshKey, setGalleryRefreshKey] = useState(0);
 
-  // 오염현황 테이블 화면을 그대로 캡처해서 저장 — 보고서([표1] 오염면적 및 오염범위) 자리엔
-  // 표 그대로가 아니라 이 화면 캡처 이미지가 들어간다(주변부지 지도 캡처와 동일한 방식).
+  // 오염현황 테이블 화면을 캡처해서 저장 — 보고서([표1] 오염면적 및 오염범위) 자리엔 표 그대로가
+  // 아니라 이 화면 캡처 이미지가 들어간다(주변부지 지도 캡처와 동일한 방식). "+ 새 오염물질
+  // 추가" 버튼이나 범례 설명까지 같이 찍히지 않게, 감싸는 카드 전체가 아니라 그 안의 <table>
+  // 요소만 정확히 찾아서 캡처한다. 또한 html2canvas는 기본적으로 현재 창 스크롤 위치를 기준으로
+  // 캡처 범위를 계산해서, 표가 화면 위쪽으로 살짝 스크롤되어 있으면 제목줄 윗부분이 잘려
+  // 캡처되는 문제가 있었다(사용자 확인) — scrollX/scrollY를 보정해 스크롤 위치와 무관하게
+  // 요소 전체가 온전히 찍히게 한다.
   async function handleCaptureTable() {
-    if (!tableWrapperRef.current || !caseId) return;
+    const tableEl = tableWrapperRef.current?.querySelector("table");
+    if (!tableEl || !caseId) return;
     setCapturing(true);
     setCaptureError("");
     try {
       const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(tableWrapperRef.current, {
+      const canvas = await html2canvas(tableEl, {
         useCORS: true,
         allowTaint: false,
         logging: false,
+        backgroundColor: "#ffffff",
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("이미지 변환 실패");

@@ -257,10 +257,15 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
     setCaptureError("");
     try {
       const html2canvas = (await import("html2canvas")).default;
+      // html2canvas는 기본적으로 현재 창 스크롤 위치를 기준으로 캡처 범위를 계산해서, 지도가
+      // 화면 위쪽으로 스크롤되어 있으면 윗부분이 잘려 캡처될 수 있다 — 오염현황 테이블
+      // 캡처에서 실제로 확인된 문제라 여기도 동일하게 보정한다.
       const canvas = await html2canvas(mapWrapperRef.current, {
         useCORS: true,
         allowTaint: false,
         logging: false,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("이미지 변환 실패");
