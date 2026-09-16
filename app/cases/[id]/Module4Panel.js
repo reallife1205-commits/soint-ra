@@ -226,6 +226,14 @@ function UploadTaggingSection({ caseId }) {
     loadDocs();
   }, [loadDocs]);
 
+  // 보고서 내보내기가 이 연도 순서로 항공사진을 채워서(오래된 연도부터), 업로드한 순서와
+  // 실제 촬영 연도가 다르면 꼭 여기서 연도를 지정해줘야 순서가 맞음.
+  async function updateYear(docId, year) {
+    const photo_year = year === "" ? null : parseInt(year, 10);
+    setDocs((prev) => prev.map((d) => (d.id === docId ? { ...d, photo_year } : d)));
+    await supabase.from("documents").update({ photo_year }).eq("id", docId);
+  }
+
   const selectedDoc = docs.find((d) => d.id === selectedDocId) || null;
 
   useEffect(() => {
@@ -278,35 +286,60 @@ function UploadTaggingSection({ caseId }) {
             아직 업로드된 항공사진이 없어요. 왼쪽에서 먼저 파일을 업로드해주세요.
           </div>
         ) : (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {docs.map((doc) => {
-              const isImage = IMAGE_EXT_RE.test(doc.file_name);
-              const isActive = doc.id === selectedDocId;
-              return (
-                <button
-                  key={doc.id}
-                  onClick={() => isImage && setSelectedDocId(doc.id)}
-                  disabled={!isImage}
-                  title={
-                    isImage
-                      ? doc.file_name
-                      : `${doc.file_name} (이미지 형식만 태깅 가능해요)`
-                  }
-                  className={isActive ? "btn-primary" : "btn-secondary"}
-                  style={{
-                    opacity: isImage ? 1 : 0.5,
-                    cursor: isImage ? "pointer" : "not-allowed",
-                    maxWidth: 220,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {isImage ? "🖼️" : "📄"} {doc.file_name}
-                </button>
-              );
-            })}
-          </div>
+          <>
+            <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 8 }}>
+              보고서에는 아래 연도 순서(오래된 연도부터)로 채워져요. 업로드 순서와 촬영 연도가
+              다르면 사진마다 연도를 입력해주세요.
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {docs.map((doc) => {
+                const isImage = IMAGE_EXT_RE.test(doc.file_name);
+                const isActive = doc.id === selectedDocId;
+                return (
+                  <div
+                    key={doc.id}
+                    style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    <button
+                      onClick={() => isImage && setSelectedDocId(doc.id)}
+                      disabled={!isImage}
+                      title={
+                        isImage
+                          ? doc.file_name
+                          : `${doc.file_name} (이미지 형식만 태깅 가능해요)`
+                      }
+                      className={isActive ? "btn-primary" : "btn-secondary"}
+                      style={{
+                        opacity: isImage ? 1 : 0.5,
+                        cursor: isImage ? "pointer" : "not-allowed",
+                        maxWidth: 180,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {isImage ? "🖼️" : "📄"} {doc.file_name}
+                    </button>
+                    {isImage && (
+                      <input
+                        type="number"
+                        placeholder="연도"
+                        value={doc.photo_year ?? ""}
+                        onChange={(e) => updateYear(doc.id, e.target.value)}
+                        style={{
+                          width: 64,
+                          padding: "6px 6px",
+                          borderRadius: 8,
+                          border: "1px solid var(--color-border)",
+                          fontSize: 14,
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 

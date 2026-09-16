@@ -53,8 +53,11 @@ function judgmentByCategory(rowDataList, category) {
 
 // category: 생략하면 카테고리 무관하게(현장사진처럼 photo_note를 자유 캡션으로 쓰는 경우),
 // null이면 category가 비어있는 문서만(사이드바 "참고 문서" 업로드), 문자열이면 그 카테고리만
-// (예: 1번 모듈의 "sample_points") 가져온다.
-async function fetchImages(caseId, moduleNumber, limit, category) {
+// (예: 1번 모듈의 "sample_points") 가져온다. orderByYear를 켜면 업로드 순서 대신 사진마다
+// 지정한 photo_year(오래된 연도부터)로 정렬한다 — 항공사진처럼 "표에 넣는 순서 = 촬영 연도
+// 순서"라 업로드한 순서(uploaded_at)와는 무관해야 하는 경우에 씀. 연도를 안 지정한 사진은
+// 뒤로 밀려 남은 칸에 채워진다.
+async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = false) {
   let query = supabaseAdmin
     .from("documents")
     .select("*")
@@ -62,7 +65,8 @@ async function fetchImages(caseId, moduleNumber, limit, category) {
     .eq("module_number", moduleNumber);
   if (category === null) query = query.is("category", null);
   else if (category !== undefined) query = query.eq("category", category);
-  const { data: docs } = await query.order("uploaded_at", { ascending: false }).limit(limit);
+  if (orderByYear) query = query.order("photo_year", { ascending: true, nullsFirst: false });
+  const { data: docs } = await query.order("uploaded_at", { ascending: !orderByYear }).limit(limit);
 
   if (!docs?.length) return [];
 
@@ -133,7 +137,9 @@ async function fetchCaseData(caseId) {
     sitePlanImages,
   ] = await Promise.all([
     fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
-    fetchImages(caseId, 4, 8),
+    // 항공사진은 표에 "오래된 연도부터" 채워지므로 업로드 순서가 아니라 사진마다 지정한
+    // photo_year 순으로 가져온다(4번 모듈 태깅 화면에서 연도 입력).
+    fetchImages(caseId, 4, 8, undefined, true),
     fetchImages(caseId, 6, MAX_PHOTOS),
     // 2.1 "시료채취지점" 사진(챕터01 이미지 갤러리, category=sample_points)
     fetchImages(caseId, 1, 5, "sample_points"),
