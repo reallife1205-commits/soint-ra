@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Module1Table from "./Module1Table";
-import Module1ImageGallery from "./Module1ImageGallery";
+import ImageGallery from "./ImageGallery";
 
 const TABS = [
   { key: "table", label: "오염 현황 테이블" },
@@ -52,10 +52,10 @@ export default function Module1Panel({ caseId, caseInfo }) {
         </div>
       )}
       {tab === "sample_points" && (
-        <Module1ImageGallery caseId={caseId} category="sample_points" title="시료채취지점 사진" />
+        <ImageGallery caseId={caseId} category="sample_points" title="시료채취지점 사진" />
       )}
       {tab === "pollution_map" && (
-        <Module1ImageGallery caseId={caseId} category="pollution_map" title="오염분포도 이미지" />
+        <ImageGallery caseId={caseId} category="pollution_map" title="오염분포도 이미지" />
       )}
     </div>
   );

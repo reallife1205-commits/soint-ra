@@ -129,8 +129,7 @@ async function fetchCaseData(caseId) {
     fieldPhotoImages,
     samplePointImages,
     pollutionMapImages,
-    surroundingImages2,
-    surroundingImages7,
+    surroundingImages,
     sitePlanImages,
   ] = await Promise.all([
     fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
@@ -140,18 +139,11 @@ async function fetchCaseData(caseId) {
     fetchImages(caseId, 1, 5, "sample_points"),
     // 2.1에 "오염분포도"로 올린 사진도 있으면 시료채취지점 사진이 없을 때 대신 쓴다
     fetchImages(caseId, 1, 5, "pollution_map"),
-    // 2.2는 전용 업로드가 없어서, 그 화면(모듈2 "주변부지 조사" 탭)에서 사이드바로 올린 일반
-    // 참고 문서(category 없음) 중 이미지를 쓴다. "주변부지 영향 판단" 탭(모듈7)에서 올렸을
-    // 수도 있어 그쪽도 같이 확인한다. limit을 5로 넉넉히 잡는 건, 가장 최근 업로드가 이미지가
-    // 아닌 파일(pdf 등)이면 그 다음 걸 찾아야 하기 때문.
-    fetchImages(caseId, 2, 5, null),
-    fetchImages(caseId, 7, 5, null),
-    // 3.4 배치도면도 전용 업로드가 없어서, 그 화면(모듈3 체크리스트 탭)에서 사이드바로 올린
-    // 일반 참고 문서(category 없음, 소유이력 증빙표 업로드는 category="ownership_table"이라
-    // 안 섞임) 중 이미지를 쓴다.
-    fetchImages(caseId, 3, 5, null),
+    // 2.2 "주변부지 조사 지점" 지도 캡처(챕터02 지도 화면의 "화면 캡처해서 저장" 버튼)
+    fetchImages(caseId, 2, 5, "surrounding_map"),
+    // 3.4 "배치도 등" 업로드(챕터03 출입가능성 화면)
+    fetchImages(caseId, 3, 5, "site_plan"),
   ]);
-  const surroundingImages = [...surroundingImages2, ...surroundingImages7];
   const networkRows = soilDataRows.filter((r) => r.source_type === "측정망");
   const surveyRows = soilDataRows.filter((r) => r.source_type === "실태조사");
 

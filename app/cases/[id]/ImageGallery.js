@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function Module1ImageGallery({ caseId, category, title }) {
+export default function ImageGallery({ caseId, moduleNumber = 1, category, title }) {
   const [docs, setDocs] = useState([]);
   const [urlMap, setUrlMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ export default function Module1ImageGallery({ caseId, category, title }) {
       .from("documents")
       .select("*")
       .eq("case_id", caseId)
-      .eq("module_number", 1)
+      .eq("module_number", moduleNumber)
       .eq("category", category)
       .order("uploaded_at", { ascending: false });
     setDocs(data || []);
@@ -27,7 +27,7 @@ export default function Module1ImageGallery({ caseId, category, title }) {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caseId, category]);
+  }, [caseId, moduleNumber, category]);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +69,7 @@ export default function Module1ImageGallery({ caseId, category, title }) {
     const extMatch = file.name.match(/\.[^.]+$/);
     const ext = extMatch ? extMatch[0] : "";
     const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
-    const filePath = `${caseId}/module1/${category}/${safeName}`;
+    const filePath = `${caseId}/module${moduleNumber}/${category}/${safeName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("documents")
@@ -84,7 +84,7 @@ export default function Module1ImageGallery({ caseId, category, title }) {
     const { error: insertError } = await supabase.from("documents").insert([
       {
         case_id: caseId,
-        module_number: 1,
+        module_number: moduleNumber,
         category,
         file_name: file.name,
         file_path: filePath,

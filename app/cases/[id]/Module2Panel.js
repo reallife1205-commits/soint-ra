@@ -5,8 +5,10 @@ import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { SUBSTANCE_GROUPS } from "@/lib/substances";
 import { CONCERN_STANDARDS, parseRegionGrade } from "@/lib/soilStandards";
+import ImageGallery from "./ImageGallery";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
+const SURROUNDING_MAP_CATEGORY = "surrounding_map";
 
 const SUBSTANCE_LABEL = Object.fromEntries(
   SUBSTANCE_GROUPS.flatMap((g) => g.items)
@@ -85,6 +87,10 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
   const [activeTab, setActiveTab] = useState("지도");
   const [pendingRestore, setPendingRestore] = useState(false);
   const autoSearchTriggered = useRef(false);
+  const mapWrapperRef = useRef(null);
+  const [capturing, setCapturing] = useState(false);
+  const [captureError, setCaptureError] = useState("");
+  const [galleryRefreshKey, setGalleryRefreshKey] = useState(0);
 
   // 선택한 측정항목·조사반경·검색 여부를 저장해뒀다가, 다시 들어왔을 때
   // "반경 내 데이터 검색" 결과가 그대로 남아있도록 복원함
@@ -243,6 +249,50 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [radius]);
 
+  // 지도 화면을 지금 보이는 그대로 캡처해서 저장 — 보고서(hwpx)엔 이 지도를 실시간으로 못 가져와서,
+  // 사용자가 원하는 확대/이동 상태로 맞춘 뒤 버튼을 누르면 그 순간 화면을 이미지로 남긴다.
+  async function handleCaptureMap() {
+    if (!mapWrapperRef.current || !caseInfo?.id) return;
+    setCapturing(true);
+    setCaptureError("");
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(mapWrapperRef.current, {
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+      });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("이미지 변환 실패");
+
+      const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`;
+      const filePath = `${caseInfo.id}/module2/${SURROUNDING_MAP_CATEGORY}/${safeName}`;
+      const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, blob);
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase.from("documents").insert([
+        {
+          case_id: caseInfo.id,
+          module_number: 2,
+          category: SURROUNDING_MAP_CATEGORY,
+          file_name: `주변부지_조사지점_${new Date().toISOString().slice(0, 10)}.png`,
+          file_path: filePath,
+          file_size: blob.size,
+        },
+      ]);
+      if (insertError) {
+        await supabase.storage.from("documents").remove([filePath]);
+        throw insertError;
+      }
+      setGalleryRefreshKey((k) => k + 1);
+    } catch (e) {
+      setCaptureError(
+        "화면 캡처에 실패했어요. 지도 타일이 다른 서버에서 오는 이미지라 브라우저 보안 정책 때문에 막힐 수 있어요. 대신 컴퓨터의 화면 캡처 기능(Windows: Win+Shift+S, Mac: Cmd+Shift+4)으로 캡처한 뒤 아래 갤러리에 직접 올려주세요."
+      );
+    }
+    setCapturing(false);
+  }
+
   const networkResults = results.filter((r) => r.source_type === "측정망");
   const surveyResults = results.filter((r) => r.source_type === "실태조사");
 
@@ -357,7 +407,28 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
           </div>
 
           {activeTab === "지도" && coords && (
-            <MapView center={coords} radiusKm={radius} points={results} />
+            <>
+              <div ref={mapWrapperRef}>
+                <MapView center={coords} radiusKm={radius} points={results} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, marginBottom: 16 }}>
+                <button className="btn-secondary" onClick={handleCaptureMap} disabled={capturing}>
+                  {capturing ? "캡처 중..." : "📸 지금 화면 캡처해서 저장"}
+                </button>
+              </div>
+              {captureError && (
+                <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginBottom: 16 }}>
+                  {captureError}
+                </div>
+              )}
+              <ImageGallery
+                key={galleryRefreshKey}
+                caseId={caseInfo?.id}
+                moduleNumber={2}
+                category={SURROUNDING_MAP_CATEGORY}
+                title="주변부지 조사 지점 그림 (보고서 2.2에 들어감)"
+              />
+            </>
           )}
 
           {activeTab === "토양측정망" && (

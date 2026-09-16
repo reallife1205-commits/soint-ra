@@ -4,6 +4,7 @@ import { useState } from "react";
 import CategorizedRowsTable from "./CategorizedRowsTable";
 import ChecklistJudgmentForm from "./ChecklistJudgmentForm";
 import OwnershipTableUpload from "./OwnershipTableUpload";
+import ImageGallery from "./ImageGallery";
 
 const OWNERSHIP_FIELDS = [
   { key: "owner_name", label: "소유자명" },
@@ -156,19 +157,29 @@ export function CostCapacitySection({ caseId }) {
 
 export function AccessSection({ caseId }) {
   return (
-    <ChecklistJudgmentForm
-      caseId={caseId}
-      moduleNumber={3}
-      category="access"
-      checklistOptions={[
-        { key: "aerial_photo", label: "항공사진" },
-        { key: "design_drawing", label: "설계도면" },
-        { key: "site_plan", label: "배치 평면도" },
-        { key: "site_photo", label: "현장사진" },
-      ]}
-      summaryLabel="토양오염이 발생한 토지로의 출입 가능성 또는 용이성"
-      summaryPlaceholder="예: 과거 소유자는 '96.1.5일 이전에 대상부지를 양수하였으며..."
-    />
+    <>
+      <ChecklistJudgmentForm
+        caseId={caseId}
+        moduleNumber={3}
+        category="access"
+        checklistOptions={[
+          { key: "aerial_photo", label: "항공사진" },
+          { key: "design_drawing", label: "설계도면" },
+          { key: "site_plan", label: "배치 평면도" },
+          { key: "site_photo", label: "현장사진" },
+        ]}
+        summaryLabel="토양오염이 발생한 토지로의 출입 가능성 또는 용이성"
+        summaryPlaceholder="예: 과거 소유자는 '96.1.5일 이전에 대상부지를 양수하였으며..."
+      />
+      <div style={{ marginTop: 16 }}>
+        <ImageGallery
+          caseId={caseId}
+          moduleNumber={3}
+          category="site_plan"
+          title="배치도 등 (항공사진 외 출입가능성 증빙 자료)"
+        />
+      </div>
+    </>
   );
 }
 
