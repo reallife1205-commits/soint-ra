@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import Module1Table from "./Module1Table";
 import ImageGallery from "./ImageGallery";
 
@@ -10,8 +11,58 @@ const TABS = [
   { key: "pollution_map", label: "오염분포도" },
 ];
 
+const POLLUTION_STATUS_TABLE_CATEGORY = "pollution_status_table";
+
 export default function Module1Panel({ caseId, caseInfo }) {
   const [tab, setTab] = useState("table");
+  const tableWrapperRef = useRef(null);
+  const [capturing, setCapturing] = useState(false);
+  const [captureError, setCaptureError] = useState("");
+  const [galleryRefreshKey, setGalleryRefreshKey] = useState(0);
+
+  // 오염현황 테이블 화면을 그대로 캡처해서 저장 — 보고서([표1] 오염면적 및 오염범위) 자리엔
+  // 표 그대로가 아니라 이 화면 캡처 이미지가 들어간다(주변부지 지도 캡처와 동일한 방식).
+  async function handleCaptureTable() {
+    if (!tableWrapperRef.current || !caseId) return;
+    setCapturing(true);
+    setCaptureError("");
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(tableWrapperRef.current, {
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+      });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("이미지 변환 실패");
+
+      const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`;
+      const filePath = `${caseId}/module1/${POLLUTION_STATUS_TABLE_CATEGORY}/${safeName}`;
+      const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, blob);
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase.from("documents").insert([
+        {
+          case_id: caseId,
+          module_number: 1,
+          category: POLLUTION_STATUS_TABLE_CATEGORY,
+          file_name: `오염현황_테이블_${new Date().toISOString().slice(0, 10)}.png`,
+          file_path: filePath,
+          file_size: blob.size,
+        },
+      ]);
+      if (insertError) {
+        await supabase.storage.from("documents").remove([filePath]);
+        throw insertError;
+      }
+      setGalleryRefreshKey((k) => k + 1);
+    } catch (e) {
+      setCaptureError(
+        "화면 캡처에 실패했어요. 대신 컴퓨터의 화면 캡처 기능(Windows: Win+Shift+S, Mac: Cmd+Shift+4)으로 캡처한 뒤 아래 갤러리에 직접 올려주세요."
+      );
+    }
+    setCapturing(false);
+  }
 
   return (
     <div>
@@ -47,8 +98,26 @@ export default function Module1Panel({ caseId, caseInfo }) {
       </div>
 
       {tab === "table" && (
-        <div className="card">
-          <Module1Table caseId={caseId} caseInfo={caseInfo} />
+        <div>
+          <div className="card" ref={tableWrapperRef}>
+            <Module1Table caseId={caseId} caseInfo={caseInfo} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, marginBottom: 16 }}>
+            <button className="btn-secondary" onClick={handleCaptureTable} disabled={capturing}>
+              {capturing ? "캡처 중..." : "📸 지금 화면 캡처해서 저장 (보고서 [표1]에 들어감)"}
+            </button>
+          </div>
+          {captureError && (
+            <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginBottom: 16 }}>
+              {captureError}
+            </div>
+          )}
+          <ImageGallery
+            key={galleryRefreshKey}
+            caseId={caseId}
+            category={POLLUTION_STATUS_TABLE_CATEGORY}
+            title="오염현황 테이블 캡처 (보고서 [표1]에 들어감)"
+          />
         </div>
       )}
       {tab === "sample_points" && (
