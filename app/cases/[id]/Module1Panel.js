@@ -41,6 +41,7 @@ export default function Module1Panel({ caseId, caseInfo }) {
         backgroundColor: "#ffffff",
         scrollX: -window.scrollX,
         scrollY: -window.scrollY,
+        scale: 2, // 더 높은 해상도로 캡처(선명하게) + rowSpan 헤더 높이 계산의 서브픽셀 오차를 줄임
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("이미지 변환 실패");

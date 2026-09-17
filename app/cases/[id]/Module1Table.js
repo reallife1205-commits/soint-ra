@@ -156,7 +156,12 @@ export default function Module1Table({ caseId, caseInfo }) {
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 15 }}>
           <thead>
-            <tr style={{ background: "#f6f8f4" }}>
+            {/* 2단 헤더(rowSpan=2 셀 + 그룹 헤더 2행)는 화면에서는 브라우저가 자동으로 두
+                행의 높이를 알맞게 나눠주지만, 오염현황 테이블 캡처(html2canvas)에서는 이
+                자동 분배가 브라우저와 다르게 계산돼 아래쪽(2번째) 헤더 줄이 눌리거나 잘려
+                찍히는 문제가 있었다 — 두 행 모두 명시적인 height를 줘서 분배를 브라우저의
+                추측에 맡기지 않고 고정한다. */}
+            <tr style={{ background: "#f6f8f4", height: 34 }}>
               {HEADER_GROUPS.map((g) =>
                 g.group ? (
                   <th
@@ -180,7 +185,7 @@ export default function Module1Table({ caseId, caseInfo }) {
                     style={{
                       width: g.fields[0].width,
                       textAlign: "center",
-                      padding: "10px 8px",
+                      padding: "6px 8px",
                       border: CELL_BORDER,
                       fontWeight: 600,
                       color: "var(--color-text-muted)",
@@ -190,11 +195,11 @@ export default function Module1Table({ caseId, caseInfo }) {
                   >
                     {g.fields[0].unit ? (
                       <>
-                        <div>
+                        <div style={{ lineHeight: "20px" }}>
                           {g.fields[0].label}
                           {g.fields[0].footnote && <sup>{g.fields[0].footnote}</sup>}
                         </div>
-                        <div style={{ fontWeight: 400 }}>{g.fields[0].unit}</div>
+                        <div style={{ fontWeight: 400, lineHeight: "20px" }}>{g.fields[0].unit}</div>
                       </>
                     ) : (
                       g.fields[0].label
@@ -210,7 +215,7 @@ export default function Module1Table({ caseId, caseInfo }) {
                 🗑️
               </th>
             </tr>
-            <tr style={{ background: "#f6f8f4" }}>
+            <tr style={{ background: "#f6f8f4", height: 34 }}>
               {HEADER_GROUPS.filter((g) => g.group).flatMap((g) =>
                 g.fields.map((f) => (
                   <th
@@ -218,7 +223,7 @@ export default function Module1Table({ caseId, caseInfo }) {
                     style={{
                       width: f.width,
                       textAlign: "center",
-                      padding: "8px 8px 10px",
+                      padding: "8px 8px",
                       border: CELL_BORDER,
                       fontWeight: 600,
                       color: "var(--color-text-muted)",
