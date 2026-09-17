@@ -41,7 +41,12 @@ export default function Module1Panel({ caseId, caseInfo }) {
         backgroundColor: "#ffffff",
         scrollX: -window.scrollX,
         scrollY: -window.scrollY,
-        scale: 2, // 더 높은 해상도로 캡처(선명하게) + rowSpan 헤더 높이 계산의 서브픽셀 오차를 줄임
+        scale: 2, // 더 높은 해상도로 캡처(선명하게)
+        // html2canvas의 기본 렌더러는 rowSpan/colSpan이 섞인 표의 행 높이를 자체적으로
+        // 다시 계산하면서 브라우저와 다르게 나오는 경우가 있다(이 표의 2단 헤더에서 실제로
+        // 확인됨). foreignObjectRendering을 켜면 브라우저의 실제 레이아웃 엔진으로 그린
+        // 결과를 그대로 이미지로 옮겨서 이 문제를 근본적으로 피할 수 있다.
+        foreignObjectRendering: true,
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("이미지 변환 실패");

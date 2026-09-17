@@ -6,13 +6,16 @@ import { SUBSTANCE_LABELS, findSubstanceKey } from "@/lib/substances";
 import { CONCERN_STANDARDS, ACTION_STANDARDS, parseRegionGrade } from "@/lib/soilStandards";
 
 const FIELDS = [
-  { key: "contaminant", label: "오염물질", width: 120 },
+  { key: "contaminant", label: "오염물질", width: 115 },
   { key: "depth", label: "심도", width: 80 },
   { key: "depth_start", label: "시작 깊이", width: 72, group: "깊이(m)" },
   { key: "depth_end", label: "끝 깊이", width: 72, group: "깊이(m)" },
-  { key: "concern_standard", label: "우려기준 초과", width: 100, group: "초과내역(시료수)" },
-  { key: "action_standard", label: "대책기준 초과", width: 100, group: "초과내역(시료수)" },
-  { key: "max_concentration", label: "최고농도", unit: "(mg/kg)", width: 125 },
+  // "초과내역(시료수)" 그룹 헤더에 이미 "초과"가 있어서, 하위 칸에서 또 "초과"까지 쓰면
+  // 100px 칸에 글자가 빡빡해 보였다(캡처뿐 아니라 화면에서도 마찬가지라는 사용자 확인) —
+  // 그룹 헤더가 문맥을 주니 하위 칸은 "우려기준"/"대책기준"만으로 줄임.
+  { key: "concern_standard", label: "우려기준", width: 108, group: "초과내역(시료수)" },
+  { key: "action_standard", label: "대책기준", width: 108, group: "초과내역(시료수)" },
+  { key: "max_concentration", label: "최고농도", unit: "(mg/kg)", width: 117 },
   { key: "area", label: "오염면적", unit: "(m²)", footnote: "1)", width: 110 },
   { key: "volume", label: "오염량", unit: "(m³)", footnote: "2)", width: 100 },
 ];
