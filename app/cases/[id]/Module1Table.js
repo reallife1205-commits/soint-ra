@@ -188,7 +188,10 @@ export default function Module1Table({ caseId, caseInfo }) {
                     style={{
                       width: g.fields[0].width,
                       textAlign: "center",
-                      padding: "6px 8px",
+                      // 위쪽 여백을 아래쪽보다 넉넉하게 둔다 — 캡처(html2canvas) 결과에서
+                      // 표 맨 위쪽 글자가 아주 살짝 잘려 보이는 현상이 반복적으로 있었는데,
+                      // 위쪽에 여유를 더 주면 잘려도 빈 여백만 깎여서 글자엔 영향이 없다.
+                      padding: g.fields[0].unit ? "8px 8px 4px" : "10px 8px 6px",
                       border: CELL_BORDER,
                       fontWeight: 600,
                       color: "var(--color-text-muted)",
