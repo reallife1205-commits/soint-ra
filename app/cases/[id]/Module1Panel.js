@@ -42,11 +42,9 @@ export default function Module1Panel({ caseId, caseInfo }) {
         scrollX: -window.scrollX,
         scrollY: -window.scrollY,
         scale: 2, // 더 높은 해상도로 캡처(선명하게)
-        // html2canvas의 기본 렌더러는 rowSpan/colSpan이 섞인 표의 행 높이를 자체적으로
-        // 다시 계산하면서 브라우저와 다르게 나오는 경우가 있다(이 표의 2단 헤더에서 실제로
-        // 확인됨). foreignObjectRendering을 켜면 브라우저의 실제 레이아웃 엔진으로 그린
-        // 결과를 그대로 이미지로 옮겨서 이 문제를 근본적으로 피할 수 있다.
-        foreignObjectRendering: true,
+        // foreignObjectRendering을 한 번 켜봤는데, rowSpan 헤더 문제는 안 고쳐지고 캡처
+        // 자체가 아예 안 보이는(빈 화면) 심각한 부작용이 있어 되돌림 — 크롬 계열에서
+        // foreignObjectRendering이 종종 빈 캔버스를 만드는 알려진 문제라고 함.
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("이미지 변환 실패");
