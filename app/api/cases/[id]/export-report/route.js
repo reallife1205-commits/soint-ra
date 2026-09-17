@@ -133,7 +133,6 @@ async function fetchCaseData(caseId) {
     fieldPhotoImages,
     samplePointImages,
     pollutionMapImages,
-    pollutionStatusTableImages,
     surroundingImages,
     sitePlanImages,
   ] = await Promise.all([
@@ -147,9 +146,6 @@ async function fetchCaseData(caseId) {
     // 2.1 "<그림> 토양시료 채취 지점 및 기준 초과 현황"엔 오염분포도가 들어간다(챕터01
     // "오염분포도" 탭 업로드, category=pollution_map)
     fetchImages(caseId, 1, 5, "pollution_map"),
-    // "[표 1] 오염면적 및 오염범위(총괄)"엔 챕터01 "오염 현황 테이블" 화면 캡처가 들어간다
-    // (category=pollution_status_table)
-    fetchImages(caseId, 1, 5, "pollution_status_table"),
     // 2.2 "주변부지 조사 지점" 지도 캡처(챕터02 지도 화면의 "화면 캡처해서 저장" 버튼)
     fetchImages(caseId, 2, 5, "surrounding_map"),
     // 3.4 "배치도 등" 업로드(챕터03 출입가능성 화면)
@@ -195,12 +191,11 @@ async function fetchCaseData(caseId) {
     costCapacityItems: m3.filter((d) => d.category === "cost_capacity_item"),
     aerialImages,
     fieldPhotoImages,
-    // 2.1엔 그림이 두 장 있음: "<그림> 토양시료 채취 지점 및 기준 초과 현황"엔 오염분포도
-    // (pollution_map, 없으면 시료채취지점 사진으로 대체), "[표 1] 오염면적 및 오염범위(총괄)"엔
-    // 오염현황 테이블 화면 캡처(pollution_status_table)가 들어간다.
+    // 2.1 "<그림> 토양시료 채취 지점 및 기준 초과 현황"엔 오염분포도(pollution_map, 없으면
+    // 시료채취지점 사진으로 대체)가 들어간다. "[표 1] 오염면적 및 오염범위(총괄)"은 화면 캡처가
+    // 아니라 contaminationRows 데이터로 만든 네이티브 표라 별도 이미지가 필요 없다.
     samplePointImages,
     pollutionMapImages: pollutionMapImages.length ? pollutionMapImages : samplePointImages,
-    pollutionStatusTableImages,
     surroundingImages,
     sitePlanImages,
     fieldSurvey,
