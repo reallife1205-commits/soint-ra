@@ -27,11 +27,6 @@ const SUB_TAB_31 = [
   { key: "dart", label: "DART·공장조회", moduleNumber: 5 },
 ];
 
-const SUB_TAB_34 = [
-  { key: "checklist", label: "체크리스트", moduleNumber: 3 },
-  { key: "aerial", label: "항공사진", moduleNumber: 4 },
-];
-
 const SUB_TAB_22 = [
   { key: "surrounding_data", label: "주변부지 조사", moduleNumber: 2 },
   { key: "surrounding_impact", label: "주변부지 영향 판단", moduleNumber: 7 },
@@ -122,7 +117,6 @@ export default function CaseDetailPage() {
   function selectSubTab(subTabKey) {
     setActiveSubTab(subTabKey);
     if (subTabKey === "3.1") setActiveTool("ownership");
-    else if (subTabKey === "3.4") setActiveTool("checklist");
     else if (subTabKey === "2.2") setActiveTool("surrounding_data");
     else setActiveTool(null);
   }
@@ -168,12 +162,6 @@ export default function CaseDetailPage() {
   if (activeChapter === "3" && activeSubTab === "3.1") {
     const tool = SUB_TAB_31.find((t) => t.key === activeTool);
     headingLabel = tool ? `3.1 소유·점유·운영 — ${tool.label}` : "3.1 소유·점유·운영";
-    effectiveModuleNumber = tool?.moduleNumber ?? 3;
-  }
-
-  if (activeChapter === "3" && activeSubTab === "3.4") {
-    const tool = SUB_TAB_34.find((t) => t.key === activeTool);
-    headingLabel = tool ? `${activeSubTabMeta.label} — ${tool.label}` : activeSubTabMeta.label;
     effectiveModuleNumber = tool?.moduleNumber ?? 3;
   }
 
@@ -451,13 +439,12 @@ export default function CaseDetailPage() {
           )}
           {activeChapter === "3" && activeSubTab === "3.4" && (
             <>
-              <ToolTabs tabs={SUB_TAB_34} active={activeTool} onSelect={setActiveTool} />
-              {activeTool === "checklist" && (
-                <div className="card">
-                  <AccessSection caseId={id} />
-                </div>
-              )}
-              {activeTool === "aerial" && <Module4Panel caseId={id} caseInfo={caseInfo} />}
+              <div className="card">
+                <AccessSection caseId={id} />
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <Module4Panel caseId={id} caseInfo={caseInfo} />
+              </div>
             </>
           )}
           {activeChapter === "3" && activeSubTab === "3.5" && (
