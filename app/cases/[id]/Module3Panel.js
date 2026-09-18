@@ -49,6 +49,8 @@ export function OwnershipLeaseSection({ caseId }) {
         checklistOptions={[
           { key: "lease_contract", label: "임대차계약서" },
           { key: "land_registry", label: "토지대장" },
+          { key: "aerial_photo", label: "항공사진" },
+          { key: "cadastral_map", label: "지적도" },
         ]}
         summaryLabel="토양오염관리대상시설(또는 부지)의 소유·점유 또는 운영"
         summaryPlaceholder="예: 토지대장 상 자문부지는 '89년 소유권이 이전되었고..."
@@ -207,6 +209,11 @@ export function ManagementHistorySection({ caseId }) {
       moduleNumber={3}
       category="management_history"
       checklistOptions={[
+        { key: "soil_test_report", label: "토양오염도검사 성적서" },
+        { key: "leak_test_report", label: "누출검사 성적서" },
+        { key: "detailed_survey_report", label: "토양정밀조사보고서" },
+        { key: "soil_network", label: "토양측정망" },
+        { key: "soil_survey", label: "토양오염실태조사" },
         { key: "facility_report", label: "특정토양오염관리대상시설 설치신고서" },
         { key: "hazmat_permit", label: "위험물 제조소·저장소·취급소 설치허가서" },
         { key: "other_permit", label: "기타 환경인허가" },
