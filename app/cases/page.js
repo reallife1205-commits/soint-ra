@@ -29,6 +29,10 @@ export default function CasesPage() {
   const [yearTarget, setYearTarget] = useState(null); // { year, total_assigned }
   const [editingTarget, setEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState("");
+  const [announcement, setAnnouncement] = useState("");
+  const [editingAnnouncement, setEditingAnnouncement] = useState(false);
+  const [announcementInput, setAnnouncementInput] = useState("");
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -70,6 +74,13 @@ export default function CasesPage() {
       .eq("year", CURRENT_YEAR)
       .maybeSingle();
     setYearTarget(targetRow || { year: CURRENT_YEAR, total_assigned: 0 });
+
+    const { data: announcementRow } = await supabase
+      .from("announcements")
+      .select("content")
+      .eq("id", 1)
+      .maybeSingle();
+    setAnnouncement(announcementRow?.content || "");
   }
 
   useEffect(() => {
@@ -130,6 +141,15 @@ export default function CasesPage() {
     setEditingTarget(false);
   }
 
+  async function saveAnnouncement() {
+    setSavingAnnouncement(true);
+    const content = announcementInput.trim();
+    await supabase.from("announcements").upsert({ id: 1, content, updated_at: new Date().toISOString() });
+    setAnnouncement(content);
+    setSavingAnnouncement(false);
+    setEditingAnnouncement(false);
+  }
+
   const filteredCases = useMemo(() => {
     return cases.filter((c) => {
       const matchesStatus =
@@ -165,6 +185,56 @@ export default function CasesPage() {
     <div className="page">
       <TopNav />
       <SoilBanner />
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: editingAnnouncement || announcement ? 8 : 0 }}>
+          <div style={{ fontWeight: 700 }}>📢 공지사항</div>
+          {!editingAnnouncement && (
+            <button
+              onClick={() => {
+                setAnnouncementInput(announcement);
+                setEditingAnnouncement(true);
+              }}
+              title="공지사항 수정"
+              style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 13 }}
+            >
+              ✏️
+            </button>
+          )}
+        </div>
+        {editingAnnouncement ? (
+          <div>
+            <textarea
+              value={announcementInput}
+              onChange={(e) => setAnnouncementInput(e.target.value)}
+              placeholder="예: 9/30까지 3분기 안건 전부 등록 완료해주세요."
+              rows={3}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid var(--color-border)",
+                fontSize: 15,
+                fontFamily: "inherit",
+                resize: "vertical",
+              }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+              <button className="btn-secondary" onClick={() => setEditingAnnouncement(false)} disabled={savingAnnouncement}>
+                취소
+              </button>
+              <button className="btn-primary" onClick={saveAnnouncement} disabled={savingAnnouncement}>
+                {savingAnnouncement ? "저장 중..." : "저장"}
+              </button>
+            </div>
+          </div>
+        ) : announcement ? (
+          <div style={{ fontSize: 15, whiteSpace: "pre-wrap" }}>{announcement}</div>
+        ) : (
+          <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>등록된 공지사항이 없어요.</div>
+        )}
+      </div>
+
       <div
         style={{
           display: "flex",
