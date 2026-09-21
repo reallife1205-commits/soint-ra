@@ -199,21 +199,25 @@ export default function CasesPage() {
   // 안건번호 기준으로 합쳐서 하나의 목록으로 보여준다. 이미 등록된 안건이 있으면 그쪽 정보를
   // 우선(더 정확)하고, 배정만 되고 아직 등록 안 한 안건은 assigned_cases의 정보를 그대로 쓴다.
   const assignedList = useMemo(() => {
-    const byCaseNumber = new Map();
-    cases.forEach((c) => {
-      byCaseNumber.set(c.case_number, {
-        case_number: c.case_number,
-        company_name: c.company_name,
-        manager: c.manager,
-        due_date: c.due_date,
-        registered: true,
-        linkedCase: c,
-        assignedId: null,
-      });
-    });
-    assignedCases.forEach((a) => {
-      if (byCaseNumber.has(a.case_number)) return;
-      byCaseNumber.set(a.case_number, {
+    // 안건번호가 실수로 중복될 수 있어서(예: 두 안건이 같은 번호를 씀), case_number를 그대로
+    // Map의 key로 쓰면 서로 다른 두 안건이 하나로 합쳐져 등록 건수보다 배정 건수가 적어 보이는
+    // 문제가 있었다. 등록된 안건(cases)은 각자 고유한 id가 있으니 그걸로 전부 빠짐없이 넣고,
+    // 배정만 된 안건(assigned_cases)은 그 번호가 등록된 안건에 하나도 없을 때만 추가한다.
+    const registeredNumbers = new Set(cases.map((c) => c.case_number));
+    const registeredEntries = cases.map((c) => ({
+      key: `case-${c.id}`,
+      case_number: c.case_number,
+      company_name: c.company_name,
+      manager: c.manager,
+      due_date: c.due_date,
+      registered: true,
+      linkedCase: c,
+      assignedId: null,
+    }));
+    const assignedOnlyEntries = assignedCases
+      .filter((a) => !registeredNumbers.has(a.case_number))
+      .map((a) => ({
+        key: `assigned-${a.id}`,
         case_number: a.case_number,
         company_name: a.company_name,
         manager: a.manager,
@@ -221,9 +225,8 @@ export default function CasesPage() {
         registered: false,
         linkedCase: null,
         assignedId: a.id,
-      });
-    });
-    return Array.from(byCaseNumber.values());
+      }));
+    return [...registeredEntries, ...assignedOnlyEntries];
   }, [cases, assignedCases]);
 
   return (
@@ -628,7 +631,7 @@ export default function CasesPage() {
                   const wrapperProps = a.registered ? { href: `/cases/${a.linkedCase.id}` } : {};
                   return (
                     <Wrapper
-                      key={a.case_number}
+                      key={a.key}
                       {...wrapperProps}
                       style={{
                         display: "flex",
