@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { OLD_MODULES } from "@/lib/modules";
 import TopNav from "@/app/components/TopNav";
@@ -9,8 +10,12 @@ import SoilBanner from "@/app/components/SoilBanner";
 import { ddayInfo } from "@/lib/dday";
 
 const STATUS_OPTIONS = ["전체", "작성중", "완료"];
+const CURRENT_YEAR = new Date().getFullYear();
+const TH_STYLE = { textAlign: "left", padding: "10px 14px", fontSize: 14, color: "var(--color-text-muted)", fontWeight: 600 };
+const TD_STYLE = { padding: "10px 14px" };
 
 export default function CasesPage() {
+  const router = useRouter();
   const [cases, setCases] = useState([]);
   const [progressByCase, setProgressByCase] = useState({});
   const [loading, setLoading] = useState(true);
@@ -20,6 +25,10 @@ export default function CasesPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [viewMode, setViewMode] = useState("card"); // "card" | "table"
+  const [yearTarget, setYearTarget] = useState(null); // { year, total_assigned }
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [targetInput, setTargetInput] = useState("");
 
   async function loadData() {
     setLoading(true);
@@ -54,6 +63,13 @@ export default function CasesPage() {
     setCases(caseRows || []);
     setProgressByCase(progressMap);
     setLoading(false);
+
+    const { data: targetRow } = await supabase
+      .from("year_case_targets")
+      .select("*")
+      .eq("year", CURRENT_YEAR)
+      .maybeSingle();
+    setYearTarget(targetRow || { year: CURRENT_YEAR, total_assigned: 0 });
   }
 
   useEffect(() => {
@@ -104,6 +120,14 @@ export default function CasesPage() {
 
     setDeletingId(null);
     loadData();
+  }
+
+  async function saveYearTarget() {
+    const n = parseInt(targetInput, 10);
+    if (isNaN(n) || n < 0) return;
+    await supabase.from("year_case_targets").upsert({ year: CURRENT_YEAR, total_assigned: n });
+    setYearTarget({ year: CURRENT_YEAR, total_assigned: n });
+    setEditingTarget(false);
   }
 
   const filteredCases = useMemo(() => {
@@ -201,6 +225,27 @@ export default function CasesPage() {
         >
           총 {filteredCases.length}건
         </div>
+        <div style={{ display: "flex", borderRadius: 10, overflow: "hidden", border: "1px solid var(--color-border)" }}>
+          {[
+            { key: "card", label: "카드형" },
+            { key: "table", label: "표형" },
+          ].map((v) => (
+            <button
+              key={v.key}
+              onClick={() => setViewMode(v.key)}
+              style={{
+                border: "none",
+                padding: "0 16px",
+                fontSize: 15,
+                cursor: "pointer",
+                background: viewMode === v.key ? "var(--color-primary)" : "white",
+                color: viewMode === v.key ? "white" : "var(--color-text)",
+              }}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {errorMsg && (
@@ -221,12 +266,53 @@ export default function CasesPage() {
               등록된 안건이 없어요. 오른쪽 위 &quot;새 안건 등록&quot; 버튼으로
               첫 안건을 추가해보세요.
             </div>
+          ) : viewMode === "table" ? (
+            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
+                <thead>
+                  <tr style={{ background: "var(--color-surface-alt)" }}>
+                    <th style={TH_STYLE}>안건번호</th>
+                    <th style={TH_STYLE}>회사명</th>
+                    <th style={TH_STYLE}>담당자</th>
+                    <th style={TH_STYLE}>상태</th>
+                    <th style={TH_STYLE}>D-day</th>
+                    <th style={TH_STYLE}>진행</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCases.map((c) => {
+                    const progress = progressByCase[c.id] || { done: 0, total: 7 };
+                    const dday = ddayInfo(c.due_date);
+                    return (
+                      <tr
+                        key={c.id}
+                        onClick={() => router.push(`/cases/${c.id}`)}
+                        style={{ cursor: "pointer", borderTop: "1px solid var(--color-border)" }}
+                      >
+                        <td style={{ ...TD_STYLE, color: "var(--color-text-muted)" }}>{c.case_number}</td>
+                        <td style={{ ...TD_STYLE, fontWeight: 600 }}>{c.company_name}</td>
+                        <td style={TD_STYLE}>{c.manager || "-"}</td>
+                        <td style={TD_STYLE}>
+                          <span className={`badge ${c.status === "완료" ? "badge-green" : "badge-blue"}`}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td style={TD_STYLE}>
+                          {dday !== null ? <span className={`badge ${dday.badgeClass}`}>{dday.label}</span> : "-"}
+                        </td>
+                        <td style={{ ...TD_STYLE, color: "var(--color-text-muted)" }}>{progress.done}/7</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: 16,
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 12,
               }}
             >
               {filteredCases.map((c) => {
@@ -237,7 +323,7 @@ export default function CasesPage() {
                     key={c.id}
                     href={`/cases/${c.id}`}
                     className="card"
-                    style={{ display: "block", position: "relative" }}
+                    style={{ display: "block", position: "relative", padding: "12px 14px" }}
                   >
                     <button
                       onClick={(e) => handleDeleteCase(e, c)}
@@ -245,81 +331,76 @@ export default function CasesPage() {
                       title="안건 삭제"
                       style={{
                         position: "absolute",
-                        top: 10,
-                        right: 10,
+                        top: 8,
+                        right: 8,
                         border: "none",
                         background: "transparent",
                         color: "var(--color-text-muted)",
                         cursor: "pointer",
-                        fontSize: 15,
-                        padding: 4,
+                        fontSize: 13,
+                        padding: 2,
                       }}
                     >
-                      {deletingId === c.id ? "삭제 중..." : "🗑️"}
+                      {deletingId === c.id ? "..." : "🗑️"}
                     </button>
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        paddingRight: 28,
+                        alignItems: "center",
+                        paddingRight: 22,
                       }}
                     >
-                      <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
+                      <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
                         {c.case_number}
                       </div>
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ display: "flex", gap: 4 }}>
                         {dday !== null && (
-                          <span className={`badge ${dday.badgeClass}`}>
+                          <span className={`badge ${dday.badgeClass}`} style={{ fontSize: 12, padding: "2px 6px" }}>
                             {dday.label}
                           </span>
                         )}
                         <span
-                          className={`badge ${
-                            c.status === "완료" ? "badge-green" : "badge-blue"
-                          }`}
+                          className={`badge ${c.status === "완료" ? "badge-green" : "badge-blue"}`}
+                          style={{ fontSize: 12, padding: "2px 6px" }}
                         >
                           {c.status}
                         </span>
                       </div>
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: 18, marginTop: 6 }}>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 16,
+                        marginTop: 4,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={c.company_name}
+                    >
                       {c.company_name}
                     </div>
-                    <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-                      {c.address}
-                    </div>
-                    <div style={{ fontSize: 15, marginTop: 8 }}>
-                      {c.region_grade}
-                      {c.region_grade && c.contaminants ? " · " : ""}
-                      {c.contaminants}
-                    </div>
-                    <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginTop: 4 }}>
-                      담당자 {c.manager || "-"} · 등록 {c.registered_date || "-"}
-                      {c.due_date ? ` · 마감 ${c.due_date}` : ""}
-                    </div>
-
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        marginTop: 14,
-                        marginBottom: 6,
-                        fontSize: 14,
+                        alignItems: "center",
+                        fontSize: 13,
                         color: "var(--color-text-muted)",
+                        marginTop: 6,
                       }}
                     >
-                      <span>챕터 진행</span>
-                      <span>
-                        {progress.done}/7
-                      </span>
+                      <span>담당자 {c.manager || "-"}</span>
+                      <span>{progress.done}/7</span>
                     </div>
                     <div
                       style={{
-                        height: 6,
+                        height: 4,
                         borderRadius: 999,
                         background: "var(--color-surface-alt)",
                         overflow: "hidden",
+                        marginTop: 4,
                       }}
                     >
                       <div
@@ -338,6 +419,69 @@ export default function CasesPage() {
         </div>
 
         <aside style={{ width: 260, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="card">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontWeight: 700 }}>{CURRENT_YEAR}년 배정 현황</div>
+              {!editingTarget && (
+                <button
+                  onClick={() => {
+                    setTargetInput(String(yearTarget?.total_assigned ?? ""));
+                    setEditingTarget(true);
+                  }}
+                  title="배정 건수 수정"
+                  style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 13 }}
+                >
+                  ✏️
+                </button>
+              )}
+            </div>
+            {editingTarget ? (
+              <div style={{ display: "flex", gap: 6 }}>
+                <input
+                  type="number"
+                  min={0}
+                  value={targetInput}
+                  onChange={(e) => setTargetInput(e.target.value)}
+                  placeholder="배정 건수"
+                  style={{ flex: 1, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--color-border)" }}
+                />
+                <button className="btn-primary" onClick={saveYearTarget} style={{ padding: "6px 12px" }}>
+                  저장
+                </button>
+                <button className="btn-secondary" onClick={() => setEditingTarget(false)} style={{ padding: "6px 12px" }}>
+                  취소
+                </button>
+              </div>
+            ) : !yearTarget?.total_assigned ? (
+              <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+                올해 배정받은 전체 건수를 입력해두면 등록 현황과 비교해볼 수 있어요.
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>배정</div>
+                  <div style={{ fontSize: 21, fontWeight: 700 }}>{yearTarget.total_assigned}건</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>등록</div>
+                  <div style={{ fontSize: 21, fontWeight: 700 }}>{cases.length}건</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>미등록</div>
+                  <div
+                    style={{
+                      fontSize: 21,
+                      fontWeight: 700,
+                      color: yearTarget.total_assigned - cases.length > 0 ? "var(--color-badge-red-text)" : undefined,
+                    }}
+                  >
+                    {Math.max(0, yearTarget.total_assigned - cases.length)}건
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="card">
             <div style={{ fontWeight: 700, marginBottom: 12 }}>전체 현황</div>
             <div style={{ display: "flex", gap: 12 }}>
