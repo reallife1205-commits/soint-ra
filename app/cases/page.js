@@ -435,8 +435,8 @@ export default function CasesPage() {
                 </button>
               )}
             </div>
-            {editingTarget ? (
-              <div style={{ display: "flex", gap: 6 }}>
+            {editingTarget && (
+              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
                 <input
                   type="number"
                   min={0}
@@ -452,25 +452,31 @@ export default function CasesPage() {
                   취소
                 </button>
               </div>
-            ) : !yearTarget?.total_assigned ? (
-              <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
+            )}
+            {!editingTarget && !yearTarget?.total_assigned && (
+              <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
                 올해 배정받은 전체 건수를 입력해두면 등록 현황과 비교해볼 수 있어요.
               </div>
-            ) : (
-              <div style={{ display: "flex", gap: 12 }}>
+            )}
+            {!editingTarget && yearTarget?.total_assigned > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 14 }}>
                 <div>
-                  <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>배정</div>
-                  <div style={{ fontSize: 21, fontWeight: 700 }}>{yearTarget.total_assigned}건</div>
+                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>배정</div>
+                  <div style={{ fontSize: 19, fontWeight: 700 }}>{yearTarget.total_assigned}건</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>등록</div>
-                  <div style={{ fontSize: 21, fontWeight: 700 }}>{cases.length}건</div>
+                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>등록</div>
+                  <div style={{ fontSize: 19, fontWeight: 700 }}>{cases.length}건</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>미등록</div>
+                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>완료</div>
+                  <div style={{ fontSize: 19, fontWeight: 700 }}>{summary.done}건</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>미등록</div>
                   <div
                     style={{
-                      fontSize: 21,
+                      fontSize: 19,
                       fontWeight: 700,
                       color: yearTarget.total_assigned - cases.length > 0 ? "var(--color-badge-red-text)" : undefined,
                     }}
@@ -480,19 +486,40 @@ export default function CasesPage() {
                 </div>
               </div>
             )}
-          </div>
 
-          <div className="card">
-            <div style={{ fontWeight: 700, marginBottom: 12 }}>전체 현황</div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>완료</div>
-                <div style={{ fontSize: 21, fontWeight: 700 }}>{summary.done}건</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>진행중</div>
-                <div style={{ fontSize: 21, fontWeight: 700 }}>{summary.inProgress}건</div>
-              </div>
+            {/* 등록된 16개 업체를 한 줄씩 작게 보여주는 리스트 — 이름 옆 뱃지로 완료 여부를
+                바로 확인할 수 있게 함(등록 여부는 이 목록에 있는 것 자체가 등록된 것). */}
+            <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 10, maxHeight: 280, overflowY: "auto" }}>
+              {cases.length === 0 ? (
+                <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>등록된 안건 없음</div>
+              ) : (
+                cases.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/cases/${c.id}`}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 13,
+                      padding: "4px 0",
+                      color: "var(--color-text)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {c.company_name}
+                    </span>
+                    <span
+                      className={`badge ${c.status === "완료" ? "badge-green" : "badge-blue"}`}
+                      style={{ fontSize: 11, padding: "1px 5px", flexShrink: 0 }}
+                    >
+                      {c.status}
+                    </span>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
 
