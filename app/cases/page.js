@@ -26,9 +26,10 @@ export default function CasesPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [viewMode, setViewMode] = useState("card"); // "card" | "table"
-  const [yearTarget, setYearTarget] = useState(null); // { year, total_assigned }
-  const [editingTarget, setEditingTarget] = useState(false);
-  const [targetInput, setTargetInput] = useState("");
+  const [assignedCases, setAssignedCases] = useState([]);
+  const [showAssignForm, setShowAssignForm] = useState(false);
+  const [assignForm, setAssignForm] = useState({ case_number: "", company_name: "", manager: "", due_date: "" });
+  const [savingAssign, setSavingAssign] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [editingAnnouncement, setEditingAnnouncement] = useState(false);
   const [announcementInput, setAnnouncementInput] = useState("");
@@ -68,12 +69,12 @@ export default function CasesPage() {
     setProgressByCase(progressMap);
     setLoading(false);
 
-    const { data: targetRow } = await supabase
-      .from("year_case_targets")
+    const { data: assignedRows } = await supabase
+      .from("assigned_cases")
       .select("*")
       .eq("year", CURRENT_YEAR)
-      .maybeSingle();
-    setYearTarget(targetRow || { year: CURRENT_YEAR, total_assigned: 0 });
+      .order("created_at", { ascending: true });
+    setAssignedCases(assignedRows || []);
 
     const { data: announcementRow } = await supabase
       .from("announcements")
@@ -133,12 +134,25 @@ export default function CasesPage() {
     loadData();
   }
 
-  async function saveYearTarget() {
-    const n = parseInt(targetInput, 10);
-    if (isNaN(n) || n < 0) return;
-    await supabase.from("year_case_targets").upsert({ year: CURRENT_YEAR, total_assigned: n });
-    setYearTarget({ year: CURRENT_YEAR, total_assigned: n });
-    setEditingTarget(false);
+  async function saveAssignedCase(e) {
+    e.preventDefault();
+    if (!assignForm.case_number.trim()) return;
+    setSavingAssign(true);
+    const { data, error } = await supabase
+      .from("assigned_cases")
+      .insert([{ year: CURRENT_YEAR, ...assignForm, due_date: assignForm.due_date || null }])
+      .select()
+      .single();
+    setSavingAssign(false);
+    if (error) return;
+    setAssignedCases((prev) => [...prev, data]);
+    setAssignForm({ case_number: "", company_name: "", manager: "", due_date: "" });
+    setShowAssignForm(false);
+  }
+
+  async function deleteAssignedCase(id) {
+    await supabase.from("assigned_cases").delete().eq("id", id);
+    setAssignedCases((prev) => prev.filter((a) => a.id !== id));
   }
 
   async function saveAnnouncement() {
@@ -180,6 +194,37 @@ export default function CasesPage() {
     });
     return Object.entries(map);
   }, [cases]);
+
+  // "배정 현황" 리스트 — 실제로 등록된 안건(cases)과 아직 등록 전인 배정 안건(assigned_cases)을
+  // 안건번호 기준으로 합쳐서 하나의 목록으로 보여준다. 이미 등록된 안건이 있으면 그쪽 정보를
+  // 우선(더 정확)하고, 배정만 되고 아직 등록 안 한 안건은 assigned_cases의 정보를 그대로 쓴다.
+  const assignedList = useMemo(() => {
+    const byCaseNumber = new Map();
+    cases.forEach((c) => {
+      byCaseNumber.set(c.case_number, {
+        case_number: c.case_number,
+        company_name: c.company_name,
+        manager: c.manager,
+        due_date: c.due_date,
+        registered: true,
+        linkedCase: c,
+        assignedId: null,
+      });
+    });
+    assignedCases.forEach((a) => {
+      if (byCaseNumber.has(a.case_number)) return;
+      byCaseNumber.set(a.case_number, {
+        case_number: a.case_number,
+        company_name: a.company_name,
+        manager: a.manager,
+        due_date: a.due_date,
+        registered: false,
+        linkedCase: null,
+        assignedId: a.id,
+      });
+    });
+    return Array.from(byCaseNumber.values());
+  }, [cases, assignedCases]);
 
   return (
     <div className="page">
@@ -492,103 +537,154 @@ export default function CasesPage() {
           <div className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontWeight: 700 }}>{CURRENT_YEAR}년 배정 현황</div>
-              {!editingTarget && (
-                <button
-                  onClick={() => {
-                    setTargetInput(String(yearTarget?.total_assigned ?? ""));
-                    setEditingTarget(true);
-                  }}
-                  title="배정 건수 수정"
-                  style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 13 }}
-                >
-                  ✏️
-                </button>
-              )}
+              <button
+                onClick={() => setShowAssignForm((v) => !v)}
+                title="배정 안건 추가"
+                style={{ border: "none", background: "transparent", color: "var(--color-primary)", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+              >
+                {showAssignForm ? "닫기" : "+ 추가"}
+              </button>
             </div>
-            {editingTarget && (
-              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+
+            {showAssignForm && (
+              <form
+                onSubmit={saveAssignedCase}
+                style={{ marginBottom: 14, padding: 10, background: "var(--color-surface-alt)", borderRadius: 8 }}
+              >
                 <input
-                  type="number"
-                  min={0}
-                  value={targetInput}
-                  onChange={(e) => setTargetInput(e.target.value)}
-                  placeholder="배정 건수"
-                  style={{ flex: 1, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--color-border)" }}
+                  required
+                  value={assignForm.case_number}
+                  onChange={(e) => setAssignForm((f) => ({ ...f, case_number: e.target.value }))}
+                  placeholder="안건번호 (예: 2026-14-사상)"
+                  style={{ width: "100%", padding: "6px 8px", borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 14 }}
                 />
-                <button className="btn-primary" onClick={saveYearTarget} style={{ padding: "6px 12px" }}>
-                  저장
-                </button>
-                <button className="btn-secondary" onClick={() => setEditingTarget(false)} style={{ padding: "6px 12px" }}>
-                  취소
-                </button>
-              </div>
-            )}
-            {!editingTarget && !yearTarget?.total_assigned && (
-              <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
-                올해 배정받은 전체 건수를 입력해두면 등록 현황과 비교해볼 수 있어요.
-              </div>
-            )}
-            {!editingTarget && yearTarget?.total_assigned > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 14 }}>
-                <div>
-                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>배정</div>
-                  <div style={{ fontSize: 19, fontWeight: 700 }}>{yearTarget.total_assigned}건</div>
+                <input
+                  value={assignForm.company_name}
+                  onChange={(e) => setAssignForm((f) => ({ ...f, company_name: e.target.value }))}
+                  placeholder="회사명"
+                  style={{ width: "100%", padding: "6px 8px", borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 14, marginTop: 6 }}
+                />
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  <input
+                    value={assignForm.manager}
+                    onChange={(e) => setAssignForm((f) => ({ ...f, manager: e.target.value }))}
+                    placeholder="담당자"
+                    style={{ flex: 1, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 14 }}
+                  />
+                  <input
+                    type="date"
+                    value={assignForm.due_date}
+                    onChange={(e) => setAssignForm((f) => ({ ...f, due_date: e.target.value }))}
+                    style={{ flex: 1, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 14 }}
+                  />
                 </div>
-                <div>
-                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>등록</div>
-                  <div style={{ fontSize: 19, fontWeight: 700 }}>{cases.length}건</div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+                  <button type="submit" className="btn-primary" disabled={savingAssign} style={{ padding: "6px 14px" }}>
+                    {savingAssign ? "추가 중..." : "추가"}
+                  </button>
                 </div>
-                <div>
-                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>완료</div>
-                  <div style={{ fontSize: 19, fontWeight: 700 }}>{summary.done}건</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>미등록</div>
-                  <div
-                    style={{
-                      fontSize: 19,
-                      fontWeight: 700,
-                      color: yearTarget.total_assigned - cases.length > 0 ? "var(--color-badge-red-text)" : undefined,
-                    }}
-                  >
-                    {Math.max(0, yearTarget.total_assigned - cases.length)}건
-                  </div>
-                </div>
-              </div>
+              </form>
             )}
 
-            {/* 등록된 16개 업체를 한 줄씩 작게 보여주는 리스트 — 이름 옆 뱃지로 완료 여부를
-                바로 확인할 수 있게 함(등록 여부는 이 목록에 있는 것 자체가 등록된 것). */}
-            <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 10, maxHeight: 280, overflowY: "auto" }}>
-              {cases.length === 0 ? (
-                <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>등록된 안건 없음</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>배정</div>
+                <div style={{ fontSize: 19, fontWeight: 700 }}>{assignedList.length}건</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>등록</div>
+                <div style={{ fontSize: 19, fontWeight: 700 }}>{cases.length}건</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>완료</div>
+                <div style={{ fontSize: 19, fontWeight: 700 }}>{summary.done}건</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>미등록</div>
+                <div
+                  style={{
+                    fontSize: 19,
+                    fontWeight: 700,
+                    color: assignedList.length - cases.length > 0 ? "var(--color-badge-red-text)" : undefined,
+                  }}
+                >
+                  {Math.max(0, assignedList.length - cases.length)}건
+                </div>
+              </div>
+            </div>
+
+            {/* 안건번호 기준으로 등록된 안건(cases)과 아직 등록 전인 배정 안건(assigned_cases)을
+                합친 리스트 — 제목/담당자/기한을 한 줄씩 보여주고, 등록 여부/완료 여부를 뱃지로
+                바로 확인할 수 있게 함. 등록된 항목은 클릭하면 해당 안건으로 이동. */}
+            <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 10, maxHeight: 320, overflowY: "auto" }}>
+              {assignedList.length === 0 ? (
+                <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+                  배정된 안건이 없어요. &quot;+ 추가&quot;로 등록 전 안건도 미리 리스트업할 수 있어요.
+                </div>
               ) : (
-                cases.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/cases/${c.id}`}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 6,
-                      fontSize: 13,
-                      padding: "4px 0",
-                      color: "var(--color-text)",
-                      textDecoration: "none",
-                    }}
-                  >
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.company_name}
-                    </span>
-                    <span
-                      className={`badge ${c.status === "완료" ? "badge-green" : "badge-blue"}`}
-                      style={{ fontSize: 11, padding: "1px 5px", flexShrink: 0 }}
+                assignedList.map((a) => {
+                  const dday = ddayInfo(a.due_date);
+                  const Wrapper = a.registered ? Link : "div";
+                  const wrapperProps = a.registered ? { href: `/cases/${a.linkedCase.id}` } : {};
+                  return (
+                    <Wrapper
+                      key={a.case_number}
+                      {...wrapperProps}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: 13,
+                        padding: "6px 0",
+                        color: "var(--color-text)",
+                        textDecoration: "none",
+                        borderBottom: "1px solid var(--color-border)",
+                      }}
                     >
-                      {c.status}
-                    </span>
-                  </Link>
-                ))
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>
+                          {a.company_name || a.case_number}
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {a.case_number}
+                          {a.manager ? ` · ${a.manager}` : ""}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                        {dday !== null && (
+                          <span className={`badge ${dday.badgeClass}`} style={{ fontSize: 11, padding: "1px 5px" }}>
+                            {dday.label}
+                          </span>
+                        )}
+                        {a.registered ? (
+                          <span
+                            className={`badge ${a.linkedCase.status === "완료" ? "badge-green" : "badge-blue"}`}
+                            style={{ fontSize: 11, padding: "1px 5px" }}
+                          >
+                            {a.linkedCase.status}
+                          </span>
+                        ) : (
+                          <span className="badge" style={{ fontSize: 11, padding: "1px 5px" }}>
+                            미등록
+                          </span>
+                        )}
+                        {!a.registered && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              deleteAssignedCase(a.assignedId);
+                            }}
+                            title="배정 목록에서 삭제"
+                            style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </Wrapper>
+                  );
+                })
               )}
             </div>
           </div>
