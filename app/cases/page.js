@@ -230,7 +230,7 @@ export default function CasesPage() {
             .some((field) => field.toLowerCase().includes(keyword));
         return matchesStatus && matchesSearch;
       })
-      .sort((a, b) => (a.case_number || "").localeCompare(b.case_number || "", "ko"));
+      .sort((a, b) => (a.case_number || "").localeCompare(b.case_number || "", "ko", { numeric: true }));
   }, [cases, search, statusFilter]);
 
   const summary = useMemo(() => {
@@ -282,7 +282,7 @@ export default function CasesPage() {
         assignedId: a.id,
       }));
     return [...registeredEntries, ...assignedOnlyEntries].sort((a, b) =>
-      (a.case_number || "").localeCompare(b.case_number || "", "ko")
+      (a.case_number || "").localeCompare(b.case_number || "", "ko", { numeric: true })
     );
   }, [cases, assignedCases]);
 
