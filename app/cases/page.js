@@ -39,6 +39,7 @@ export default function CasesPage() {
   const [announcementColorInput, setAnnouncementColorInput] = useState("#111111");
   const [announcementFontSizeInput, setAnnouncementFontSizeInput] = useState(15);
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  const [announcementError, setAnnouncementError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
 
@@ -216,18 +217,30 @@ export default function CasesPage() {
 
   async function saveAnnouncement() {
     setSavingAnnouncement(true);
+    setAnnouncementError("");
     const content = announcementInput.trim();
-    await supabase.from("announcements").upsert({
+    const { error } = await supabase.from("announcements").upsert({
       id: 1,
       content,
       color: announcementColorInput,
       font_size: announcementFontSizeInput,
       updated_at: new Date().toISOString(),
     });
+    setSavingAnnouncement(false);
+    if (error) {
+      // sql/021(color/font_size 컬럼 추가)을 아직 안 돌렸으면 저장이 실패하는데, 예전엔 이
+      // 실패를 무시하고 화면 상태만 낙관적으로 바꿔서 "저장된 것처럼" 보이다가 새로고침하면
+      // 사라지는 문제가 있었다 — 이제 실패하면 화면 상태를 그대로 두고 에러를 보여준다.
+      setAnnouncementError(
+        error.message.includes("color") || error.message.includes("font_size")
+          ? "저장에 실패했어요 — sql/021_announcement_style.sql을 Supabase에서 아직 실행 안 하신 것 같아요."
+          : `저장에 실패했어요: ${error.message}`
+      );
+      return;
+    }
     setAnnouncement(content);
     setAnnouncementColor(announcementColorInput);
     setAnnouncementFontSize(announcementFontSizeInput);
-    setSavingAnnouncement(false);
     setEditingAnnouncement(false);
   }
 
@@ -387,8 +400,20 @@ export default function CasesPage() {
                 </select>
               </label>
             </div>
+            {announcementError && (
+              <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginTop: 8 }}>
+                {announcementError}
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
-              <button className="btn-secondary" onClick={() => setEditingAnnouncement(false)} disabled={savingAnnouncement}>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setEditingAnnouncement(false);
+                  setAnnouncementError("");
+                }}
+                disabled={savingAnnouncement}
+              >
                 취소
               </button>
               <button className="btn-primary" onClick={saveAnnouncement} disabled={savingAnnouncement}>
