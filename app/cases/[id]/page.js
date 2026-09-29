@@ -47,7 +47,7 @@ export default function CaseDetailPage() {
   const [activeTool, setActiveTool] = useState(null);
   const [moduleStatus, setModuleStatus] = useState({});
   const [editingMeta, setEditingMeta] = useState(false);
-  const [metaForm, setMetaForm] = useState({ address: "", manager: "", due_date: "" });
+  const [metaForm, setMetaForm] = useState({ case_number: "", company_name: "", address: "", manager: "", due_date: "" });
   const [savingMeta, setSavingMeta] = useState(false);
 
   const loadCase = useCallback(async () => {
@@ -79,6 +79,8 @@ export default function CaseDetailPage() {
   useEffect(() => {
     if (caseInfo && !editingMeta) {
       setMetaForm({
+        case_number: caseInfo.case_number || "",
+        company_name: caseInfo.company_name || "",
         address: caseInfo.address || "",
         manager: caseInfo.manager || "",
         due_date: caseInfo.due_date || "",
@@ -87,10 +89,13 @@ export default function CaseDetailPage() {
   }, [caseInfo, editingMeta]);
 
   async function saveMeta() {
+    if (!metaForm.case_number.trim() || !metaForm.company_name.trim()) return;
     setSavingMeta(true);
     await supabase
       .from("cases")
       .update({
+        case_number: metaForm.case_number.trim(),
+        company_name: metaForm.company_name.trim(),
         address: metaForm.address || null,
         manager: metaForm.manager || null,
         due_date: metaForm.due_date || null,
@@ -186,9 +191,26 @@ export default function CaseDetailPage() {
             ← 목록
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-            <span style={{ fontWeight: 700, fontSize: 18 }}>
-              {caseInfo.case_number} · {caseInfo.company_name}
-            </span>
+            {editingMeta ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  value={metaForm.case_number}
+                  onChange={(e) => setMetaForm((f) => ({ ...f, case_number: e.target.value }))}
+                  placeholder="안건번호"
+                  style={{ width: 140, padding: "4px 8px", borderRadius: 6, border: "1px solid var(--color-border)", fontSize: 16, fontWeight: 700 }}
+                />
+                <input
+                  value={metaForm.company_name}
+                  onChange={(e) => setMetaForm((f) => ({ ...f, company_name: e.target.value }))}
+                  placeholder="회사명"
+                  style={{ width: 180, padding: "4px 8px", borderRadius: 6, border: "1px solid var(--color-border)", fontSize: 16, fontWeight: 700 }}
+                />
+              </div>
+            ) : (
+              <span style={{ fontWeight: 700, fontSize: 18 }}>
+                {caseInfo.case_number} · {caseInfo.company_name}
+              </span>
+            )}
             <span
               className={`badge ${
                 caseInfo.status === "완료" ? "badge-green" : "badge-blue"
