@@ -35,6 +35,25 @@ export default function CasesPage() {
   const [editingAnnouncement, setEditingAnnouncement] = useState(false);
   const [announcementInput, setAnnouncementInput] = useState("");
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin-login")
+      .then((res) => res.json())
+      .then((data) => setIsAdmin(!!data.isAdmin))
+      .catch(() => {});
+  }, []);
+
+  // 관리자 전용 버튼들의 진입점 — 이미 관리자면 바로 액션을 실행하고, 아니면 로그인 모달을
+  // 띄운 뒤 성공하면 그 액션을 이어서 실행한다.
+  function requireAdmin(action) {
+    if (isAdmin) {
+      action();
+    } else {
+      setShowAdminLogin(() => action);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -199,17 +218,19 @@ export default function CasesPage() {
   }
 
   const filteredCases = useMemo(() => {
-    return cases.filter((c) => {
-      const matchesStatus =
-        statusFilter === "전체" || c.status === statusFilter;
-      const keyword = search.trim().toLowerCase();
-      const matchesSearch =
-        !keyword ||
-        [c.case_number, c.address, c.manager, c.company_name]
-          .filter(Boolean)
-          .some((field) => field.toLowerCase().includes(keyword));
-      return matchesStatus && matchesSearch;
-    });
+    return cases
+      .filter((c) => {
+        const matchesStatus =
+          statusFilter === "전체" || c.status === statusFilter;
+        const keyword = search.trim().toLowerCase();
+        const matchesSearch =
+          !keyword ||
+          [c.case_number, c.address, c.manager, c.company_name]
+            .filter(Boolean)
+            .some((field) => field.toLowerCase().includes(keyword));
+        return matchesStatus && matchesSearch;
+      })
+      .sort((a, b) => (a.case_number || "").localeCompare(b.case_number || "", "ko"));
   }, [cases, search, statusFilter]);
 
   const summary = useMemo(() => {
@@ -275,11 +296,13 @@ export default function CasesPage() {
           <div style={{ fontWeight: 700 }}>📢 공지사항</div>
           {!editingAnnouncement && (
             <button
-              onClick={() => {
-                setAnnouncementInput(announcement);
-                setEditingAnnouncement(true);
-              }}
-              title="공지사항 수정"
+              onClick={() =>
+                requireAdmin(() => {
+                  setAnnouncementInput(announcement);
+                  setEditingAnnouncement(true);
+                })
+              }
+              title="공지사항 수정 (관리자 전용)"
               style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 13 }}
             >
               ✏️
@@ -582,10 +605,10 @@ export default function CasesPage() {
                     setShowAssignForm(false);
                     setEditingAssignedId(null);
                   } else {
-                    startAddAssignedCase();
+                    requireAdmin(startAddAssignedCase);
                   }
                 }}
-                title="배정 안건 추가"
+                title="배정 안건 추가 (관리자 전용)"
                 style={{ border: "none", background: "transparent", color: "var(--color-primary)", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
               >
                 {showAssignForm ? "닫기" : "+ 추가"}
@@ -731,9 +754,11 @@ export default function CasesPage() {
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
-                                startEditAssignedCase({ id: a.assignedId, case_number: a.case_number, company_name: a.company_name, manager: a.manager, due_date: a.due_date });
+                                requireAdmin(() =>
+                                  startEditAssignedCase({ id: a.assignedId, case_number: a.case_number, company_name: a.company_name, manager: a.manager, due_date: a.due_date })
+                                );
                               }}
-                              title="배정 안건 수정"
+                              title="배정 안건 수정 (관리자 전용)"
                               style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
                             >
                               ✏️
@@ -741,9 +766,9 @@ export default function CasesPage() {
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
-                                deleteAssignedCase(a.assignedId);
+                                requireAdmin(() => deleteAssignedCase(a.assignedId));
                               }}
-                              title="배정 목록에서 삭제"
+                              title="배정 목록에서 삭제 (관리자 전용)"
                               style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
                             >
                               ✕
@@ -802,6 +827,98 @@ export default function CasesPage() {
           onConfirm={() => confirmDeleteCase(deleteTarget)}
         />
       )}
+
+      {showAdminLogin && (
+        <AdminLoginModal
+          onClose={() => setShowAdminLogin(false)}
+          onSuccess={() => {
+            const pendingAction = showAdminLogin;
+            setIsAdmin(true);
+            setShowAdminLogin(false);
+            if (typeof pendingAction === "function") pendingAction();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// 배정 현황 편집·공지사항 작성처럼 관리자만 해야 하는 기능을 누르면 뜨는 두 번째 비밀번호
+// 입력 모달. 사이트 공유 비밀번호와는 별개(ADMIN_PASSWORD)이며, 성공하면 브라우저에 30일간
+// 기억돼서 매번 다시 입력할 필요는 없다.
+function AdminLoginModal({ onClose, onSuccess }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "비밀번호가 올바르지 않아요.");
+        setSubmitting(false);
+        return;
+      }
+      onSuccess();
+    } catch {
+      setError("로그인 중 문제가 발생했어요.");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.35)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+      }}
+    >
+      <form onSubmit={handleSubmit} className="card" style={{ width: 360, background: "white" }}>
+        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 10 }}>🔒 관리자 확인</div>
+        <div style={{ fontSize: 15, marginBottom: 14, color: "var(--color-text-muted)" }}>
+          이 기능은 관리자만 사용할 수 있어요. 관리자 비밀번호를 입력해주세요.
+        </div>
+        <input
+          type="password"
+          autoFocus
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="관리자 비밀번호"
+          style={{
+            width: "100%",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid var(--color-border)",
+            marginBottom: 10,
+          }}
+        />
+        {error && (
+          <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginBottom: 10 }}>
+            {error}
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            취소
+          </button>
+          <button type="submit" className="btn-primary" disabled={submitting || !password}>
+            {submitting ? "확인 중..." : "확인"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
