@@ -32,8 +32,12 @@ export default function CasesPage() {
   const [assignForm, setAssignForm] = useState({ case_number: "", company_name: "", manager: "", due_date: "" });
   const [savingAssign, setSavingAssign] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const [announcementColor, setAnnouncementColor] = useState("");
+  const [announcementFontSize, setAnnouncementFontSize] = useState(15);
   const [editingAnnouncement, setEditingAnnouncement] = useState(false);
   const [announcementInput, setAnnouncementInput] = useState("");
+  const [announcementColorInput, setAnnouncementColorInput] = useState("#111111");
+  const [announcementFontSizeInput, setAnnouncementFontSizeInput] = useState(15);
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -98,10 +102,12 @@ export default function CasesPage() {
 
     const { data: announcementRow } = await supabase
       .from("announcements")
-      .select("content")
+      .select("content, color, font_size")
       .eq("id", 1)
       .maybeSingle();
     setAnnouncement(announcementRow?.content || "");
+    setAnnouncementColor(announcementRow?.color || "");
+    setAnnouncementFontSize(announcementRow?.font_size || 15);
   }
 
   useEffect(() => {
@@ -211,8 +217,16 @@ export default function CasesPage() {
   async function saveAnnouncement() {
     setSavingAnnouncement(true);
     const content = announcementInput.trim();
-    await supabase.from("announcements").upsert({ id: 1, content, updated_at: new Date().toISOString() });
+    await supabase.from("announcements").upsert({
+      id: 1,
+      content,
+      color: announcementColorInput,
+      font_size: announcementFontSizeInput,
+      updated_at: new Date().toISOString(),
+    });
     setAnnouncement(content);
+    setAnnouncementColor(announcementColorInput);
+    setAnnouncementFontSize(announcementFontSizeInput);
     setSavingAnnouncement(false);
     setEditingAnnouncement(false);
   }
@@ -299,6 +313,8 @@ export default function CasesPage() {
               onClick={() =>
                 requireAdmin(() => {
                   setAnnouncementInput(announcement);
+                  setAnnouncementColorInput(announcementColor || "#111111");
+                  setAnnouncementFontSizeInput(announcementFontSize || 15);
                   setEditingAnnouncement(true);
                 })
               }
@@ -311,6 +327,26 @@ export default function CasesPage() {
         </div>
         {editingAnnouncement ? (
           <div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+              {["❗", "★", "☆", "✔", "▶", "※", "☎", "♥", "→"].map((ch) => (
+                <button
+                  key={ch}
+                  type="button"
+                  onClick={() => setAnnouncementInput((v) => v + ch)}
+                  title="공지사항에 삽입"
+                  style={{
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 6,
+                    background: "white",
+                    cursor: "pointer",
+                    fontSize: 15,
+                    padding: "2px 8px",
+                  }}
+                >
+                  {ch}
+                </button>
+              ))}
+            </div>
             <textarea
               value={announcementInput}
               onChange={(e) => setAnnouncementInput(e.target.value)}
@@ -324,8 +360,33 @@ export default function CasesPage() {
                 fontSize: 15,
                 fontFamily: "inherit",
                 resize: "vertical",
+                color: announcementColorInput,
               }}
             />
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--color-text-muted)" }}>
+                글자색
+                <input
+                  type="color"
+                  value={announcementColorInput}
+                  onChange={(e) => setAnnouncementColorInput(e.target.value)}
+                  style={{ width: 32, height: 24, padding: 0, border: "1px solid var(--color-border)", borderRadius: 4, cursor: "pointer" }}
+                />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "var(--color-text-muted)" }}>
+                글자 크기
+                <select
+                  value={announcementFontSizeInput}
+                  onChange={(e) => setAnnouncementFontSizeInput(Number(e.target.value))}
+                  style={{ padding: "4px 6px", borderRadius: 6, border: "1px solid var(--color-border)", fontSize: 14 }}
+                >
+                  <option value={13}>작게</option>
+                  <option value={15}>보통</option>
+                  <option value={19}>크게</option>
+                  <option value={24}>아주 크게</option>
+                </select>
+              </label>
+            </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
               <button className="btn-secondary" onClick={() => setEditingAnnouncement(false)} disabled={savingAnnouncement}>
                 취소
@@ -336,7 +397,9 @@ export default function CasesPage() {
             </div>
           </div>
         ) : announcement ? (
-          <div style={{ fontSize: 15, whiteSpace: "pre-wrap" }}>{announcement}</div>
+          <div style={{ fontSize: announcementFontSize, color: announcementColor || undefined, whiteSpace: "pre-wrap" }}>
+            {announcement}
+          </div>
         ) : (
           <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>등록된 공지사항이 없어요.</div>
         )}
