@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import ReportStatusBadge from "./ReportStatusBadge";
 
 function isImageFile(fileName) {
   return /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName || "");
@@ -123,6 +124,7 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
     <div>
       <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
         참고 문서 업로드
+        <ReportStatusBadge status="reference" />
       </div>
 
       <label

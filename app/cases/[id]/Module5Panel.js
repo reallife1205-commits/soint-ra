@@ -4,13 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import FactorySearchTab from "./Module5FactoryTab";
 import CategorizedRowsTable from "./CategorizedRowsTable";
+import ReportStatusBadge from "./ReportStatusBadge";
 
+// DART 검색/공장등록 조회/수동 추가/수집 결과는 회사명을 찾기 위한 검색 보조 도구라 보고서엔
+// 안 들어가고, "공장등록 이력(표5)"에 직접 입력한 표만 [표 5]로 그대로 반영된다.
 const TABS = [
   { key: "dart", label: "DART 검색" },
   { key: "factory", label: "공장등록 조회" },
   { key: "manual", label: "수동 추가" },
   { key: "results", label: "수집 결과" },
-  { key: "factory_history", label: "공장등록 이력(표5)" },
+  { key: "factory_history", label: "공장등록 이력(표5)", status: "required" },
 ];
 
 const FACTORY_HISTORY_FIELDS = [
@@ -59,6 +62,7 @@ export default function Module5Panel({ caseId }) {
                 {resultCount}
               </span>
             )}
+            <ReportStatusBadge status={t.status} />
           </button>
         ))}
       </div>

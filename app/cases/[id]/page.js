@@ -21,21 +21,23 @@ import ReviewOpinionTab from "./Module7ReviewOpinion";
 import ModuleCompletionToggle from "./ModuleCompletionToggle";
 import DocumentUpload from "./DocumentUpload";
 import Module8ScientificAnalysis from "./Module8ScientificAnalysis";
+import ReportStatusBadge from "./ReportStatusBadge";
 
+// status: "required"(보고서에 반영됨) | "reference"(입력해도 보고서엔 안 들어감, 화면엔 남겨둠).
 const SUB_TAB_31 = [
-  { key: "ownership", label: "소유·임대차 이력", moduleNumber: 3 },
-  { key: "dart", label: "DART·공장조회", moduleNumber: 5 },
+  { key: "ownership", label: "소유·임대차 이력", moduleNumber: 3, status: "required" },
+  { key: "dart", label: "DART·공장조회", moduleNumber: 5 }, // 안에 "공장등록 이력(표5)" 탭만 반영됨 — 그 탭에서 개별 표시
 ];
 
 const SUB_TAB_22 = [
-  { key: "surrounding_data", label: "주변부지 조사", moduleNumber: 2 },
-  { key: "surrounding_impact", label: "주변부지 영향 판단", moduleNumber: 7 },
+  { key: "surrounding_data", label: "주변부지 조사", moduleNumber: 2, status: "required" },
+  { key: "surrounding_impact", label: "주변부지 영향 판단", moduleNumber: 7, status: "reference" },
 ];
 
 const SUB_TAB_6 = [
-  { key: "legal", label: "법적 판단", moduleNumber: 3 },
+  { key: "legal", label: "법적 판단", moduleNumber: 3, status: "required" },
   { key: "timeline", label: "통합 타임라인", moduleNumber: 7 },
-  { key: "opinion", label: "검토 의견", moduleNumber: 7 },
+  { key: "opinion", label: "검토 의견", moduleNumber: 7, status: "reference" },
 ];
 
 export default function CaseDetailPage() {
@@ -339,6 +341,7 @@ export default function CaseDetailPage() {
               }}
             >
               {c.label}
+              <ReportStatusBadge status={c.reportStatus} />
             </button>
           );
         })}
@@ -374,6 +377,7 @@ export default function CaseDetailPage() {
                 }}
               >
                 {s.label}
+                <ReportStatusBadge status={s.reportStatus} />
               </button>
             );
           })}
@@ -478,7 +482,10 @@ export default function CaseDetailPage() {
             <div className="card">
               <ManagementHistorySection caseId={id} />
               <hr style={{ margin: "20px 0", border: "none", borderTop: "1px solid var(--color-border)" }} />
-              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>오염물질 × 기업 매핑</div>
+              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12 }}>
+                오염물질 × 기업 매핑
+                <ReportStatusBadge status="reference" />
+              </div>
               <PollutionMappingTab caseId={id} />
             </div>
           )}
@@ -520,6 +527,7 @@ function ToolTabs({ tabs, active, onSelect }) {
           style={{ fontSize: 14 }}
         >
           {t.label}
+          <ReportStatusBadge status={t.status} />
         </button>
       ))}
     </div>
