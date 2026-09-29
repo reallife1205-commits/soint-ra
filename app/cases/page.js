@@ -28,6 +28,7 @@ export default function CasesPage() {
   const [viewMode, setViewMode] = useState("card"); // "card" | "table"
   const [assignedCases, setAssignedCases] = useState([]);
   const [showAssignForm, setShowAssignForm] = useState(false);
+  const [editingAssignedId, setEditingAssignedId] = useState(null); // null | "new" | 배정 안건 id
   const [assignForm, setAssignForm] = useState({ case_number: "", company_name: "", manager: "", due_date: "" });
   const [savingAssign, setSavingAssign] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -138,16 +139,49 @@ export default function CasesPage() {
     e.preventDefault();
     if (!assignForm.case_number.trim()) return;
     setSavingAssign(true);
-    const { data, error } = await supabase
-      .from("assigned_cases")
-      .insert([{ year: CURRENT_YEAR, ...assignForm, due_date: assignForm.due_date || null }])
-      .select()
-      .single();
-    setSavingAssign(false);
-    if (error) return;
-    setAssignedCases((prev) => [...prev, data]);
+    const payload = { ...assignForm, due_date: assignForm.due_date || null };
+
+    if (editingAssignedId && editingAssignedId !== "new") {
+      const { data, error } = await supabase
+        .from("assigned_cases")
+        .update(payload)
+        .eq("id", editingAssignedId)
+        .select()
+        .single();
+      setSavingAssign(false);
+      if (error) return;
+      setAssignedCases((prev) => prev.map((a) => (a.id === data.id ? data : a)));
+    } else {
+      const { data, error } = await supabase
+        .from("assigned_cases")
+        .insert([{ year: CURRENT_YEAR, ...payload }])
+        .select()
+        .single();
+      setSavingAssign(false);
+      if (error) return;
+      setAssignedCases((prev) => [...prev, data]);
+    }
+
     setAssignForm({ case_number: "", company_name: "", manager: "", due_date: "" });
     setShowAssignForm(false);
+    setEditingAssignedId(null);
+  }
+
+  function startAddAssignedCase() {
+    setAssignForm({ case_number: "", company_name: "", manager: "", due_date: "" });
+    setEditingAssignedId("new");
+    setShowAssignForm(true);
+  }
+
+  function startEditAssignedCase(a) {
+    setAssignForm({
+      case_number: a.case_number || "",
+      company_name: a.company_name || "",
+      manager: a.manager || "",
+      due_date: a.due_date || "",
+    });
+    setEditingAssignedId(a.id);
+    setShowAssignForm(true);
   }
 
   async function deleteAssignedCase(id) {
@@ -226,7 +260,9 @@ export default function CasesPage() {
         linkedCase: null,
         assignedId: a.id,
       }));
-    return [...registeredEntries, ...assignedOnlyEntries];
+    return [...registeredEntries, ...assignedOnlyEntries].sort((a, b) =>
+      (a.case_number || "").localeCompare(b.case_number || "", "ko")
+    );
   }, [cases, assignedCases]);
 
   return (
@@ -541,7 +577,14 @@ export default function CasesPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontWeight: 700 }}>{CURRENT_YEAR}년 배정 현황</div>
               <button
-                onClick={() => setShowAssignForm((v) => !v)}
+                onClick={() => {
+                  if (showAssignForm) {
+                    setShowAssignForm(false);
+                    setEditingAssignedId(null);
+                  } else {
+                    startAddAssignedCase();
+                  }
+                }}
                 title="배정 안건 추가"
                 style={{ border: "none", background: "transparent", color: "var(--color-primary)", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
               >
@@ -582,8 +625,19 @@ export default function CasesPage() {
                   />
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setShowAssignForm(false);
+                      setEditingAssignedId(null);
+                    }}
+                    style={{ padding: "6px 14px" }}
+                  >
+                    취소
+                  </button>
                   <button type="submit" className="btn-primary" disabled={savingAssign} style={{ padding: "6px 14px" }}>
-                    {savingAssign ? "추가 중..." : "추가"}
+                    {savingAssign ? "저장 중..." : editingAssignedId && editingAssignedId !== "new" ? "수정" : "추가"}
                   </button>
                 </div>
               </form>
@@ -647,10 +701,10 @@ export default function CasesPage() {
                     >
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>
-                          {a.company_name || a.case_number}
+                          {a.case_number}
                         </div>
                         <div style={{ fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {a.case_number}
+                          {a.company_name || "-"}
                           {a.manager ? ` · ${a.manager}` : ""}
                         </div>
                       </div>
@@ -673,16 +727,28 @@ export default function CasesPage() {
                           </span>
                         )}
                         {!a.registered && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              deleteAssignedCase(a.assignedId);
-                            }}
-                            title="배정 목록에서 삭제"
-                            style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
-                          >
-                            ✕
-                          </button>
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                startEditAssignedCase({ id: a.assignedId, case_number: a.case_number, company_name: a.company_name, manager: a.manager, due_date: a.due_date });
+                              }}
+                              title="배정 안건 수정"
+                              style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                deleteAssignedCase(a.assignedId);
+                              }}
+                              title="배정 목록에서 삭제"
+                              style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
+                            >
+                              ✕
+                            </button>
+                          </>
                         )}
                       </div>
                     </Wrapper>
