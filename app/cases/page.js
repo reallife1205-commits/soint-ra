@@ -113,7 +113,7 @@ export default function CasesPage() {
   function handleDeleteCase(e, c) {
     e.preventDefault();
     e.stopPropagation();
-    setDeleteTarget(c);
+    requireAdmin(() => setDeleteTarget(c));
   }
 
   // 안건과 그 아래 딸린 모든 자료(표 입력값, 문서, 항공사진 태그 등)를 완전히 삭제한다.
@@ -505,7 +505,7 @@ export default function CasesPage() {
                     <button
                       onClick={(e) => handleDeleteCase(e, c)}
                       disabled={deletingId === c.id}
-                      title="안건 삭제"
+                      title="안건 삭제 (관리자 전용)"
                       style={{
                         position: "absolute",
                         top: 8,
