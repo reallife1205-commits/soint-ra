@@ -72,7 +72,7 @@ export default function SurroundingImpactTab({ caseId, caseInfo }) {
     (m1rows || []).forEach((r) => {
       const d = r.row_data || {};
       const name = (d.contaminant || "").trim();
-      const val = parseFloat(d.max_concentration);
+      const val = parseFloat(String(d.max_concentration ?? "").replace(/,/g, ""));
       if (!name || isNaN(val)) return;
       if (!targetMaxBySubstance[name] || val > targetMaxBySubstance[name]) {
         targetMaxBySubstance[name] = val;

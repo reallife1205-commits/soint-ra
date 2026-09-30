@@ -10,12 +10,13 @@ const PROGRESS_FIELDS = [
   { key: "description", label: "내용" },
 ];
 
+// 천 단위 쉼표(예: "1,250")가 있으면 parseFloat가 1로 읽어버려서 먼저 제거한다.
 function toNum(v) {
-  const n = parseFloat(v);
+  const n = parseFloat(String(v ?? "").replace(/,/g, ""));
   return isNaN(n) ? 0 : n;
 }
 function toNumOrNull(v) {
-  const n = parseFloat(v);
+  const n = parseFloat(String(v ?? "").replace(/,/g, ""));
   return v === null || v === undefined || v === "" || isNaN(n) ? null : n;
 }
 function formatSum(n) {

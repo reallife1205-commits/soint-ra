@@ -34,7 +34,8 @@ FIELDS.forEach((f) => {
 const CELL_BORDER = "1px solid var(--color-border)";
 
 function toNum(v) {
-  const n = parseFloat(v);
+  // 천 단위 쉼표(예: "1,250")가 있으면 parseFloat가 1로 읽어버려서 먼저 제거한다.
+  const n = parseFloat(String(v ?? "").replace(/,/g, ""));
   return isNaN(n) ? 0 : n;
 }
 
@@ -46,7 +47,7 @@ function formatSum(n) {
 
 // 최고농도가 법정 우려기준/대책기준을 초과하는지 판단 ("action" > "concern" > null 순)
 function exceedLevel(contaminant, maxConcentration, zone) {
-  const val = parseFloat(maxConcentration);
+  const val = parseFloat(String(maxConcentration ?? "").replace(/,/g, ""));
   if (!zone || isNaN(val) || val <= 0) return null;
   const key = findSubstanceKey(contaminant);
   if (!key) return null;
