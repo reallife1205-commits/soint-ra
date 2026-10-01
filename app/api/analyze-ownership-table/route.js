@@ -140,6 +140,9 @@ ${matchingText}
       body: JSON.stringify({
         model: "claude-sonnet-5",
         max_tokens: 1000,
+        // claude-sonnet-5는 thinking을 생략하면 기본으로 켜져서, 자료가 많을 때 1000토큰을
+        // 생각하는 데 다 쓰고 본문이 비어버린다. 짧은 요약 작업이라 꺼둔다.
+        thinking: { type: "disabled" },
         messages: [{ role: "user", content }],
       }),
       signal: controller.signal,
@@ -155,7 +158,14 @@ ${matchingText}
       );
     }
 
-    let analysis = data.content?.map((c) => c.text || "").join("\n") || "";
+    let analysis = data.content?.map((c) => c.text || "").join("\n").trim() || "";
+
+    if (!analysis) {
+      return Response.json(
+        { error: "AI가 분석 결과를 내지 못했어요. 잠시 후 다시 시도해주세요." },
+        { status: 500 }
+      );
+    }
 
     // 토큰 한도에 걸려 문장 중간에 끊긴 경우, 마지막 미완성 줄을 버리고 안내를 붙인다.
     if (data.stop_reason === "max_tokens") {
