@@ -96,13 +96,31 @@ export async function POST(req) {
     const buffer = Buffer.from(await blob.arrayBuffer());
     const base64 = buffer.toString("base64");
 
+    const { data: matchingRow } = await supabaseAdmin
+      .from("module_rows")
+      .select("row_data")
+      .eq("case_id", caseId)
+      .eq("module_number", 3)
+      .contains("row_data", { category: "party_matching" })
+      .maybeSingle();
+    const matchingText = matchingRow?.row_data?.text?.trim();
+
+    const prompt = matchingText
+      ? `${PROMPT}
+
+[검토자가 의견서·법인 서류로 확인한 업체–대표자 매칭]
+${matchingText}
+표에 위 대표자와 같은 개인 이름이 나오면 "김OO(OO업체 대표자)"처럼 업체와 연결해서 쓰고,
+개인 명의와 법인 명의는 법적으로 별개이므로 동일인 여부가 불확실하면 "확인 필요"를 붙이기.`
+      : PROMPT;
+
     const isPdf = mediaType === "application/pdf";
     const content = [
       {
         type: isPdf ? "document" : "image",
         source: { type: "base64", media_type: mediaType, data: base64 },
       },
-      { type: "text", text: PROMPT },
+      { type: "text", text: prompt },
     ];
 
     const controller = new AbortController();

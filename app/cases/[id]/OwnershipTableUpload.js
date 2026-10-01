@@ -17,6 +17,45 @@ export default function OwnershipTableUpload({ caseId }) {
   const [uploading, setUploading] = useState(false);
   const [analyzingId, setAnalyzingId] = useState(null);
   const [error, setError] = useState("");
+  const [matchingText, setMatchingText] = useState("");
+  const [matchingRowId, setMatchingRowId] = useState(null);
+  const [matchingSaving, setMatchingSaving] = useState(false);
+
+  useEffect(() => {
+    async function loadMatching() {
+      const { data } = await supabase
+        .from("module_rows")
+        .select("*")
+        .eq("case_id", caseId)
+        .eq("module_number", MODULE_NUMBER)
+        .contains("row_data", { category: "party_matching" })
+        .maybeSingle();
+      if (data) {
+        setMatchingRowId(data.id);
+        setMatchingText(data.row_data?.text || "");
+      }
+    }
+    loadMatching();
+  }, [caseId]);
+
+  async function saveMatching() {
+    setMatchingSaving(true);
+    const newData = { category: "party_matching", text: matchingText };
+    if (matchingRowId) {
+      await supabase
+        .from("module_rows")
+        .update({ row_data: newData, updated_at: new Date().toISOString() })
+        .eq("id", matchingRowId);
+    } else {
+      const { data } = await supabase
+        .from("module_rows")
+        .insert([{ case_id: caseId, module_number: MODULE_NUMBER, row_order: 0, row_data: newData }])
+        .select()
+        .single();
+      if (data) setMatchingRowId(data.id);
+    }
+    setMatchingSaving(false);
+  }
 
   async function load() {
     setLoading(true);
@@ -144,6 +183,24 @@ export default function OwnershipTableUpload({ caseId }) {
         [표 4]~[표 6]처럼 정해진 양식이 없는 소유·점유 증빙 표(등기부등본, 팩토리온 공장등록,
         공유지연명부 등)를 사진/스캔 이미지나 PDF로 올려주세요. 올린 뒤 "AI 분석"을 누르면
         간단한 검토 포인트를 함께 정리해드려요.
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+          업체–대표자 매칭 {matchingSaving && <span style={{ fontWeight: 400, color: "var(--color-text-muted)" }}>저장 중...</span>}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 6 }}>
+          의견서·법인 서류로 확인한 업체명과 대표자를 한 줄에 하나씩 적어주세요. AI 분석 시 토지대장·등기부의
+          개인 이름을 이 목록과 연결해서 봐요. (적은 뒤 &quot;다시 분석&quot;을 눌러야 반영돼요)
+        </div>
+        <textarea
+          value={matchingText}
+          onChange={(e) => setMatchingText(e.target.value)}
+          onBlur={saveMatching}
+          rows={4}
+          placeholder={"예) (주)OO산업 = 홍길동 (2005~2015 대표)\n(주)△△테크 = 김철수"}
+          style={{ width: "100%", fontSize: 14 }}
+        />
       </div>
 
       <label
