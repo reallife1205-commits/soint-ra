@@ -15,7 +15,8 @@ export default function OwnershipTableUpload({ caseId }) {
   const [urlMap, setUrlMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [analyzingId, setAnalyzingId] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState("");
   const [matchingText, setMatchingText] = useState("");
   const [matchingRowId, setMatchingRowId] = useState(null);
@@ -35,7 +36,18 @@ export default function OwnershipTableUpload({ caseId }) {
         setMatchingText(data.row_data?.text || "");
       }
     }
+    async function loadAnalysis() {
+      const { data } = await supabase
+        .from("module_rows")
+        .select("row_data")
+        .eq("case_id", caseId)
+        .eq("module_number", MODULE_NUMBER)
+        .contains("row_data", { category: "ownership_table_analysis" })
+        .maybeSingle();
+      setAnalysis(data?.row_data || null);
+    }
     loadMatching();
+    loadAnalysis();
   }, [caseId]);
 
   async function saveMatching() {
@@ -156,33 +168,38 @@ export default function OwnershipTableUpload({ caseId }) {
     load();
   }
 
-  async function handleAnalyze(doc) {
-    setAnalyzingId(doc.id);
+  async function handleAnalyze() {
+    setAnalyzing(true);
     setError("");
     try {
       const res = await fetch("/api/analyze-ownership-table", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId, documentId: doc.id }),
+        body: JSON.stringify({ caseId }),
       });
       const data = await res.json();
       if (data.error) {
         setError(data.error);
       } else {
-        setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, analysis: data.analysis } : d)));
+        setAnalysis(data.analysis);
       }
     } catch (e) {
       setError("분석 중 문제가 발생했어요");
     }
-    setAnalyzingId(null);
+    setAnalyzing(false);
   }
+
+  // 분석 이후 자료를 추가·삭제했으면 결과가 지금 자료 목록과 다르다는 걸 알려준다.
+  const analysisStale =
+    analysis &&
+    [...(analysis.doc_ids || [])].sort().join(",") !== docs.map((d) => d.id).sort().join(",");
 
   return (
     <div>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
         [표 4]~[표 6]처럼 정해진 양식이 없는 소유·점유 증빙 표(등기부등본, 팩토리온 공장등록,
-        공유지연명부 등)를 사진/스캔 이미지나 PDF로 올려주세요. 올린 뒤 "AI 분석"을 누르면
-        간단한 검토 포인트를 함께 정리해드려요.
+        공유지연명부 등)를 사진/스캔 이미지나 PDF로 올려주세요. 자료를 모두 올린 뒤 아래
+        &quot;AI 분석&quot;을 누르면 전체 자료를 종합해 검토 포인트를 정리해드려요.
       </div>
 
       <div style={{ marginBottom: 14 }}>
@@ -265,14 +282,6 @@ export default function OwnershipTableUpload({ caseId }) {
                     {doc.file_name}
                   </a>
                   <button
-                    className="btn-secondary"
-                    onClick={() => handleAnalyze(doc)}
-                    disabled={analyzingId === doc.id}
-                    style={{ flexShrink: 0, fontSize: 14, padding: "6px 10px" }}
-                  >
-                    {analyzingId === doc.id ? "분석 중..." : doc.analysis ? "🔄 다시 분석" : "✨ AI 분석"}
-                  </button>
-                  <button
                     onClick={() => handleDelete(doc)}
                     style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", flexShrink: 0 }}
                     title="삭제"
@@ -280,26 +289,47 @@ export default function OwnershipTableUpload({ caseId }) {
                     ✕
                   </button>
                 </div>
-                {doc.analysis && (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      padding: 10,
-                      background: "var(--color-surface-alt)",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      whiteSpace: "pre-wrap",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {doc.analysis}
-                  </div>
-                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {docs.length > 0 && (
+        <div className="card" style={{ padding: 12, marginTop: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ flex: 1, fontWeight: 600, fontSize: 15 }}>종합 AI 분석 (자료 {docs.length}건)</div>
+            <button
+              className="btn-secondary"
+              onClick={handleAnalyze}
+              disabled={analyzing}
+              style={{ flexShrink: 0, fontSize: 14, padding: "6px 10px" }}
+            >
+              {analyzing ? "분석 중..." : analysis ? "🔄 다시 분석" : "✨ AI 분석"}
+            </button>
+          </div>
+          {analysisStale && !analyzing && (
+            <div style={{ fontSize: 13, color: "var(--color-badge-red-text)", marginTop: 8 }}>
+              분석 이후 자료가 바뀌었어요. &quot;다시 분석&quot;을 눌러주세요.
+            </div>
+          )}
+          {analysis?.text && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: 10,
+                background: "var(--color-surface-alt)",
+                borderRadius: 8,
+                fontSize: 14,
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.5,
+              }}
+            >
+              {analysis.text}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
