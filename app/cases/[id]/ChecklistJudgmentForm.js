@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import HeadedTextEditor from "./HeadedTextEditor";
 
 export default function ChecklistJudgmentForm({
   caseId,
@@ -12,7 +13,7 @@ export default function ChecklistJudgmentForm({
   summaryLabel = "판단 내용",
   summaryPlaceholder = "",
   summaryRows = 4,
-  headingPreview = false,
+  headingBold = false,
 }) {
   const [rowId, setRowId] = useState(null);
   const [checked, setChecked] = useState({});
@@ -136,45 +137,24 @@ export default function ChecklistJudgmentForm({
       )}
 
       <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>{summaryLabel}</label>
-      <textarea
-        value={summary}
-        onChange={(e) => setSummary(e.target.value)}
-        onBlur={() => save()}
-        placeholder={summaryPlaceholder}
-        rows={summaryRows}
-        style={{ ...inputStyle, resize: "vertical" }}
-      />
-
-      {/* textarea는 글자 일부만 굵게 할 수 없어서, 줄 맨 앞의 "(소제목)"을 굵게 보여주는 미리보기를 따로 둔다. */}
-      {headingPreview && summary.trim() && (
-        <div
-          style={{
-            marginTop: 8,
-            padding: "10px 12px",
-            borderRadius: 8,
-            background: "var(--color-surface-alt)",
-            fontSize: 15,
-            lineHeight: 1.7,
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 4 }}>미리보기</div>
-          {summary.split("\n").map((line, i) => {
-            const m = line.match(/^(\([^)]*\))(.*)$/);
-            return (
-              <div key={i} style={{ minHeight: "1.7em" }}>
-                {m ? (
-                  <>
-                    <strong>{m[1]}</strong>
-                    {m[2]}
-                  </>
-                ) : (
-                  line
-                )}
-              </div>
-            );
-          })}
-        </div>
+      {headingBold ? (
+        <HeadedTextEditor
+          value={summary}
+          onChange={setSummary}
+          onBlur={() => save()}
+          placeholder={summaryPlaceholder}
+          rows={summaryRows}
+          style={inputStyle}
+        />
+      ) : (
+        <textarea
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          onBlur={() => save()}
+          placeholder={summaryPlaceholder}
+          rows={summaryRows}
+          style={{ ...inputStyle, resize: "vertical" }}
+        />
       )}
 
       {saving && (
