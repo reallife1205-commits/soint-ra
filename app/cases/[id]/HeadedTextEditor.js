@@ -56,9 +56,10 @@ export default function HeadedTextEditor({ value, onChange, onBlur, placeholder,
           position: "absolute",
           inset: 0,
           // textarea의 marginTop은 부모 div 밖으로 겹쳐(margin collapse) 부모 위치 자체를 내리므로,
-          // 표시층에도 margin을 주면 그만큼 더 내려가 어긋난다.
-          margin: 0,
-          borderColor: "transparent",
+          // 표시층에도 margin을 주면 그만큼 더 내려가 어긋난다. (축약형 margin/borderColor를 섞으면
+          // React가 개별 속성을 덮어쓰지 못해서, style에 있는 같은 키를 그대로 덮어쓴다.)
+          marginTop: 0,
+          border: "1px solid transparent",
           background: "var(--color-surface, #fff)",
           color: "var(--color-text)",
           overflow: "hidden",
