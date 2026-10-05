@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import HeadedTextEditor from "./HeadedTextEditor";
 
@@ -22,6 +22,9 @@ export default function ChecklistJudgmentForm({
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // 마지막으로 불러오거나 저장한 내용. 바뀐 게 없으면 저장하지 않는다 — 같은 화면이 다른 탭에 예전
+  // 내용으로 열려 있을 때, 그 탭에서 입력칸을 눌렀다 나오기만 해도 예전 내용으로 덮어써지던 문제 방지.
+  const lastSaved = useRef(null);
 
   useEffect(() => {
     async function load() {
@@ -39,6 +42,16 @@ export default function ChecklistJudgmentForm({
         setOtherText(data.row_data.other_text || "");
         setSummary(data.row_data.summary || "");
         if (radioField) setRadioValue(data.row_data[radioField.key] || radioField.options[0]);
+        lastSaved.current = JSON.stringify(
+          buildData({
+            checked: data.row_data.checked || {},
+            other_text: data.row_data.other_text || "",
+            summary: data.row_data.summary || "",
+            ...(radioField ? { [radioField.key]: data.row_data[radioField.key] || radioField.options[0] } : {}),
+          })
+        );
+      } else {
+        lastSaved.current = JSON.stringify(buildData({ checked: {}, other_text: "", summary: "" }));
       }
       setLoading(false);
     }
@@ -46,9 +59,8 @@ export default function ChecklistJudgmentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId, moduleNumber, category]);
 
-  async function save(overrides = {}) {
-    setSaving(true);
-    const newData = {
+  function buildData(overrides = {}) {
+    return {
       category,
       checked,
       other_text: otherText,
@@ -56,6 +68,13 @@ export default function ChecklistJudgmentForm({
       ...(radioField ? { [radioField.key]: radioValue } : {}),
       ...overrides,
     };
+  }
+
+  async function save(overrides = {}) {
+    const newData = buildData(overrides);
+    const snapshot = JSON.stringify(newData);
+    if (snapshot === lastSaved.current) return;
+    setSaving(true);
 
     if (rowId) {
       await supabase
@@ -70,6 +89,7 @@ export default function ChecklistJudgmentForm({
         .single();
       if (data) setRowId(data.id);
     }
+    lastSaved.current = snapshot;
     setSaving(false);
   }
 
