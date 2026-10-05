@@ -176,6 +176,7 @@ export function AccessSection({ caseId }) {
           "\n(정화 시 출입 용이성) 현 소유자 OO테크가 부지를 직접 사용하고 있어 정화를 위한 출입이 용이함"
         }
         summaryRows={12}
+        headingPreview
       />
       <div style={{ marginTop: 16 }}>
         <ImageGallery
