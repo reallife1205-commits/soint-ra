@@ -177,6 +177,7 @@ export function AccessSection({ caseId }) {
         }
         summaryRows={12}
         headingBold
+        draftEndpoint="/api/draft-access"
       />
       <div style={{ marginTop: 16 }}>
         <ImageGallery

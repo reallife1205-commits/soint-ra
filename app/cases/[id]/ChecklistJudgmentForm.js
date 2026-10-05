@@ -14,6 +14,7 @@ export default function ChecklistJudgmentForm({
   summaryPlaceholder = "",
   summaryRows = 4,
   headingBold = false,
+  draftEndpoint,
 }) {
   const [rowId, setRowId] = useState(null);
   const [checked, setChecked] = useState({});
@@ -22,6 +23,8 @@ export default function ChecklistJudgmentForm({
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState("");
   // 마지막으로 불러오거나 저장한 내용. 바뀐 게 없으면 저장하지 않는다 — 같은 화면이 다른 탭에 예전
   // 내용으로 열려 있을 때, 그 탭에서 입력칸을 눌렀다 나오기만 해도 예전 내용으로 덮어써지던 문제 방지.
   const lastSaved = useRef(null);
@@ -93,6 +96,27 @@ export default function ChecklistJudgmentForm({
     setSaving(false);
   }
 
+  // "AI 초안 작성" — 이 안건 자료로 초안을 받아 입력칸에 넣고 바로 저장한다. 이미 쓴 내용은 확인 후에만 바꾼다.
+  async function writeDraft() {
+    if (summary.trim() && !window.confirm("지금 입력된 내용을 AI 초안으로 바꿀까요?")) return;
+    setDrafting(true);
+    setDraftError("");
+    try {
+      const res = await fetch(draftEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.draft) throw new Error(data.error || "AI 초안 작성 중 문제가 발생했어요");
+      setSummary(data.draft);
+      await save({ summary: data.draft });
+    } catch (e) {
+      setDraftError(e.message);
+    }
+    setDrafting(false);
+  }
+
   function toggleCheck(key) {
     const next = { ...checked, [key]: !checked[key] };
     setChecked(next);
@@ -156,7 +180,17 @@ export default function ChecklistJudgmentForm({
         </div>
       )}
 
-      <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>{summaryLabel}</label>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>{summaryLabel}</label>
+        {draftEndpoint && (
+          <button type="button" className="btn-secondary" onClick={writeDraft} disabled={drafting}>
+            {drafting ? "작성 중..." : "✨ AI 초안 작성"}
+          </button>
+        )}
+      </div>
+      {draftError && (
+        <div style={{ fontSize: 14, color: "var(--color-badge-red-text)", marginTop: 4 }}>{draftError}</div>
+      )}
       {headingBold ? (
         <HeadedTextEditor
           value={summary}
