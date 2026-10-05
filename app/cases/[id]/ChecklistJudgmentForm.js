@@ -11,6 +11,7 @@ export default function ChecklistJudgmentForm({
   radioField,
   summaryLabel = "판단 내용",
   summaryPlaceholder = "",
+  summaryRows = 4,
 }) {
   const [rowId, setRowId] = useState(null);
   const [checked, setChecked] = useState({});
@@ -139,7 +140,7 @@ export default function ChecklistJudgmentForm({
         onChange={(e) => setSummary(e.target.value)}
         onBlur={() => save()}
         placeholder={summaryPlaceholder}
-        rows={4}
+        rows={summaryRows}
         style={{ ...inputStyle, resize: "vertical" }}
       />
 
