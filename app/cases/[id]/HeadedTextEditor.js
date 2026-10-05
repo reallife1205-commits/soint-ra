@@ -33,10 +33,26 @@ function renderedHtml(text) {
   return tmp.innerHTML;
 }
 
+// 줄 하나 = 최상위 div 하나(buildLines 구조). innerText는 빈 줄(<div><br></div>)을 두 줄로 세어서
+// 저장할 때마다 빈 줄이 늘어나므로 직접 센다. 처음 입력하면 div 없이 글자가 바로 들어오거나
+// 최상위 <br>로 줄이 나뉘기도 해서 그 경우도 한 줄로 묶는다.
 function readText(el) {
-  // 편집 중 브라우저가 만든 구조가 제각각이어도 innerText는 줄 단위로 "\n"을 넣어준다.
-  // 마지막 줄 뒤에 붙는 줄바꿈 하나는 실제 내용이 아니라서 뗀다.
-  return el.innerText.replace(/\n$/, "");
+  const lines = [];
+  let cur = null;
+  el.childNodes.forEach((n) => {
+    if (n.nodeName === "DIV" || n.nodeName === "P") {
+      if (cur !== null) lines.push(cur);
+      cur = null;
+      lines.push(n.textContent);
+    } else if (n.nodeName === "BR") {
+      lines.push(cur ?? "");
+      cur = null;
+    } else {
+      cur = (cur ?? "") + n.textContent;
+    }
+  });
+  if (cur !== null) lines.push(cur);
+  return lines.join("\n");
 }
 
 // 커서 위치를 "몇 번째 줄의 몇 번째 글자"로 저장했다가, 다시 그린 뒤 같은 자리로 되돌린다.
