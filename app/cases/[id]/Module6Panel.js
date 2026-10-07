@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 const FIELD_ITEMS_DEFAULT = [
@@ -39,6 +39,13 @@ export default function Module6Panel({ caseId }) {
   );
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+  const [saveError, setSaveError] = useState("");
+  // 마지막으로 불러오거나 저장한 내용. 바뀐 게 없으면 저장하지 않는다 (다른 탭의 예전 내용으로 덮어쓰기 방지).
+  const lastSaved = useRef(null);
+
+  function snapshotOf(date, field, interview) {
+    return JSON.stringify({ survey_date: date || null, field_items: field, interview_items: interview });
+  }
 
   async function load() {
     setLoading(true);
@@ -48,11 +55,18 @@ export default function Module6Panel({ caseId }) {
       .eq("case_id", caseId)
       .maybeSingle();
 
+    let date = "";
+    let field = fieldItems;
+    let interview = interviewItems;
     if (data) {
-      setSurveyDate(data.survey_date || "");
-      if (data.field_items?.length) setFieldItems(data.field_items);
-      if (data.interview_items?.length) setInterviewItems(data.interview_items);
+      date = data.survey_date || "";
+      if (data.field_items?.length) field = data.field_items;
+      if (data.interview_items?.length) interview = data.interview_items;
+      setSurveyDate(date);
+      setFieldItems(field);
+      setInterviewItems(interview);
     }
+    lastSaved.current = snapshotOf(date, field, interview);
     setLoading(false);
   }
 
@@ -61,34 +75,51 @@ export default function Module6Panel({ caseId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
-  function updateFieldItem(index, patch) {
-    setFieldItems((items) =>
-      items.map((it, i) => (i === index ? { ...it, ...patch } : it))
-    );
-    setSavedMsg("");
-  }
+  // 입력칸에서 나올 때, 체크박스·날짜를 바꿀 때 자동 저장한다 (다른 장과 같은 방식).
+  async function save(overrides = {}) {
+    const date = overrides.surveyDate ?? surveyDate;
+    const field = overrides.fieldItems ?? fieldItems;
+    const interview = overrides.interviewItems ?? interviewItems;
+    const snapshot = snapshotOf(date, field, interview);
+    if (snapshot === lastSaved.current) return true;
 
-  function updateInterviewItem(index, patch) {
-    setInterviewItems((items) =>
-      items.map((it, i) => (i === index ? { ...it, ...patch } : it))
-    );
-    setSavedMsg("");
-  }
-
-  async function handleSave() {
     setSaving(true);
-    await supabase.from("field_surveys").upsert(
+    setSaveError("");
+    const { error } = await supabase.from("field_surveys").upsert(
       {
         case_id: caseId,
-        survey_date: surveyDate || null,
-        field_items: fieldItems,
-        interview_items: interviewItems,
+        survey_date: date || null,
+        field_items: field,
+        interview_items: interview,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "case_id" }
     );
     setSaving(false);
-    setSavedMsg("저장했어요!");
+    if (error) {
+      setSaveError(`저장에 실패했어요: ${error.message}`);
+      return false;
+    }
+    lastSaved.current = snapshot;
+    return true;
+  }
+
+  function updateFieldItem(index, patch, { saveNow = false } = {}) {
+    const next = fieldItems.map((it, i) => (i === index ? { ...it, ...patch } : it));
+    setFieldItems(next);
+    setSavedMsg("");
+    if (saveNow) save({ fieldItems: next });
+  }
+
+  function updateInterviewItem(index, patch, { saveNow = false } = {}) {
+    const next = interviewItems.map((it, i) => (i === index ? { ...it, ...patch } : it));
+    setInterviewItems(next);
+    setSavedMsg("");
+    if (saveNow) save({ interviewItems: next });
+  }
+
+  async function handleSave() {
+    if (await save()) setSavedMsg("저장했어요!");
   }
 
   if (loading) {
@@ -107,6 +138,7 @@ export default function Module6Panel({ caseId }) {
           onChange={(e) => {
             setSurveyDate(e.target.value);
             setSavedMsg("");
+            save({ surveyDate: e.target.value });
           }}
           style={{
             padding: "6px 10px",
@@ -121,6 +153,7 @@ export default function Module6Panel({ caseId }) {
         note="※ 오염개연시설 존부, 오염물질 누출 등 현장 확인"
         items={fieldItems}
         onChange={updateFieldItem}
+        onBlur={() => save()}
       />
 
       <ChecklistCard
@@ -128,10 +161,13 @@ export default function Module6Panel({ caseId }) {
         note="※ 대상부지 소유자, 관리자, 근무자, 지역 공무원 등 직접 방문 또는 전화 인터뷰 등 실시"
         items={interviewItems}
         onChange={updateInterviewItem}
+        onBlur={() => save()}
       />
 
       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 24 }}>
-        {savedMsg && <span style={{ fontSize: 15, color: "var(--color-primary)" }}>{savedMsg}</span>}
+        {saveError && <span style={{ fontSize: 15, color: "var(--color-badge-red-text)" }}>{saveError}</span>}
+        {!saveError && saving && <span style={{ fontSize: 15, color: "var(--color-text-muted)" }}>저장 중...</span>}
+        {!saveError && !saving && savedMsg && <span style={{ fontSize: 15, color: "var(--color-primary)" }}>{savedMsg}</span>}
         <button className="btn-primary" onClick={handleSave} disabled={saving}>
           {saving ? "저장 중..." : "체크리스트 저장"}
         </button>
@@ -142,7 +178,7 @@ export default function Module6Panel({ caseId }) {
   );
 }
 
-function ChecklistCard({ title, note, items, onChange }) {
+function ChecklistCard({ title, note, items, onChange, onBlur }) {
   return (
     <div className="card" style={{ marginBottom: 16 }}>
       <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 2 }}>{title}</div>
@@ -162,7 +198,7 @@ function ChecklistCard({ title, note, items, onChange }) {
             <input
               type="checkbox"
               checked={item.checked}
-              onChange={(e) => onChange(i, { checked: e.target.checked })}
+              onChange={(e) => onChange(i, { checked: e.target.checked }, { saveNow: true })}
               style={{ marginTop: 3 }}
             />
             <span>{item.label}</span>
@@ -170,6 +206,7 @@ function ChecklistCard({ title, note, items, onChange }) {
           <input
             value={item.answer}
             onChange={(e) => onChange(i, { answer: e.target.value })}
+            onBlur={onBlur}
             placeholder="확인 내용을 입력하세요 (예: 없음, 확인되지 않음 등)"
             style={{
               width: "100%",
