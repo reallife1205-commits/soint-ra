@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useModuleRows } from "@/lib/useModuleRows";
+import { currentOwnerNames } from "@/lib/currentOwner";
 import CategorizedRowsTable from "./CategorizedRowsTable";
 
 const PROGRESS_FIELDS = [
@@ -39,10 +40,7 @@ export default function Module0Overview({ caseId, onAddressUpdated }) {
   const [saving, setSaving] = useState(false);
 
   const { rows: ownershipRows } = useModuleRows(caseId, 3);
-  const currentOwners = ownershipRows
-    .filter((r) => r.row_data.category === "ownership" && !r.row_data.disposed_date)
-    .map((r) => r.row_data.owner_name)
-    .filter(Boolean);
+  const currentOwners = currentOwnerNames(ownershipRows.map((r) => r.row_data));
 
   const { rows: contaminationRows } = useModuleRows(caseId, 1);
   const contaminationData = contaminationRows.map((r) => r.row_data).filter((d) => d.contaminant);
@@ -160,7 +158,7 @@ export default function Module0Overview({ caseId, onAddressUpdated }) {
       </div>
 
       <div style={{ marginBottom: 8 }}>
-        <label style={labelStyle}>정화책임자 (챕터03 소유 이력의 현재 소유자 기준, 읽기전용)</label>
+        <label style={labelStyle}>정화책임자 (3.1 소유 이력에서 취득일이 가장 늦은 현재 소유자, 읽기전용)</label>
         <div style={readOnlyBoxStyle(currentOwners.length)}>
           {currentOwners.length ? currentOwners.join(", ") : "챕터03 소유 이력에서 현재 소유자를 등록하면 여기 표시돼요"}
         </div>

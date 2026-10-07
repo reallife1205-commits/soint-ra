@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
+import { currentOwnerNames } from "@/lib/currentOwner";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -100,7 +101,7 @@ async function fetchCaseData(caseId) {
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 0),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 1),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 2),
-    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3),
+    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3).order("row_order", { ascending: true }),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 5),
     supabaseAdmin.from("field_surveys").select("*").eq("case_id", caseId).maybeSingle(),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 8),
@@ -122,10 +123,7 @@ async function fetchCaseData(caseId) {
     .filter((d) => d.category === "progress")
     .map((d) => ({ date: d.date, description: d.description }))
     .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-  const currentOwners = m3
-    .filter((d) => d.category === "ownership" && !d.disposed_date)
-    .map((d) => d.owner_name)
-    .filter(Boolean);
+  const currentOwners = currentOwnerNames(m3);
 
   const [
     soilDataRows,
