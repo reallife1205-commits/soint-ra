@@ -115,7 +115,7 @@ export default function LegalJudgmentForm({ caseId }) {
         onChange={(e) => updateField("summary", e.target.value)}
         onBlur={handleBlurSave}
         placeholder="소유 이력과 임대차 이력을 바탕으로 한 판단 요약을 입력하세요."
-        rows={5}
+        rows={14}
         style={{
           width: "100%",
           padding: "8px 10px",

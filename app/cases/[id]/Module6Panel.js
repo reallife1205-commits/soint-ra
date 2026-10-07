@@ -38,7 +38,6 @@ export default function Module6Panel({ caseId }) {
     INTERVIEW_ITEMS_DEFAULT.map((label) => ({ label, checked: false, answer: "" }))
   );
   const [saving, setSaving] = useState(false);
-  const [savedMsg, setSavedMsg] = useState("");
   const [saveError, setSaveError] = useState("");
   // 마지막으로 불러오거나 저장한 내용. 바뀐 게 없으면 저장하지 않는다 (다른 탭의 예전 내용으로 덮어쓰기 방지).
   const lastSaved = useRef(null);
@@ -107,19 +106,13 @@ export default function Module6Panel({ caseId }) {
   function updateFieldItem(index, patch, { saveNow = false } = {}) {
     const next = fieldItems.map((it, i) => (i === index ? { ...it, ...patch } : it));
     setFieldItems(next);
-    setSavedMsg("");
     if (saveNow) save({ fieldItems: next });
   }
 
   function updateInterviewItem(index, patch, { saveNow = false } = {}) {
     const next = interviewItems.map((it, i) => (i === index ? { ...it, ...patch } : it));
     setInterviewItems(next);
-    setSavedMsg("");
     if (saveNow) save({ interviewItems: next });
-  }
-
-  async function handleSave() {
-    if (await save()) setSavedMsg("저장했어요!");
   }
 
   if (loading) {
@@ -137,7 +130,6 @@ export default function Module6Panel({ caseId }) {
           value={surveyDate}
           onChange={(e) => {
             setSurveyDate(e.target.value);
-            setSavedMsg("");
             save({ surveyDate: e.target.value });
           }}
           style={{
@@ -164,13 +156,9 @@ export default function Module6Panel({ caseId }) {
         onBlur={() => save()}
       />
 
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, marginBottom: 24, minHeight: 20 }}>
         {saveError && <span style={{ fontSize: 15, color: "var(--color-badge-red-text)" }}>{saveError}</span>}
         {!saveError && saving && <span style={{ fontSize: 15, color: "var(--color-text-muted)" }}>저장 중...</span>}
-        {!saveError && !saving && savedMsg && <span style={{ fontSize: 15, color: "var(--color-primary)" }}>{savedMsg}</span>}
-        <button className="btn-primary" onClick={handleSave} disabled={saving}>
-          {saving ? "저장 중..." : "체크리스트 저장"}
-        </button>
       </div>
 
       <FieldPhotos caseId={caseId} />
