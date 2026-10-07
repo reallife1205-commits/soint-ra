@@ -27,10 +27,9 @@ export default function ReportStatusBadge({ status, superscript = false }) {
       <span
         className="badge"
         style={{
-          fontSize: 11,
-          padding: "1px 6px",
-          marginLeft: 6,
-          verticalAlign: "middle",
+          ...(superscript
+            ? { fontSize: 10, padding: "0 5px", marginLeft: 2, verticalAlign: "super", lineHeight: 1.4 }
+            : { fontSize: 11, padding: "1px 6px", marginLeft: 6, verticalAlign: "middle" }),
           background: "var(--color-surface-alt)",
           color: "var(--color-text-muted)",
           border: "1px solid var(--color-border)",

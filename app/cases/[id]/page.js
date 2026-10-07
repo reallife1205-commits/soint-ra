@@ -377,7 +377,7 @@ export default function CaseDetailPage() {
                 }}
               >
                 {s.label}
-                <ReportStatusBadge status={s.reportStatus} />
+                <ReportStatusBadge status={s.reportStatus} superscript />
               </button>
             );
           })}
@@ -527,7 +527,7 @@ function ToolTabs({ tabs, active, onSelect }) {
           style={{ fontSize: 14 }}
         >
           {t.label}
-          <ReportStatusBadge status={t.status} />
+          <ReportStatusBadge status={t.status} superscript />
         </button>
       ))}
     </div>

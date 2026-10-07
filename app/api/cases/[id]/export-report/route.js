@@ -104,7 +104,7 @@ async function fetchCaseData(caseId) {
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3).order("row_order", { ascending: true }),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 5),
     supabaseAdmin.from("field_surveys").select("*").eq("case_id", caseId).maybeSingle(),
-    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 8),
+    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 8).order("updated_at", { ascending: false, nullsFirst: false }), // 행이 여러 개면 가장 최근 것
   ]);
 
   if (!caseInfo) return null;

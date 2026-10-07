@@ -62,7 +62,7 @@ export default function Module5Panel({ caseId }) {
                 {resultCount}
               </span>
             )}
-            <ReportStatusBadge status={t.status} />
+            <ReportStatusBadge status={t.status} superscript />
           </button>
         ))}
       </div>
