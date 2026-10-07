@@ -54,6 +54,7 @@ export function OwnershipLeaseSection({ caseId }) {
         ]}
         summaryLabel="토양오염관리대상시설(또는 부지)의 소유·점유 또는 운영"
         summaryPlaceholder="예: 토지대장 상 자문부지는 '89년 소유권이 이전되었고..."
+        summaryRows={8}
       />
 
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--color-border)", margin: "18px 0 16px" }}>
