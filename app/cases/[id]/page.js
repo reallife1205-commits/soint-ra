@@ -330,7 +330,7 @@ export default function CaseDetailPage() {
               style={{
                 border: "none",
                 background: "transparent",
-                padding: "10px 14px",
+                padding: "10px 10px",
                 cursor: "pointer",
                 borderBottom: isActive ? "2px solid var(--color-chapter-active)" : "2px solid transparent",
                 textAlign: "left",
@@ -341,7 +341,7 @@ export default function CaseDetailPage() {
               }}
             >
               {c.label}
-              <ReportStatusBadge status={c.reportStatus} />
+              <ReportStatusBadge status={c.reportStatus} superscript />
             </button>
           );
         })}

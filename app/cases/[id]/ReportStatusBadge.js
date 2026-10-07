@@ -3,12 +3,17 @@
 // 이 화면에 입력한 내용이 실제로 hwpx 보고서에 반영되는지 한눈에 보여주는 작은 표시.
 // "required" = 반영됨(필수작성), "reference" = 입력해도 보고서엔 안 들어감(참고용).
 // status가 없으면 아무것도 안 그린다(주로 검색·조회 보조 화면처럼 굳이 표시할 필요 없는 곳).
-export default function ReportStatusBadge({ status }) {
+// superscript: 위첨자처럼 작게 올려 붙인다 — 상단 챕터 탭이 한 줄에 다 보이도록 폭을 줄일 때 사용.
+export default function ReportStatusBadge({ status, superscript = false }) {
   if (status === "required") {
     return (
       <span
         className="badge badge-green"
-        style={{ fontSize: 11, padding: "1px 6px", marginLeft: 6, verticalAlign: "middle" }}
+        style={
+          superscript
+            ? { fontSize: 10, padding: "0 5px", marginLeft: 2, verticalAlign: "super", lineHeight: 1.4 }
+            : { fontSize: 11, padding: "1px 6px", marginLeft: 6, verticalAlign: "middle" }
+        }
         title="이 화면에 입력한 내용이 보고서에 반영돼요"
       >
         필수작성
