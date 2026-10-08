@@ -3,6 +3,12 @@ import fs from "fs";
 import path from "path";
 import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
 import { currentOwnerNames } from "@/lib/currentOwner";
+import {
+  SITE_CONTAMINATION_CATEGORY,
+  defaultSources,
+  sourceCheckboxLine,
+  buildSiteContaminationDraft,
+} from "@/lib/siteContaminationDraft";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -99,7 +105,7 @@ async function fetchCaseData(caseId) {
   ] = await Promise.all([
     supabaseAdmin.from("cases").select("*").eq("id", caseId).single(),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 0),
-    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 1),
+    supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 1).order("row_order", { ascending: true }), // 2.1 본문의 물질 순서를 표와 같게
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 2),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3).order("row_order", { ascending: true }),
     supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 5),
@@ -119,6 +125,19 @@ async function fetchCaseData(caseId) {
   const selectedSubstances = module2Settings ? module2Settings.selected || [] : null;
 
   const overviewData = m0.find((d) => d.category === "overview") || {};
+  // 2.1 본문: 저장된 게 없거나 내용이 비어 있으면 표 내용으로 초안을 만들어 넣는다(화면의 "초안 만들기"와 같은 규칙).
+  const siteStatusSaved = m0.find((d) => d.category === SITE_CONTAMINATION_CATEGORY);
+  const siteSources = siteStatusSaved ? siteStatusSaved.sources || [] : defaultSources(overviewData);
+  const siteContamination = {
+    checkboxLine: sourceCheckboxLine(siteSources, siteStatusSaved?.other_text),
+    content:
+      (siteStatusSaved?.content || "").trim() ||
+      buildSiteContaminationDraft({
+        contaminationRows: (contaminationRows || []).map((r) => r.row_data),
+        overview: overviewData,
+        sources: siteSources,
+      }),
+  };
   const progressItems = m0
     .filter((d) => d.category === "progress")
     .map((d) => ({ date: d.date, description: d.description }))
@@ -198,6 +217,7 @@ async function fetchCaseData(caseId) {
     sitePlanImages,
     fieldSurvey,
     scientificAnalysis,
+    siteContamination,
   };
 }
 

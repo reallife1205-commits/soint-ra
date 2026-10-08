@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Module1Table from "./Module1Table";
 import ImageGallery from "./ImageGallery";
+import Module1Narrative from "./Module1Narrative";
 
 const TABS = [
   { key: "table", label: "오염 현황 테이블" },
@@ -50,9 +51,12 @@ export default function Module1Panel({ caseId, caseInfo }) {
           여기 입력하는 데이터로 직접 만든 네이티브 표가 들어간다(export-report/hwpxReportBuilder의
           fillContaminationStatusTable) — 캡처 방식은 2단 헤더 렌더링이 계속 불안정해서 포기함. */}
       {tab === "table" && (
-        <div className="card">
-          <Module1Table caseId={caseId} caseInfo={caseInfo} />
-        </div>
+        <>
+          <Module1Narrative caseId={caseId} />
+          <div className="card">
+            <Module1Table caseId={caseId} caseInfo={caseInfo} />
+          </div>
+        </>
       )}
       {tab === "sample_points" && (
         <ImageGallery caseId={caseId} category="sample_points" title="시료채취지점 사진" />
