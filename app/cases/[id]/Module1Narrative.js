@@ -173,7 +173,7 @@ export default function Module1Narrative({ caseId }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onBlur={() => save(current())}
-        placeholder={"ㅇ (조사기간) '24.6월 ~ '24.12월\n- 개황조사 및 상세조사 결과, TPH 및 아연 항목이 우려기준 및 대책기준을 초과하였으며 오염 면적은 234 ㎡, 오염량은 275 ㎥로 산정됨"}
+        placeholder="아직 작성 안 됨 — [표 내용으로 초안 만들기]를 누르면 표 내용으로 문장이 채워지고, 여기서 고칠 수 있어요."
         rows={5}
         style={{
           width: "100%",
