@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { OLD_MODULES, TOTAL_TRACKED_MODULES } from "@/lib/modules";
+import { CHAPTER_COMPLETIONS, TOTAL_CHAPTERS, isChapterCompletionNumber } from "@/lib/modules";
 import TopNav from "@/app/components/TopNav";
 import SoilBanner from "@/app/components/SoilBanner";
 import { ddayInfo } from "@/lib/dday";
@@ -79,10 +79,12 @@ export default function CasesPage() {
 
     const { data: statusRows } = await supabase
       .from("module_status")
-      .select("case_id, is_completed");
+      .select("case_id, module_number, is_completed");
 
     const progressMap = {};
+    // 장(1~6) 완료 기록만 센다. 옛 0~7 기록은 무시.
     (statusRows || []).forEach((row) => {
+      if (!isChapterCompletionNumber(row.module_number)) return;
       if (!progressMap[row.case_id]) {
         progressMap[row.case_id] = { done: 0, total: 0 };
       }
@@ -565,7 +567,7 @@ export default function CasesPage() {
                         <td style={TD_STYLE}>
                           {dday !== null ? <span className={`badge ${dday.badgeClass}`}>{dday.label}</span> : "-"}
                         </td>
-                        <td style={{ ...TD_STYLE, color: "var(--color-text-muted)" }}>{progress.done}/{TOTAL_TRACKED_MODULES}</td>
+                        <td style={{ ...TD_STYLE, color: "var(--color-text-muted)" }}>{progress.done}/{TOTAL_CHAPTERS}</td>
                       </tr>
                     );
                   })}
@@ -657,7 +659,7 @@ export default function CasesPage() {
                       }}
                     >
                       <span>담당자 {c.manager || "-"}</span>
-                      <span>{progress.done}/{TOTAL_TRACKED_MODULES}</span>
+                      <span>{progress.done}/{TOTAL_CHAPTERS}</span>
                     </div>
                     <div
                       style={{
@@ -671,7 +673,7 @@ export default function CasesPage() {
                       <div
                         style={{
                           height: "100%",
-                          width: `${(progress.done / TOTAL_TRACKED_MODULES) * 100}%`,
+                          width: `${(progress.done / TOTAL_CHAPTERS) * 100}%`,
                           background: "var(--color-primary)",
                         }}
                       />
@@ -1113,10 +1115,10 @@ function AddCaseModal({ onClose, onCreated }) {
       return;
     }
 
-    const moduleRows = OLD_MODULES.map((m) => ({
+    const moduleRows = CHAPTER_COMPLETIONS.map((c) => ({
       case_id: newCase.id,
-      module_number: m.number,
-      module_name: m.name,
+      module_number: c.number,
+      module_name: c.name,
       is_completed: false,
     }));
     await supabase.from("module_status").insert(moduleRows);

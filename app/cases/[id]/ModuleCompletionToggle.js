@@ -1,18 +1,21 @@
 "use client";
 
 import { supabase } from "@/lib/supabaseClient";
-import { OLD_MODULES } from "@/lib/modules";
+import { CHAPTER_COMPLETIONS } from "@/lib/modules";
 
-// 옛 module_number(0~7) 하나에 대한 완료 처리 버튼. 여러 새 화면(예: 3.1 안의 소유이력/항공사진/DART)에서
-// 각자 자기 옛 번호로 재사용됨. moduleStatus/caseStatus는 상위(page.js)에서 한 번만 불러온 걸 그대로 씀.
+// 장(1~6) 하나에 대한 완료 처리 버튼. 장 안의 어느 하위 화면에서 눌러도 같은 장 기록을 바꾼다.
+// moduleStatus/caseStatus는 상위(page.js)에서 한 번만 불러온 걸 그대로 씀.
 export default function ModuleCompletionToggle({
   caseId,
-  moduleNumber,
+  chapterKey,
   moduleStatus,
   caseStatus,
   reloadModuleStatus,
   reloadCase,
 }) {
+  const chapter = CHAPTER_COMPLETIONS.find((c) => c.chapterKey === chapterKey);
+  if (!chapter) return null;
+  const moduleNumber = chapter.number;
   const current = moduleStatus[moduleNumber];
   const isCompleted = !!current?.is_completed;
 
@@ -34,7 +37,7 @@ export default function ModuleCompletionToggle({
         {
           case_id: caseId,
           module_number: moduleNumber,
-          module_name: OLD_MODULES.find((m) => m.number === moduleNumber)?.name,
+          module_name: chapter.name,
           is_completed: newValue,
           completed_at: newValue ? new Date().toISOString() : null,
         },
@@ -46,8 +49,8 @@ export default function ModuleCompletionToggle({
     }
     await reloadModuleStatus();
 
-    const allDone = OLD_MODULES.every((m) =>
-      m.number === moduleNumber ? newValue : moduleStatus[m.number]?.is_completed
+    const allDone = CHAPTER_COMPLETIONS.every((c) =>
+      c.number === moduleNumber ? newValue : moduleStatus[c.number]?.is_completed
     );
     if (allDone) {
       await supabase.from("cases").update({ status: "완료" }).eq("id", caseId);
@@ -60,7 +63,7 @@ export default function ModuleCompletionToggle({
 
   return (
     <button className={isCompleted ? "btn-complete-done" : "btn-complete"} onClick={toggleComplete}>
-      {isCompleted ? "✓ 완료 취소" : "완료 처리"}
+      {isCompleted ? `✓ ${chapterKey}장 완료 취소` : `${chapterKey}장 완료 처리`}
     </button>
   );
 }

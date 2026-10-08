@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { CHAPTERS, TOTAL_TRACKED_MODULES } from "@/lib/modules";
+import { CHAPTERS, TOTAL_CHAPTERS, chapterCompletionNumber, isChapterCompletionNumber } from "@/lib/modules";
 import { ddayInfo } from "@/lib/dday";
 import Module0Overview from "./Module0Overview";
 import Module1Panel from "./Module1Panel";
@@ -108,7 +108,11 @@ export default function CaseDetailPage() {
     setEditingMeta(false);
   }
 
-  const completedCount = Object.values(moduleStatus).filter((m) => m.is_completed).length;
+  // 장(1~6) 기준. 옛 0~7 기록은 세지 않는다.
+  const completedCount = Object.values(moduleStatus).filter(
+    (m) => m.is_completed && isChapterCompletionNumber(m.module_number)
+  ).length;
+  const isChapterDone = (key) => !!moduleStatus[chapterCompletionNumber(key)]?.is_completed;
   const dday = ddayInfo(caseInfo?.due_date);
 
   function selectChapter(chapterKey) {
@@ -305,7 +309,7 @@ export default function CaseDetailPage() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-            {completedCount}/{TOTAL_TRACKED_MODULES} 완료
+            {completedCount}/{TOTAL_CHAPTERS} 완료
           </div>
           <a href={`/api/cases/${id}/export-report`} className="btn-secondary">
             📄 보고서 초안 내보내기
@@ -340,6 +344,9 @@ export default function CaseDetailPage() {
                 color: isActive ? "var(--color-chapter-active)" : "var(--color-secondary)",
               }}
             >
+              {isChapterDone(c.key) && (
+                <span title="완료" style={{ color: "var(--color-chapter-active)", marginRight: 4 }}>✓</span>
+              )}
               {c.label}
               <ReportStatusBadge status={c.reportStatus} superscript />
             </button>
@@ -394,16 +401,14 @@ export default function CaseDetailPage() {
         }}
       >
         <div style={{ fontSize: 17, fontWeight: 700 }}>{headingLabel}</div>
-        {effectiveModuleNumber !== undefined && (
-          <ModuleCompletionToggle
-            caseId={id}
-            moduleNumber={effectiveModuleNumber}
-            moduleStatus={moduleStatus}
-            caseStatus={caseInfo.status}
-            reloadModuleStatus={loadModuleStatus}
-            reloadCase={loadCase}
-          />
-        )}
+        <ModuleCompletionToggle
+          caseId={id}
+          chapterKey={activeChapter}
+          moduleStatus={moduleStatus}
+          caseStatus={caseInfo.status}
+          reloadModuleStatus={loadModuleStatus}
+          reloadCase={loadCase}
+        />
       </div>
 
       <div style={{ display: "flex", gap: 20 }}>
