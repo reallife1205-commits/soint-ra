@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabaseClient";
 
 const LEGAL_REFERENCE_DATE = "1996-01-06"; // 토양환경보전법 시행일 기준
 const PX_PER_YEAR = 50;
-const ROW_HEIGHT = 40;
 
 // 취득일/처분일 등이 이제 날짜선택기가 아니라 수기 텍스트라 "1989.9", "2008-01-10",
 // "2008" 등 형식이 제각각이다. 정확한 날짜 파싱 대신 연도(필수)와 있으면 월까지만
@@ -21,9 +20,109 @@ function yearFraction(dateStr) {
   return year + (month - 1) / 12;
 }
 
+// 정렬·비교용 키 (일까지). 연도를 못 찾으면 null.
+function dateKey(dateStr) {
+  if (!dateStr) return null;
+  const yearMatch = dateStr.match(/(19|20)\d{2}/);
+  if (!yearMatch) return null;
+  const nums = dateStr.slice(yearMatch.index + yearMatch[0].length).match(/\d{1,2}/g) || [];
+  return parseInt(yearMatch[0], 10) * 10000 + (parseInt(nums[0], 10) || 1) * 100 + (parseInt(nums[1], 10) || 1);
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return "현재";
   return dateStr;
+}
+
+// 처분일을 비워 둔 소유자가 대부분이라 전부 "~ 현재"로 겹쳐 그려졌다.
+// 처분일이 없으면 다음 소유자(더 늦은 취득일)의 취득일까지로 본다.
+// 같은 날 취득한 사람들은 공동소유로 보고 함께 끝난다.
+function inferOwnerEnds(list) {
+  return list.map((o) => {
+    if (o.end) return o;
+    const k = dateKey(o.start);
+    if (k == null) return o;
+    const next = list
+      .filter((x) => dateKey(x.start) != null && dateKey(x.start) > k)
+      .sort((a, b) => dateKey(a.start) - dateKey(b.start))[0];
+    return next ? { ...o, end: next.start, endInferred: true } : o;
+  });
+}
+
+// 기간이 겹치는 막대는 아랫줄로 내려서 서로 가리지 않게 한다.
+function assignLanes(items) {
+  const laneEnds = [];
+  return items.map((it) => {
+    let lane = laneEnds.findIndex((end) => end <= it.s + 1e-6);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(it.e);
+    } else {
+      laneEnds[lane] = it.e;
+    }
+    return { ...it, lane };
+  });
+}
+
+const OWNER_COLORS = ["#a8562f", "#d08a52", "#7a3b1d"];
+const TENANT_COLORS = ["#5f7048", "#8a9a6a"];
+const BAR_HEIGHT = 28;
+const LANE_HEIGHT = 32;
+
+function toBars(list) {
+  const thisYear = new Date().getFullYear();
+  const bars = list
+    .map((item, i) => {
+      const s = yearFraction(item.start);
+      if (s == null) return null;
+      const e = Math.max(yearFraction(item.end) || thisYear, s);
+      return { ...item, i, s, e };
+    })
+    .filter(Boolean);
+  return assignLanes(bars);
+}
+
+function BarRow({ label, bars, colors, xFor }) {
+  const lanes = Math.max(1, ...bars.map((b) => b.lane + 1));
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{label}</div>
+      <div style={{ position: "relative", height: lanes * LANE_HEIGHT + 8 }}>
+        {bars.map((b) => {
+          const left = xFor(b.s);
+          // 1px 간격을 둬서 이어지는 막대끼리 경계가 보이게
+          const width = Math.max(xFor(b.e) - left - 1, 4);
+          return (
+            <div
+              key={b.i}
+              title={`${b.name} (${formatDate(b.start)} ~ ${formatDate(b.end)})`}
+              style={{
+                position: "absolute",
+                left,
+                width,
+                height: BAR_HEIGHT,
+                top: 4 + b.lane * LANE_HEIGHT,
+                background: colors[b.i % colors.length],
+                color: "white",
+                fontSize: 13,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+                borderRadius: 4,
+                padding: "0 4px",
+                boxSizing: "border-box",
+              }}
+            >
+              {b.name}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function IntegratedTimeline({ caseId }) {
@@ -62,8 +161,9 @@ export default function IntegratedTimeline({ caseId }) {
           });
         }
       });
-      ownerList.sort((a, b) => (a.start || "").localeCompare(b.start || ""));
-      tenantList.sort((a, b) => (a.start || "").localeCompare(b.start || ""));
+      const byStart = (a, b) => (dateKey(a.start) ?? Infinity) - (dateKey(b.start) ?? Infinity);
+      ownerList.sort(byStart);
+      tenantList.sort(byStart);
 
       const { data: docs } = await supabase
         .from("documents")
@@ -82,7 +182,7 @@ export default function IntegratedTimeline({ caseId }) {
       const photoList = [...byYear.values()].sort((a, b) => a.photo_year - b.photo_year);
 
       if (!cancelled) {
-        setOwners(ownerList);
+        setOwners(inferOwnerEnds(ownerList));
         setTenants(tenantList);
         setPhotoDocs(photoList);
         setLoading(false);
@@ -133,6 +233,8 @@ export default function IntegratedTimeline({ caseId }) {
   }
 
   const legalX = xForYearFraction(yearFraction(LEGAL_REFERENCE_DATE));
+  const ownerBars = toBars(owners);
+  const tenantBars = toBars(tenants);
 
   const yearTicks = [];
   for (let y = Math.ceil(minYear / 5) * 5; y <= maxYear; y += 5) {
@@ -175,9 +277,9 @@ export default function IntegratedTimeline({ caseId }) {
               style={{
                 position: "absolute",
                 top: 24,
+                bottom: 0,
                 left: legalX,
                 width: 0,
-                height: (owners.length > 0 ? ROW_HEIGHT : 0) + (photoDocs.length > 0 ? ROW_HEIGHT : 0) + 40,
                 borderLeft: "2px dashed #d64545",
                 zIndex: 2,
               }}
@@ -198,85 +300,13 @@ export default function IntegratedTimeline({ caseId }) {
             </div>
 
             {/* 소유자 행 */}
-            <div style={{ marginTop: 40 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>소유자</div>
-              <div style={{ position: "relative", height: ROW_HEIGHT }}>
-                {owners.map((o, i) => {
-                  const s = yearFraction(o.start);
-                  const e = yearFraction(o.end) || new Date().getFullYear();
-                  if (s == null) return null;
-                  const left = xForYearFraction(s);
-                  const width = Math.max(xForYearFraction(e) - left, 4);
-                  return (
-                    <div
-                      key={i}
-                      title={`${o.name} (${formatDate(o.start)} ~ ${formatDate(o.end)})`}
-                      style={{
-                        position: "absolute",
-                        left,
-                        width,
-                        height: 28,
-                        top: 4,
-                        background: "#a8562f",
-                        color: "white",
-                        fontSize: 13,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden",
-                        whiteSpace: "nowrap",
-                        borderRadius: 4,
-                        padding: "0 4px",
-                        boxSizing: "border-box",
-                      }}
-                    >
-                      {o.name}
-                    </div>
-                  );
-                })}
-              </div>
+            <div style={{ marginTop: 32 }}>
+              <BarRow label="소유자" bars={ownerBars} colors={OWNER_COLORS} xFor={xForYearFraction} />
             </div>
 
             {/* 임차인 행 */}
             {tenants.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>임차인</div>
-                <div style={{ position: "relative", height: ROW_HEIGHT }}>
-                  {tenants.map((t, i) => {
-                    const s = yearFraction(t.start);
-                    const e = yearFraction(t.end) || new Date().getFullYear();
-                    if (s == null) return null;
-                    const left = xForYearFraction(s);
-                    const width = Math.max(xForYearFraction(e) - left, 4);
-                    return (
-                      <div
-                        key={i}
-                        title={`${t.name} (${formatDate(t.start)} ~ ${formatDate(t.end)})`}
-                        style={{
-                          position: "absolute",
-                          left,
-                          width,
-                          height: 28,
-                          top: 4,
-                          background: "#5f7048",
-                          color: "white",
-                          fontSize: 13,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          overflow: "hidden",
-                          whiteSpace: "nowrap",
-                          borderRadius: 4,
-                          padding: "0 4px",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        {t.name}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <BarRow label="임차인" bars={tenantBars} colors={TENANT_COLORS} xFor={xForYearFraction} />
             )}
 
             {/* 항공사진 행 */}
@@ -333,17 +363,23 @@ export default function IntegratedTimeline({ caseId }) {
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {owners.map((o, i) => (
               <li key={`o${i}`} style={{ fontSize: 15, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
-                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#a8562f", marginRight: 8 }} />
-                소유자 {o.name} ({formatDate(o.start)} ~ {formatDate(o.end)})
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: OWNER_COLORS[i % OWNER_COLORS.length], marginRight: 8 }} />
+                소유자 {o.name} ({formatDate(o.start)} ~ {formatDate(o.end)}
+                {o.endInferred && <span style={{ color: "var(--color-text-muted)" }}>*</span>})
               </li>
             ))}
             {tenants.map((t, i) => (
               <li key={`t${i}`} style={{ fontSize: 15, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
-                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#5f7048", marginRight: 8 }} />
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: TENANT_COLORS[i % TENANT_COLORS.length], marginRight: 8 }} />
                 임차인 {t.name} ({formatDate(t.start)} ~ {formatDate(t.end)})
               </li>
             ))}
           </ul>
+        )}
+        {owners.some((o) => o.endInferred) && (
+          <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 8 }}>
+            * 처분일이 비어 있어 다음 소유자의 취득일까지로 표시했어요. 같은 날 취득한 소유자는 공동소유로 보고 겹쳐 표시해요.
+          </div>
         )}
       </div>
 
