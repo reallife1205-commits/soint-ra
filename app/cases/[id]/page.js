@@ -334,7 +334,7 @@ export default function CaseDetailPage() {
               style={{
                 border: "none",
                 background: "transparent",
-                padding: "10px 10px",
+                padding: "10px 7px", // 완료 ✓가 붙어도 6개 탭이 한 줄에 들어가게
                 cursor: "pointer",
                 borderBottom: isActive ? "2px solid var(--color-chapter-active)" : "2px solid transparent",
                 textAlign: "left",
@@ -345,7 +345,7 @@ export default function CaseDetailPage() {
               }}
             >
               {isChapterDone(c.key) && (
-                <span title="완료" style={{ color: "var(--color-chapter-active)", marginRight: 4 }}>✓</span>
+                <span title="완료" style={{ color: "var(--color-chapter-active)", fontSize: 13, marginRight: 2 }}>✓</span>
               )}
               {c.label}
               <ReportStatusBadge status={c.reportStatus} superscript />
