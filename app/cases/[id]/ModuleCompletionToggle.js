@@ -19,16 +19,18 @@ export default function ModuleCompletionToggle({
   async function toggleComplete() {
     const newValue = !isCompleted;
 
+    // 예전엔 저장 실패를 무시해서, 1. 개요처럼 DB가 거부해도 버튼만 눌리고 아무 일도 없었다.
+    let saveError;
     if (current) {
-      await supabase
+      ({ error: saveError } = await supabase
         .from("module_status")
         .update({
           is_completed: newValue,
           completed_at: newValue ? new Date().toISOString() : null,
         })
-        .eq("id", current.id);
+        .eq("id", current.id));
     } else {
-      await supabase.from("module_status").insert([
+      ({ error: saveError } = await supabase.from("module_status").insert([
         {
           case_id: caseId,
           module_number: moduleNumber,
@@ -36,7 +38,11 @@ export default function ModuleCompletionToggle({
           is_completed: newValue,
           completed_at: newValue ? new Date().toISOString() : null,
         },
-      ]);
+      ]));
+    }
+    if (saveError) {
+      alert(`완료 처리를 저장하지 못했어요: ${saveError.message}`);
+      return;
     }
     await reloadModuleStatus();
 

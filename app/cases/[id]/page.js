@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { CHAPTERS } from "@/lib/modules";
+import { CHAPTERS, TOTAL_TRACKED_MODULES } from "@/lib/modules";
 import { ddayInfo } from "@/lib/dday";
 import Module0Overview from "./Module0Overview";
 import Module1Panel from "./Module1Panel";
@@ -305,7 +305,7 @@ export default function CaseDetailPage() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-            {completedCount}/8 완료
+            {completedCount}/{TOTAL_TRACKED_MODULES} 완료
           </div>
           <a href={`/api/cases/${id}/export-report`} className="btn-secondary">
             📄 보고서 초안 내보내기

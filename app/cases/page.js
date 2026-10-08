@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { OLD_MODULES } from "@/lib/modules";
+import { OLD_MODULES, TOTAL_TRACKED_MODULES } from "@/lib/modules";
 import TopNav from "@/app/components/TopNav";
 import SoilBanner from "@/app/components/SoilBanner";
 import { ddayInfo } from "@/lib/dday";
@@ -565,7 +565,7 @@ export default function CasesPage() {
                         <td style={TD_STYLE}>
                           {dday !== null ? <span className={`badge ${dday.badgeClass}`}>{dday.label}</span> : "-"}
                         </td>
-                        <td style={{ ...TD_STYLE, color: "var(--color-text-muted)" }}>{progress.done}/7</td>
+                        <td style={{ ...TD_STYLE, color: "var(--color-text-muted)" }}>{progress.done}/{TOTAL_TRACKED_MODULES}</td>
                       </tr>
                     );
                   })}
@@ -657,7 +657,7 @@ export default function CasesPage() {
                       }}
                     >
                       <span>담당자 {c.manager || "-"}</span>
-                      <span>{progress.done}/7</span>
+                      <span>{progress.done}/{TOTAL_TRACKED_MODULES}</span>
                     </div>
                     <div
                       style={{
@@ -671,7 +671,7 @@ export default function CasesPage() {
                       <div
                         style={{
                           height: "100%",
-                          width: `${(progress.done / 7) * 100}%`,
+                          width: `${(progress.done / TOTAL_TRACKED_MODULES) * 100}%`,
                           background: "var(--color-primary)",
                         }}
                       />
