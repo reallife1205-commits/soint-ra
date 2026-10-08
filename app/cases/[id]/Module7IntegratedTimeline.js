@@ -52,20 +52,34 @@ function inferOwnerEnds(list) {
 // 기간이 겹치는 막대는 아랫줄로 내려서 서로 가리지 않게 한다.
 function assignLanes(items) {
   const laneEnds = [];
+  const laneCounts = [];
   return items.map((it) => {
     let lane = laneEnds.findIndex((end) => end <= it.s + 1e-6);
     if (lane === -1) {
       lane = laneEnds.length;
       laneEnds.push(it.e);
+      laneCounts.push(0);
     } else {
       laneEnds[lane] = it.e;
     }
-    return { ...it, lane };
+    // 같은 줄에서 바로 앞 막대와 색이 겹치지 않게, 줄마다 순서대로 색을 돌린다
+    const colorIdx = laneCounts[lane] + lane;
+    laneCounts[lane] += 1;
+    return { ...it, lane, colorIdx };
   });
 }
 
-const OWNER_COLORS = ["#a8562f", "#d08a52", "#7a3b1d"];
-const TENANT_COLORS = ["#5f7048", "#8a9a6a"];
+// 이웃 막대끼리 확실히 구분되도록 명도 차이가 큰 초록·연두·노랑. 밝은 색은 글자를 어둡게.
+const OWNER_COLORS = [
+  { bg: "#2e7d32", fg: "white" },
+  { bg: "#9ccc65", fg: "#1b3a1d" },
+  { bg: "#f4c430", fg: "#4a3b00" },
+];
+// 임차인은 소유자(초록 계열)와 헷갈리지 않게 갈색 계열
+const TENANT_COLORS = [
+  { bg: "#a8562f", fg: "white" },
+  { bg: "#d9a066", fg: "#3d2310" },
+];
 const BAR_HEIGHT = 28;
 const LANE_HEIGHT = 32;
 
@@ -80,6 +94,12 @@ function toBars(list) {
     })
     .filter(Boolean);
   return assignLanes(bars);
+}
+
+// 이력 목록의 점 색을 타임라인 막대 색과 맞춘다
+function barColor(bars, i, colors) {
+  const b = bars.find((x) => x.i === i);
+  return colors[(b ? b.colorIdx : i) % colors.length].bg;
 }
 
 function BarRow({ label, bars, colors, xFor }) {
@@ -102,8 +122,8 @@ function BarRow({ label, bars, colors, xFor }) {
                 width,
                 height: BAR_HEIGHT,
                 top: 4 + b.lane * LANE_HEIGHT,
-                background: colors[b.i % colors.length],
-                color: "white",
+                background: colors[b.colorIdx % colors.length].bg,
+                color: colors[b.colorIdx % colors.length].fg,
                 fontSize: 13,
                 display: "flex",
                 alignItems: "center",
@@ -341,11 +361,11 @@ export default function IntegratedTimeline({ caseId }) {
 
         <div style={{ display: "flex", gap: 16, fontSize: 14, marginTop: 12, color: "var(--color-text-muted)" }}>
           <span>
-            <span style={{ display: "inline-block", width: 10, height: 10, background: "#a8562f", borderRadius: 2, marginRight: 4 }} />
+            <span style={{ display: "inline-block", width: 10, height: 10, background: OWNER_COLORS[0].bg, borderRadius: 2, marginRight: 4 }} />
             소유자
           </span>
           <span>
-            <span style={{ display: "inline-block", width: 10, height: 10, background: "#5f7048", borderRadius: 2, marginRight: 4 }} />
+            <span style={{ display: "inline-block", width: 10, height: 10, background: TENANT_COLORS[0].bg, borderRadius: 2, marginRight: 4 }} />
             임차인
           </span>
           <span>🖼️ 항공사진</span>
@@ -363,14 +383,14 @@ export default function IntegratedTimeline({ caseId }) {
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {owners.map((o, i) => (
               <li key={`o${i}`} style={{ fontSize: 15, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
-                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: OWNER_COLORS[i % OWNER_COLORS.length], marginRight: 8 }} />
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: barColor(ownerBars, i, OWNER_COLORS), marginRight: 8 }} />
                 소유자 {o.name} ({formatDate(o.start)} ~ {formatDate(o.end)}
                 {o.endInferred && <span style={{ color: "var(--color-text-muted)" }}>*</span>})
               </li>
             ))}
             {tenants.map((t, i) => (
               <li key={`t${i}`} style={{ fontSize: 15, padding: "6px 0", borderBottom: "1px solid var(--color-border)" }}>
-                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: TENANT_COLORS[i % TENANT_COLORS.length], marginRight: 8 }} />
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: barColor(tenantBars, i, TENANT_COLORS), marginRight: 8 }} />
                 임차인 {t.name} ({formatDate(t.start)} ~ {formatDate(t.end)})
               </li>
             ))}
