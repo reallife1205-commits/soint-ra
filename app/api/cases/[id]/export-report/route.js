@@ -9,6 +9,12 @@ import {
   sourceCheckboxLine,
   buildSiteContaminationDraft,
 } from "@/lib/siteContaminationDraft";
+import {
+  SURROUNDING_STATUS_CATEGORY,
+  defaultSurroundingSources,
+  surroundingCheckboxLine,
+  buildSurroundingDraft,
+} from "@/lib/surroundingContaminationDraft";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -122,6 +128,8 @@ async function fetchCaseData(caseId) {
   const m8 = (scientificRows || []).map((r) => r.row_data);
   const scientificAnalysis = m8.find((d) => d.category === "scientific_analysis")?.content || "";
   const module2Settings = m2.find((d) => d.category === "settings");
+  const surroundingRadius =
+    typeof module2Settings?.radius === "number" ? module2Settings.radius : DEFAULT_RADIUS_KM;
   const selectedSubstances = module2Settings ? module2Settings.selected || [] : null;
 
   const overviewData = m0.find((d) => d.category === "overview") || {};
@@ -153,7 +161,8 @@ async function fetchCaseData(caseId) {
     surroundingImages,
     sitePlanImages,
   ] = await Promise.all([
-    fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, DEFAULT_RADIUS_KM),
+    // 2.2 화면에서 검색한 반경(설정에 저장됨)을 쓴다 — 예전엔 늘 4km라 화면·본문과 [표 2]/[표 3]이 달랐다.
+    fetchReferenceSoilData(caseInfo.lat, caseInfo.lon, surroundingRadius),
     // 항공사진은 표에 "오래된 연도부터" 채워지므로 업로드 순서가 아니라 사진마다 지정한
     // photo_year 순으로 가져온다(4번 모듈 태깅 화면에서 연도 입력).
     fetchImages(caseId, 4, 8, undefined, true),
@@ -170,6 +179,24 @@ async function fetchCaseData(caseId) {
   ]);
   const networkRows = soilDataRows.filter((r) => r.source_type === "측정망");
   const surveyRows = soilDataRows.filter((r) => r.source_type === "실태조사");
+
+  // 2.2 본문: 화면 입력이 비어 있으면 검색 결과로 초안을 만들어 넣는다(화면의 "초안 만들기"와 같은 규칙).
+  const surroundingSaved = m2.find((d) => d.category === SURROUNDING_STATUS_CATEGORY);
+  const surroundingSources = surroundingSaved
+    ? surroundingSaved.sources || []
+    : defaultSurroundingSources(networkRows, surveyRows);
+  const surroundingContamination = {
+    checkboxLine: surroundingCheckboxLine(surroundingSources),
+    content:
+      (surroundingSaved?.content || "").trim() ||
+      buildSurroundingDraft({
+        networkRows,
+        surveyRows,
+        radius: surroundingRadius,
+        selectedSubstances,
+        regionGrade: caseInfo.region_grade,
+      }),
+  };
 
   const legalJudgment = judgmentByCategory(m3, "legal");
 
@@ -218,6 +245,7 @@ async function fetchCaseData(caseId) {
     fieldSurvey,
     scientificAnalysis,
     siteContamination,
+    surroundingContamination,
   };
 }
 

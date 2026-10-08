@@ -6,6 +6,14 @@ import { supabase } from "@/lib/supabaseClient";
 import { SUBSTANCE_GROUPS } from "@/lib/substances";
 import { CONCERN_STANDARDS, parseRegionGrade } from "@/lib/soilStandards";
 import ImageGallery from "./ImageGallery";
+import ReportNarrativeCard from "./ReportNarrativeCard";
+import {
+  SURROUNDING_STATUS_CATEGORY,
+  SURROUNDING_SOURCE_OPTIONS,
+  defaultSurroundingSources,
+  surroundingCheckboxLine,
+  buildSurroundingDraft,
+} from "@/lib/surroundingContaminationDraft";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
 const SURROUNDING_MAP_CATEGORY = "surrounding_map";
@@ -380,6 +388,31 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
       >
         {searching ? "검색 중..." : "🔄 반경 내 데이터 검색"}
       </button>
+
+      {/* 보고서 2.2 그림 위 본문 — 위 검색 결과(반경·측정망·실태조사)로 초안을 만든다 */}
+      <ReportNarrativeCard
+        caseId={caseInfo?.id}
+        moduleNumber={2}
+        category={SURROUNDING_STATUS_CATEGORY}
+        title="보고서 본문 (그림 위 설명)"
+        description="보고서 2.2의 <그림> 주변부지 토양오염 조사 지점 위에 들어가요. 비워 두면 내보낼 때 검색 결과로 자동 작성돼요."
+        sourceOptions={SURROUNDING_SOURCE_OPTIONS}
+        checkboxLine={surroundingCheckboxLine}
+        getDefaultSources={async () =>
+          searched ? defaultSurroundingSources(networkResults, surveyResults) : SURROUNDING_SOURCE_OPTIONS.map((o) => o.key)
+        }
+        buildDraft={async () =>
+          buildSurroundingDraft({
+            networkRows: networkResults,
+            surveyRows: surveyResults,
+            radius,
+            selectedSubstances: Array.from(selected),
+            regionGrade: caseInfo?.region_grade,
+          })
+        }
+        draftButtonLabel="검색 결과로 초안 만들기"
+        draftDisabledReason={!searched || searching ? "먼저 반경 내 데이터를 검색해 주세요" : null}
+      />
 
       {searched && (
         <>
