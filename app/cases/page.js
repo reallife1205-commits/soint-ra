@@ -554,14 +554,18 @@ export default function CasesPage() {
                       <tr
                         key={c.id}
                         onClick={() => router.push(`/cases/${c.id}`)}
-                        style={{ cursor: "pointer", borderTop: "1px solid var(--color-border)" }}
+                        style={{
+                          cursor: "pointer",
+                          borderTop: "1px solid var(--color-border)",
+                          background: c.status === "완료" ? "#eef5e8" : undefined,
+                        }}
                       >
                         <td style={{ ...TD_STYLE, color: "var(--color-text-muted)" }}>{c.case_number}</td>
                         <td style={{ ...TD_STYLE, fontWeight: 600 }}>{c.company_name}</td>
                         <td style={TD_STYLE}>{c.manager || "-"}</td>
                         <td style={TD_STYLE}>
-                          <span className={`badge ${c.status === "완료" ? "badge-green" : "badge-blue"}`}>
-                            {c.status}
+                          <span className={`badge ${c.status === "완료" ? "badge-done" : "badge-blue"}`}>
+                            {c.status === "완료" ? "✓ 완료" : c.status}
                           </span>
                         </td>
                         <td style={TD_STYLE}>
@@ -589,7 +593,7 @@ export default function CasesPage() {
                   <Link
                     key={c.id}
                     href={`/cases/${c.id}`}
-                    className="card"
+                    className={`card${c.status === "완료" ? " card-done" : ""}`}
                     style={{ display: "block", position: "relative", padding: "12px 14px" }}
                   >
                     <button
@@ -622,16 +626,17 @@ export default function CasesPage() {
                         {c.case_number}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
-                        {dday !== null && (
+                        {/* 완료된 안건은 마감 D-day가 의미 없어서 숨김 */}
+                        {dday !== null && c.status !== "완료" && (
                           <span className={`badge ${dday.badgeClass}`} style={{ fontSize: 12, padding: "2px 6px" }}>
                             {dday.label}
                           </span>
                         )}
                         <span
-                          className={`badge ${c.status === "완료" ? "badge-green" : "badge-blue"}`}
-                          style={{ fontSize: 12, padding: "2px 6px" }}
+                          className={`badge ${c.status === "완료" ? "badge-done" : "badge-blue"}`}
+                          style={{ fontSize: 12, padding: "2px 8px" }}
                         >
-                          {c.status}
+                          {c.status === "완료" ? "✓ 완료" : c.status}
                         </span>
                       </div>
                     </div>
@@ -674,7 +679,7 @@ export default function CasesPage() {
                         style={{
                           height: "100%",
                           width: `${(progress.done / TOTAL_CHAPTERS) * 100}%`,
-                          background: "var(--color-primary)",
+                          background: c.status === "완료" ? "var(--color-complete-bg)" : "var(--color-primary)",
                         }}
                       />
                     </div>
@@ -822,17 +827,17 @@ export default function CasesPage() {
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                        {dday !== null && (
+                        {dday !== null && a.linkedCase?.status !== "완료" && (
                           <span className={`badge ${dday.badgeClass}`} style={{ fontSize: 11, padding: "1px 5px" }}>
                             {dday.label}
                           </span>
                         )}
                         {a.registered ? (
                           <span
-                            className={`badge ${a.linkedCase.status === "완료" ? "badge-green" : "badge-blue"}`}
-                            style={{ fontSize: 11, padding: "1px 5px" }}
+                            className={`badge ${a.linkedCase.status === "완료" ? "badge-done" : "badge-blue"}`}
+                            style={{ fontSize: 11, padding: "1px 6px" }}
                           >
-                            {a.linkedCase.status}
+                            {a.linkedCase.status === "완료" ? "✓ 완료" : a.linkedCase.status}
                           </span>
                         ) : (
                           <span className="badge" style={{ fontSize: 11, padding: "1px 5px" }}>
