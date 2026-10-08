@@ -50,23 +50,36 @@ function inferOwnerEnds(list) {
 }
 
 // 기간이 겹치는 막대는 아랫줄로 내려서 서로 가리지 않게 한다.
-function assignLanes(items) {
+function assignLanes(items, colorCount) {
   const laneEnds = [];
-  const laneCounts = [];
-  return items.map((it) => {
+  const laneLastColor = [];
+  const placed = [];
+  items.forEach((it) => {
     let lane = laneEnds.findIndex((end) => end <= it.s + 1e-6);
     if (lane === -1) {
       lane = laneEnds.length;
       laneEnds.push(it.e);
-      laneCounts.push(0);
+      laneLastColor.push(-1);
     } else {
       laneEnds[lane] = it.e;
     }
-    // 같은 줄에서 바로 앞 막대와 색이 겹치지 않게, 줄마다 순서대로 색을 돌린다
-    const colorIdx = laneCounts[lane] + lane;
-    laneCounts[lane] += 1;
-    return { ...it, lane, colorIdx };
+    // 같은 줄 바로 앞 막대, 그리고 기간이 겹치는 다른 줄 막대와 색이 겹치지 않게 고른다
+    const forbidden = new Set([laneLastColor[lane]]);
+    placed.forEach((p) => {
+      if (p.s < it.e && it.s < p.e) forbidden.add(p.colorIdx);
+    });
+    let colorIdx = laneLastColor[lane] + 1;
+    for (let k = 0; k < colorCount; k++) {
+      const c = (laneLastColor[lane] + 1 + k) % colorCount;
+      if (!forbidden.has(c)) {
+        colorIdx = c;
+        break;
+      }
+    }
+    laneLastColor[lane] = colorIdx % colorCount;
+    placed.push({ ...it, lane, colorIdx: colorIdx % colorCount });
   });
+  return placed;
 }
 
 // 이웃 막대끼리 확실히 구분되도록 명도 차이가 큰 초록·연두·노랑. 밝은 색은 글자를 어둡게.
@@ -83,7 +96,7 @@ const TENANT_COLORS = [
 const BAR_HEIGHT = 28;
 const LANE_HEIGHT = 32;
 
-function toBars(list) {
+function toBars(list, colorCount) {
   const thisYear = new Date().getFullYear();
   const bars = list
     .map((item, i) => {
@@ -93,7 +106,7 @@ function toBars(list) {
       return { ...item, i, s, e };
     })
     .filter(Boolean);
-  return assignLanes(bars);
+  return assignLanes(bars, colorCount);
 }
 
 // 이력 목록의 점 색을 타임라인 막대 색과 맞춘다
@@ -253,8 +266,8 @@ export default function IntegratedTimeline({ caseId }) {
   }
 
   const legalX = xForYearFraction(yearFraction(LEGAL_REFERENCE_DATE));
-  const ownerBars = toBars(owners);
-  const tenantBars = toBars(tenants);
+  const ownerBars = toBars(owners, OWNER_COLORS.length);
+  const tenantBars = toBars(tenants, TENANT_COLORS.length);
 
   const yearTicks = [];
   for (let y = Math.ceil(minYear / 5) * 5; y <= maxYear; y += 5) {
