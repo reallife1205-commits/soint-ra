@@ -413,7 +413,8 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        <div style={{ flex: 1 }}>
+        {/* minWidth 0: 없으면 타임라인처럼 넓은 내용에 맞춰 이 칸이 늘어나 페이지 전체가 가로로 스크롤된다 */}
+        <div style={{ flex: 1, minWidth: 0 }}>
           {activeChapter === "1" && (
             <Module0Overview
               caseId={id}
