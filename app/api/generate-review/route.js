@@ -60,8 +60,16 @@ function buildPrompt(ctx) {
     .map((i) => `- ${i.label}: ${i.answer || "확인함"}`)
     .join("\n");
 
+  // 매핑 화면과 같게 3.1 소유자·임차인 업체만 — 예전에 조회했던 다른 업체에 매긴 값이 섞이지 않게
+  const historyCompanies = new Set(
+    m3
+      .map((r) => r.row_data || {})
+      .flatMap((d) => [d.category === "ownership" && d.owner_name, d.category === "lease" && d.tenant_name])
+      .filter(Boolean)
+      .map((n) => n.trim())
+  );
   const mappingLines = mapping
-    .filter((m) => m.level && m.level !== "판단불가")
+    .filter((m) => m.level && m.level !== "판단불가" && historyCompanies.has((m.company_name || "").trim()))
     .map((m) => `- ${m.company_name} × ${m.substance}: 연관성 ${m.level}${m.note ? ` (${m.note})` : ""}`)
     .join("\n");
 

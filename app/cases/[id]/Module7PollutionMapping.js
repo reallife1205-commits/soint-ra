@@ -48,12 +48,11 @@ export default function PollutionMappingTab({ caseId }) {
 
     const substanceSet = new Set();
     const cellMap = {};
+    // 소유·임대차 이력에 없는 업체의 칸(예전에 조회했던 업체에 매긴 값 등)은 DB에 남겨 두되 보여주지 않는다
+    // — 나중에 그 업체를 이력에 추가하면 다시 나타난다.
     (mapRows || []).forEach((r) => {
       substanceSet.add(r.substance);
       cellMap[`${r.substance}::${r.company_name}`] = { level: r.level, note: r.note || "" };
-      // 소유이력에 없는 업체라도 이미 연관성을 매기거나 메모를 쓴 칸은 지우지 않고 보여준다
-      // (빈 칸 — "판단불가"에 메모 없음 — 은 예전 조회 업체의 흔적이라 숨김).
-      if (r.level !== "판단불가" || (r.note || "").trim()) companySet.add(r.company_name);
     });
 
     setCompanies([...companySet]);
