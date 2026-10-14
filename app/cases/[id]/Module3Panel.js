@@ -176,7 +176,7 @@ export function AccessSection({ caseId }) {
           "예: (오염 발생 당시 출입 가능성) 오염 지점은 '08~'16년 OO단조가 운영하던 단조 공정 및 자재 야적 구역에 해당함\n" +
           "\n(정화 시 출입 용이성) 현 소유자 OO테크가 부지를 직접 사용하고 있어 정화를 위한 출입이 용이함"
         }
-        summaryRows={12}
+        summaryRows={8}
         headingBold
         draftEndpoint="/api/draft-access"
       />
