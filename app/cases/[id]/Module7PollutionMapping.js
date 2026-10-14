@@ -27,45 +27,36 @@ export default function PollutionMappingTab({ caseId }) {
   const load = useCallback(async () => {
     setLoading(true);
 
-    const [{ data: dartRows }, { data: factoryRows }, { data: mapRows }] = await Promise.all([
+    const [{ data: historyRows }, { data: mapRows }] = await Promise.all([
       supabase
-        .from("dart_search_results")
-        .select("corp_name")
-        .eq("case_id", caseId)
-        .eq("status", "완료"),
-      supabase
-        .from("factory_search_results")
-        .select("cmpny_nm")
-        .eq("case_id", caseId)
-        .eq("status", "완료"),
-      supabase.from("pollution_mappings").select("*").eq("case_id", caseId),
-    ]);
-
-    const companySet = new Set();
-    (dartRows || []).forEach((r) => r.corp_name && companySet.add(r.corp_name));
-    (factoryRows || []).forEach((r) => r.cmpny_nm && companySet.add(r.cmpny_nm));
-
-    if (companySet.size === 0) {
-      const { data: ownerRows } = await supabase
         .from("module_rows")
         .select("row_data")
         .eq("case_id", caseId)
-        .eq("module_number", 3);
-      (ownerRows || []).forEach((r) => {
-        const d = r.row_data || {};
-        if (d.category === "ownership" && d.owner_name) companySet.add(d.owner_name);
-      });
-    }
+        .eq("module_number", 3)
+        .order("row_order", { ascending: true }),
+      supabase.from("pollution_mappings").select("*").eq("case_id", caseId),
+    ]);
+
+    // 기업 = 3.1 소유·임대차 이력의 소유자·임차인(입력 순서대로). 예전엔 DART·공장조회에서 한 번이라도
+    // 조회한 업체를 전부 넣고 소유이력은 조회 기록이 없을 때만 써서, 소유이력과 무관한 업체가 나왔다.
+    const companySet = new Set();
+    (historyRows || []).forEach((r) => {
+      const d = r.row_data || {};
+      if (d.category === "ownership" && d.owner_name?.trim()) companySet.add(d.owner_name.trim());
+      if (d.category === "lease" && d.tenant_name?.trim()) companySet.add(d.tenant_name.trim());
+    });
 
     const substanceSet = new Set();
     const cellMap = {};
     (mapRows || []).forEach((r) => {
-      companySet.add(r.company_name);
       substanceSet.add(r.substance);
       cellMap[`${r.substance}::${r.company_name}`] = { level: r.level, note: r.note || "" };
+      // 소유이력에 없는 업체라도 이미 연관성을 매기거나 메모를 쓴 칸은 지우지 않고 보여준다
+      // (빈 칸 — "판단불가"에 메모 없음 — 은 예전 조회 업체의 흔적이라 숨김).
+      if (r.level !== "판단불가" || (r.note || "").trim()) companySet.add(r.company_name);
     });
 
-    setCompanies([...companySet].sort());
+    setCompanies([...companySet]);
     setSubstances([...substanceSet].sort());
     setCells(cellMap);
     setLoading(false);
@@ -209,8 +200,7 @@ export default function PollutionMappingTab({ caseId }) {
 
       {companies.length === 0 ? (
         <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
-          챕터 05에서 DART 검색 또는 공장등록 조회로 회사를 먼저 찾아주세요. (챕터 03
-          소유자만 있어도 표시돼요.)
+          3.1 소유·임대차 이력에 소유자나 임차인을 먼저 입력해 주세요. 입력한 업체가 여기 나와요.
         </div>
       ) : substances.length === 0 ? (
         <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
