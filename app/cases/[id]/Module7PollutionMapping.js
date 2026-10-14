@@ -226,7 +226,7 @@ export default function PollutionMappingTab({ caseId }) {
                     position: "sticky",
                     left: 0,
                     background: "white",
-                    padding: "8px 10px",
+                    padding: "5px 10px",
                     borderBottom: "2px solid var(--color-border)",
                     textAlign: "left",
                     minWidth: 100,
@@ -238,7 +238,7 @@ export default function PollutionMappingTab({ caseId }) {
                   <th
                     key={c}
                     style={{
-                      padding: "8px 10px",
+                      padding: "5px 10px",
                       background: COMPANY_COLORS[ci % COMPANY_COLORS.length].head,
                       borderBottom: "2px solid var(--color-border)",
                       borderLeft: "2px solid white",
@@ -260,7 +260,7 @@ export default function PollutionMappingTab({ caseId }) {
                       position: "sticky",
                       left: 0,
                       background: "white",
-                      padding: "8px 10px",
+                      padding: "5px 10px",
                       borderBottom: "1px solid var(--color-border)",
                       fontWeight: 600,
                       whiteSpace: "nowrap",
@@ -293,7 +293,7 @@ export default function PollutionMappingTab({ caseId }) {
                           background: COMPANY_COLORS[ci % COMPANY_COLORS.length].col,
                           borderLeft: "2px solid white",
                           borderBottom: "1px solid var(--color-border)",
-                          padding: 6,
+                          padding: "2px 6px",
                           verticalAlign: "top",
                         }}
                       >
@@ -305,11 +305,11 @@ export default function PollutionMappingTab({ caseId }) {
                             background: style.bg,
                             color: style.text,
                             fontWeight: 600,
-                            padding: "6px 4px",
+                            padding: "3px 4px",
                             borderRadius: 6,
                             cursor: "pointer",
                             fontSize: 14,
-                            marginBottom: 4,
+                            marginBottom: 3,
                           }}
                         >
                           {style.label}
@@ -326,7 +326,7 @@ export default function PollutionMappingTab({ caseId }) {
                           placeholder="메모"
                           style={{
                             width: "100%",
-                            padding: "4px 6px",
+                            padding: "2px 6px",
                             fontSize: 13,
                             borderRadius: 4,
                             border: "1px solid var(--color-border)",
