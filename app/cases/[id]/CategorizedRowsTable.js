@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useModuleRows } from "@/lib/useModuleRows";
-import { parsePastedTable } from "@/lib/pasteTable";
+import { parsePastedTable, htmlTableToTsv } from "@/lib/pasteTable";
 
 // pasteImport: true면 "붙여넣기로 추가" — 다른 화면(예: 팩토리온 조회 결과)의 표를 복사해 붙이면
 // fields의 label/aliases로 칸을 맞춰 한 번에 행을 추가한다.
@@ -186,6 +186,14 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
           <textarea
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
+            onPaste={(e) => {
+              // 화면 표를 복사하면 일반 텍스트는 "한 칸 = 한 줄"로 올 때가 있어(팩토리온), 같이 담긴 HTML 표로 칸을 나눈다
+              const tsv = htmlTableToTsv(e.clipboardData?.getData("text/html"));
+              if (tsv) {
+                e.preventDefault();
+                setPasteText(tsv);
+              }
+            }}
             rows={6}
             placeholder="여기에 붙여넣기 (Ctrl+V)"
             style={{
@@ -205,6 +213,11 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
                 미리보기 {pastePreview.rows.length}행
                 {pastePreview.headerFound ? " (머리글로 칸을 맞췄어요)" : " (머리글이 없어 순서대로 읽었어요)"}
               </div>
+              {pastePreview.warning && (
+                <div style={{ fontSize: 13, color: "var(--color-badge-red-text)", marginBottom: 4 }}>
+                  ⚠ {pastePreview.warning}
+                </div>
+              )}
               <table style={{ borderCollapse: "collapse", fontSize: 13, background: "white", width: "100%" }}>
                 <thead>
                   <tr>
