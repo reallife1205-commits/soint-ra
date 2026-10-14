@@ -6,22 +6,25 @@ import FactorySearchTab from "./Module5FactoryTab";
 import CategorizedRowsTable from "./CategorizedRowsTable";
 import ReportStatusBadge from "./ReportStatusBadge";
 
-// 보고서 [표 5]에 들어가는 건 "공장등록 이력(표5)" 하나라 맨 앞(기본 화면)에 둔다. "업체 조회"(DART·공장등록
+// 보고서 [표 5]에 들어가는 건 "공장등록 현황(표5)" 하나라 맨 앞(기본 화면)에 둔다. "업체 조회"(DART·공장등록
 // 조회)는 회사 정보를 찾아보는 보조 도구라 보고서엔 안 들어간다. 예전의 "수동 추가"/"수집 결과" 탭은
 // 오염물질×기업 매핑의 업체 목록을 채우던 용도였는데, 매핑이 3.1 소유·임대차 이력을 쓰게 되면서 없앴다
 // (dart_search_results에 저장된 예전 기록은 DB에 그대로 있음).
 const TABS = [
-  { key: "factory_history", label: "공장등록 이력(표5)", status: "optional" },
+  { key: "factory_history", label: "공장등록 현황(표5)", status: "optional" },
   { key: "lookup", label: "업체 조회 (DART·공장등록)" },
 ];
 
+// [표 5] = 팩토리온 "공장(기업)조회 서비스" 결과 칸(대표업종은 빼기로 함). 예전 칸(승인일·취소일·보유구분·업종)으로
+// 입력했던 행은 DB에 그대로 있지만 화면·보고서엔 회사명만 이어서 보인다.
+// aliases: 결과 표를 붙여 넣을 때 머리글 이름이 조금 달라도 칸을 맞추기 위한 다른 이름들
 const FACTORY_HISTORY_FIELDS = [
-  // aliases: 팩토리온 조회 결과를 붙여 넣을 때 머리글 이름이 달라도 칸을 맞추기 위한 다른 이름들
-  { key: "approved_date", label: "승인일", type: "date", aliases: ["승인일자", "최초승인일", "등록일", "등록일자", "공장등록일"] },
-  { key: "cancelled_date", label: "취소일", type: "date", aliases: ["취소일자", "등록취소일", "폐업일", "말소일"] },
-  { key: "company_name", label: "회사명", aliases: ["업체명", "기업명", "상호", "회사명(상호)"] },
-  { key: "holding_type", label: "보유구분", aliases: ["보유형태", "소유구분"] },
-  { key: "business_type", label: "업종", aliases: ["업종명", "업종명칭", "업종(분류)"] },
+  { key: "company_name", label: "공장(기업)명", aliases: ["공장명", "기업명", "회사명", "업체명", "상호"] },
+  { key: "region", label: "지역", aliases: ["시군구", "소재지역"] },
+  { key: "industrial_complex", label: "산업단지명", aliases: ["산업단지", "단지명"] },
+  { key: "address", label: "대표주소", aliases: ["공장(기업) 대표주소", "공장대표주소", "주소", "소재지"] },
+  { key: "product", label: "생산품", aliases: ["생산제품", "주생산품"] },
+  { key: "raw_material", label: "원자재", aliases: ["원재료", "주원자재"] },
 ];
 
 export default function Module5Panel({ caseId }) {
@@ -72,20 +75,20 @@ export default function Module5Panel({ caseId }) {
       {tab === "factory_history" && (
         <div className="card">
           <div style={{ fontWeight: 700, marginBottom: 4 }}>
-            공장등록 이력 (표5 — 팩토리온에서 직접 조회한 결과를 입력)
+            공장등록 현황 (표5 — 팩토리온 공장(기업)조회 서비스 결과)
           </div>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
-            팩토리온(factoryon.go.kr)의 &quot;공장(기업)조회 서비스&quot;는 로그인이 필요해서 자동 연동이
-            안 돼요. 직접 로그인해서 조회한 결과를 아래 표에 입력하거나, 결과 표를 복사해서
-            [📋 붙여넣기로 추가]에 붙여 넣어 주세요. 연번은 입력 순서대로 자동으로 매겨져요.
-            필수 항목은 아니에요 — 비워 두면 보고서에서 [표 5]가 통째로 빠져요.
+            팩토리온(factoryon.go.kr) 로그인 → 민원서비스 → 공장(기업)조회 서비스에서 지역과 공장(기업)명으로
+            조회한 결과를 넣어 주세요. 결과 표를 머리글까지 드래그해 복사하거나, [엑셀저장]으로 받은 엑셀에서
+            복사해 [📋 붙여넣기로 추가]에 붙이면 칸이 자동으로 맞춰져요(대표업종 칸은 버려요). 연번은 입력
+            순서대로 매겨져요. 필수 항목은 아니에요 — 비워 두면 보고서에서 [표 5]가 통째로 빠져요.
           </div>
           <CategorizedRowsTable
             caseId={caseId}
             moduleNumber={5}
             category="factory_history_item"
             fields={FACTORY_HISTORY_FIELDS}
-            emptyText="공장등록 이력 없음 — 아래 버튼으로 추가하거나, 팩토리온 조회 결과를 복사해 붙여 넣으세요"
+            emptyText="입력된 공장 없음 — 아래 버튼으로 추가하거나, 팩토리온 조회 결과를 복사해 붙여 넣으세요"
             pasteImport
           />
         </div>
