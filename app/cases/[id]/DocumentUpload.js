@@ -9,7 +9,9 @@ function isImageFile(fileName) {
 }
 
 // title/status: 기본은 "참고 문서 업로드(참고용)". 3.4처럼 올린 파일이 보고서에 쓰이는 화면은 바꿔 넘긴다.
-export default function DocumentUpload({ caseId, moduleNumber, title = "참고 문서 업로드", status = "reference" }) {
+// category: 같은 module_number를 여러 화면이 같이 쓰는 경우(3장 3.1~3.6, 6장 법적판단은 모두 3번) 화면마다
+// 따로 보이도록 붙이는 구분값. includeLegacy: 구분값 없이(category NULL) 예전에 올린 파일도 같이 보여준다.
+export default function DocumentUpload({ caseId, moduleNumber, title = "참고 문서 업로드", status = "reference", category = null, includeLegacy = false }) {
   const [docs, setDocs] = useState([]);
   const [urlMap, setUrlMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -19,13 +21,15 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
 
   async function load() {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("documents")
       .select("*")
       .eq("case_id", caseId)
-      .eq("module_number", moduleNumber)
-      .is("category", null)
-      .order("uploaded_at", { ascending: false });
+      .eq("module_number", moduleNumber);
+    if (!category) query = query.is("category", null);
+    else if (includeLegacy) query = query.or(`category.eq.${category},category.is.null`);
+    else query = query.eq("category", category);
+    const { data } = await query.order("uploaded_at", { ascending: false });
     setDocs(data || []);
     setLoading(false);
   }
@@ -33,7 +37,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caseId, moduleNumber]);
+  }, [caseId, moduleNumber, category]);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +95,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
         file_name: file.name,
         file_path: filePath,
         file_size: file.size,
+        category,
       },
     ]);
 

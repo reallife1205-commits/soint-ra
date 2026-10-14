@@ -186,6 +186,15 @@ export default function CaseDetailPage() {
   // 3장 공용 3번에 저장하던 탓에 올린 사진이 항공사진 쪽에 안 나왔다 — 3.4에선 4번으로 올린다.
   if (activeChapter === "3" && activeSubTab === "3.4") effectiveModuleNumber = 4;
 
+  // 3장(3.1~3.6)과 6장 법적판단은 모두 documents 3번이라 왼쪽 참고 문서가 화면마다 똑같이 보였다 —
+  // 화면별 구분값을 붙여 따로 보이게 한다. 구분값 없이 예전에 올린 공용 파일은 3.1에서만 보인다.
+  const sidebarCategory =
+    effectiveModuleNumber === 3
+      ? activeChapter === "3"
+        ? `ref_${activeSubTab}`
+        : `ref_${activeChapter}`
+      : null;
+
   return (
     <div className="page">
       <div
@@ -421,7 +430,12 @@ export default function CaseDetailPage() {
             {effectiveModuleNumber === 4 ? (
               <DocumentUpload caseId={id} moduleNumber={4} title="항공사진·현장사진 업로드" status="required" />
             ) : (
-              <DocumentUpload caseId={id} moduleNumber={effectiveModuleNumber} />
+              <DocumentUpload
+                caseId={id}
+                moduleNumber={effectiveModuleNumber}
+                category={sidebarCategory}
+                includeLegacy={sidebarCategory === "ref_3.1"}
+              />
             )}
           </div>
         )}
