@@ -6,27 +6,26 @@ import FactorySearchTab from "./Module5FactoryTab";
 import CategorizedRowsTable from "./CategorizedRowsTable";
 import ReportStatusBadge from "./ReportStatusBadge";
 
-// DART 검색/공장등록 조회/수동 추가/수집 결과는 회사명을 찾기 위한 검색 보조 도구라 보고서엔
-// 안 들어가고, "공장등록 이력(표5)"에 직접 입력한 표만 [표 5]로 그대로 반영된다.
+// 보고서 [표 5]에 들어가는 건 "공장등록 이력(표5)" 하나라 맨 앞(기본 화면)에 둔다. "업체 조회"(DART·공장등록
+// 조회)는 회사 정보를 찾아보는 보조 도구라 보고서엔 안 들어간다. 예전의 "수동 추가"/"수집 결과" 탭은
+// 오염물질×기업 매핑의 업체 목록을 채우던 용도였는데, 매핑이 3.1 소유·임대차 이력을 쓰게 되면서 없앴다
+// (dart_search_results에 저장된 예전 기록은 DB에 그대로 있음).
 const TABS = [
-  { key: "dart", label: "DART 검색" },
-  { key: "factory", label: "공장등록 조회" },
-  { key: "manual", label: "수동 추가" },
-  { key: "results", label: "수집 결과" },
   { key: "factory_history", label: "공장등록 이력(표5)", status: "required" },
+  { key: "lookup", label: "업체 조회 (DART·공장등록)" },
 ];
 
 const FACTORY_HISTORY_FIELDS = [
-  { key: "approved_date", label: "승인일", type: "date" },
-  { key: "cancelled_date", label: "취소일", type: "date" },
-  { key: "company_name", label: "회사명" },
-  { key: "holding_type", label: "보유구분" },
-  { key: "business_type", label: "업종" },
+  // aliases: 팩토리온 조회 결과를 붙여 넣을 때 머리글 이름이 달라도 칸을 맞추기 위한 다른 이름들
+  { key: "approved_date", label: "승인일", type: "date", aliases: ["승인일자", "최초승인일", "등록일", "등록일자", "공장등록일"] },
+  { key: "cancelled_date", label: "취소일", type: "date", aliases: ["취소일자", "등록취소일", "폐업일", "말소일"] },
+  { key: "company_name", label: "회사명", aliases: ["업체명", "기업명", "상호", "회사명(상호)"] },
+  { key: "holding_type", label: "보유구분", aliases: ["보유형태", "소유구분"] },
+  { key: "business_type", label: "업종", aliases: ["업종명", "업종명칭", "업종(분류)"] },
 ];
 
 export default function Module5Panel({ caseId }) {
-  const [tab, setTab] = useState("dart");
-  const [resultCount, setResultCount] = useState(0);
+  const [tab, setTab] = useState("factory_history");
 
   return (
     <div>
@@ -57,23 +56,18 @@ export default function Module5Panel({ caseId }) {
             }}
           >
             {t.label}
-            {t.key === "results" && (
-              <span style={{ marginLeft: 4, color: "var(--color-text-muted)" }}>
-                {resultCount}
-              </span>
-            )}
             <ReportStatusBadge status={t.status} superscript />
           </button>
         ))}
       </div>
 
-      {tab === "dart" && (
-        <DartSearchTab caseId={caseId} onResultsChanged={setResultCount} />
-      )}
-      {tab === "factory" && <FactorySearchTab caseId={caseId} />}
-      {tab === "manual" && <ManualAddTab caseId={caseId} onResultsChanged={setResultCount} />}
-      {tab === "results" && (
-        <ResultsTab caseId={caseId} onResultsChanged={setResultCount} />
+      {tab === "lookup" && (
+        <>
+          <DartSearchTab caseId={caseId} />
+          <div style={{ marginTop: 20 }}>
+            <FactorySearchTab caseId={caseId} />
+          </div>
+        </>
       )}
       {tab === "factory_history" && (
         <div className="card">
@@ -82,15 +76,16 @@ export default function Module5Panel({ caseId }) {
           </div>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
             팩토리온(factoryon.go.kr)의 &quot;공장(기업)조회 서비스&quot;는 로그인이 필요해서 자동 연동이
-            안 돼요. 직접 로그인해서 조회한 결과를 아래 표에 입력해주세요. 연번은 입력 순서대로
-            자동으로 매겨져요.
+            안 돼요. 직접 로그인해서 조회한 결과를 아래 표에 입력하거나, 결과 표를 복사해서
+            [📋 붙여넣기로 추가]에 붙여 넣어 주세요. 연번은 입력 순서대로 자동으로 매겨져요.
           </div>
           <CategorizedRowsTable
             caseId={caseId}
             moduleNumber={5}
             category="factory_history_item"
             fields={FACTORY_HISTORY_FIELDS}
-            emptyText="공장등록 이력 없음 — 아래 버튼으로 추가하세요"
+            emptyText="공장등록 이력 없음 — 아래 버튼으로 추가하거나, 팩토리온 조회 결과를 복사해 붙여 넣으세요"
+            pasteImport
           />
         </div>
       )}
@@ -432,186 +427,4 @@ function StatusBadge({ status }) {
   if (status === "완료") return <span className="badge badge-green">완료</span>;
   if (status === "없음") return <span className="badge badge-red">결과 없음</span>;
   return <span className="badge">{status}</span>;
-}
-
-function ManualAddTab({ caseId, onResultsChanged }) {
-  const [form, setForm] = useState({
-    source_name: "",
-    corp_name: "",
-    ceo_name: "",
-    biz_no: "",
-    address: "",
-    note: "",
-  });
-  const [saving, setSaving] = useState(false);
-
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
-  async function handleSave() {
-    if (!form.source_name && !form.corp_name) return;
-    setSaving(true);
-    await supabase.from("dart_search_results").insert([
-      {
-        case_id: caseId,
-        source_name: form.source_name || form.corp_name,
-        corp_name: form.corp_name || null,
-        ceo_name: form.ceo_name || null,
-        biz_no: form.biz_no || null,
-        address: form.address || null,
-        note: form.note || null,
-        status: "완료",
-        search_type: "manual",
-      },
-    ]);
-    setSaving(false);
-    setForm({
-      source_name: "",
-      corp_name: "",
-      ceo_name: "",
-      biz_no: "",
-      address: "",
-      note: "",
-    });
-    if (onResultsChanged) {
-      const { count } = await supabase
-        .from("dart_search_results")
-        .select("*", { count: "exact", head: true })
-        .eq("case_id", caseId);
-      onResultsChanged(count || 0);
-    }
-  }
-
-  const fields = [
-    { key: "source_name", label: "검색 대상명 (소유자/업체명)" },
-    { key: "corp_name", label: "확인된 회사명" },
-    { key: "ceo_name", label: "대표자명" },
-    { key: "biz_no", label: "사업자등록번호" },
-    { key: "address", label: "주소" },
-  ];
-
-  return (
-    <div className="card" style={{ maxWidth: 480 }}>
-      <div style={{ fontWeight: 700, marginBottom: 14 }}>직접 입력해서 추가</div>
-      {fields.map((f) => (
-        <div key={f.key} style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>{f.label}</label>
-          <input
-            value={form[f.key]}
-            onChange={(e) => update(f.key, e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              borderRadius: 8,
-              border: "1px solid var(--color-border)",
-              marginTop: 4,
-            }}
-          />
-        </div>
-      ))}
-      <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 14, color: "var(--color-text-muted)" }}>메모</label>
-        <textarea
-          value={form.note}
-          onChange={(e) => update("note", e.target.value)}
-          rows={2}
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid var(--color-border)",
-            marginTop: 4,
-            fontFamily: "inherit",
-            resize: "vertical",
-          }}
-        />
-      </div>
-      <button className="btn-primary" onClick={handleSave} disabled={saving}>
-        {saving ? "저장 중..." : "추가"}
-      </button>
-    </div>
-  );
-}
-
-function ResultsTab({ caseId, onResultsChanged }) {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  async function load() {
-    setLoading(true);
-    const { data } = await supabase
-      .from("dart_search_results")
-      .select("*")
-      .eq("case_id", caseId)
-      .order("created_at", { ascending: false });
-    setRows(data || []);
-    setLoading(false);
-    if (onResultsChanged) onResultsChanged((data || []).length);
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caseId]);
-
-  async function handleDelete(id) {
-    await supabase.from("dart_search_results").delete().eq("id", id);
-    load();
-  }
-
-  if (loading) return <div className="card">불러오는 중이에요...</div>;
-
-  if (rows.length === 0) {
-    return (
-      <div className="card" style={{ textAlign: "center", color: "var(--color-text-muted)" }}>
-        아직 수집된 결과가 없어요. &apos;DART 검색&apos; 탭에서 검색을 실행해보세요.
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
-        <thead>
-          <tr style={{ borderBottom: "2px solid var(--color-border)", textAlign: "left" }}>
-            <th style={{ padding: "8px 6px" }}>검색 대상</th>
-            <th style={{ padding: "8px 6px" }}>회사명</th>
-            <th style={{ padding: "8px 6px" }}>대표자</th>
-            <th style={{ padding: "8px 6px" }}>사업자번호</th>
-            <th style={{ padding: "8px 6px" }}>주소</th>
-            <th style={{ padding: "8px 6px" }}>상태</th>
-            <th style={{ padding: "8px 6px" }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
-              <td style={{ padding: "8px 6px" }}>{r.source_name}</td>
-              <td style={{ padding: "8px 6px" }}>{r.corp_name || "-"}</td>
-              <td style={{ padding: "8px 6px" }}>{r.ceo_name || "-"}</td>
-              <td style={{ padding: "8px 6px" }}>{r.biz_no || "-"}</td>
-              <td style={{ padding: "8px 6px", maxWidth: 220 }}>{r.address || "-"}</td>
-              <td style={{ padding: "8px 6px" }}>
-                <StatusBadge status={r.status} />
-              </td>
-              <td style={{ padding: "8px 6px" }}>
-                <button
-                  onClick={() => handleDelete(r.id)}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    color: "var(--color-text-muted)",
-                    cursor: "pointer",
-                  }}
-                >
-                  ✕
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
 }
