@@ -1,7 +1,8 @@
 "use client";
 
 // 이 화면에 입력한 내용이 실제로 hwpx 보고서에 반영되는지 한눈에 보여주는 작은 표시.
-// "required" = 반영됨(필수작성), "reference" = 입력해도 보고서엔 안 들어감(참고용).
+// "required" = 반영됨(필수작성), "optional" = 입력하면 반영·비우면 빠짐(선택작성),
+// "reference" = 입력해도 보고서엔 안 들어감(참고용).
 // status가 없으면 아무것도 안 그린다(주로 검색·조회 보조 화면처럼 굳이 표시할 필요 없는 곳).
 // superscript: 위첨자처럼 작게 올려 붙인다 — 상단 챕터 탭이 한 줄에 다 보이도록 폭을 줄일 때 사용.
 export default function ReportStatusBadge({ status, superscript = false }) {
@@ -37,6 +38,22 @@ export default function ReportStatusBadge({ status, superscript = false }) {
         title="이 화면에 입력한 내용은 보고서에는 반영되지 않아요(참고·관리용)"
       >
         참고용
+      </span>
+    );
+  }
+  if (status === "optional") {
+    // 입력하면 보고서에 들어가지만 필수는 아닌 것(예: [표 5] 공장등록 이력 — 비우면 표째로 빠짐)
+    return (
+      <span
+        className="badge badge-blue"
+        style={
+          superscript
+            ? { fontSize: 10, padding: "0 5px", marginLeft: 2, verticalAlign: "super", lineHeight: 1.4 }
+            : { fontSize: 11, padding: "1px 6px", marginLeft: 6, verticalAlign: "middle" }
+        }
+        title="입력하면 보고서에 반영돼요. 비워 두면 보고서에서 빠져요"
+      >
+        선택작성
       </span>
     );
   }

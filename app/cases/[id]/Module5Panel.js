@@ -11,7 +11,7 @@ import ReportStatusBadge from "./ReportStatusBadge";
 // 오염물질×기업 매핑의 업체 목록을 채우던 용도였는데, 매핑이 3.1 소유·임대차 이력을 쓰게 되면서 없앴다
 // (dart_search_results에 저장된 예전 기록은 DB에 그대로 있음).
 const TABS = [
-  { key: "factory_history", label: "공장등록 이력(표5)", status: "required" },
+  { key: "factory_history", label: "공장등록 이력(표5)", status: "optional" },
   { key: "lookup", label: "업체 조회 (DART·공장등록)" },
 ];
 
@@ -78,6 +78,7 @@ export default function Module5Panel({ caseId }) {
             팩토리온(factoryon.go.kr)의 &quot;공장(기업)조회 서비스&quot;는 로그인이 필요해서 자동 연동이
             안 돼요. 직접 로그인해서 조회한 결과를 아래 표에 입력하거나, 결과 표를 복사해서
             [📋 붙여넣기로 추가]에 붙여 넣어 주세요. 연번은 입력 순서대로 자동으로 매겨져요.
+            필수 항목은 아니에요 — 비워 두면 보고서에서 [표 5]가 통째로 빠져요.
           </div>
           <CategorizedRowsTable
             caseId={caseId}
