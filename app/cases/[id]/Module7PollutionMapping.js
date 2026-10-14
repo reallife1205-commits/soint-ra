@@ -11,6 +11,17 @@ const LEVEL_STYLE = {
   높음: { bg: "#f6b1ab", text: "#8a1f1a", label: "★★★ 높음" },
 };
 
+// 업체(열) 구분용 파스텔 — 칸 안 연관성 색(노랑·주황·빨강)과 겹치지 않게 차가운 계열 위주.
+// head: 업체명 칸, col: 그 아래 칸들에 옅게 깔리는 색.
+const COMPANY_COLORS = [
+  { head: "#dbeafe", col: "#f3f8ff" }, // 하늘
+  { head: "#d5f0e3", col: "#f2fbf6" }, // 민트
+  { head: "#e6e0f8", col: "#f7f5fd" }, // 연보라
+  { head: "#d6eef2", col: "#f2fafb" }, // 청록
+  { head: "#f3e0ec", col: "#fcf5f9" }, // 연분홍
+  { head: "#e4e8ee", col: "#f6f7f9" }, // 회청
+];
+
 function nextLevel(level) {
   const idx = LEVELS.indexOf(level);
   return LEVELS[(idx + 1) % LEVELS.length];
@@ -223,12 +234,14 @@ export default function PollutionMappingTab({ caseId }) {
                 >
                   오염물질 \ 기업
                 </th>
-                {companies.map((c) => (
+                {companies.map((c, ci) => (
                   <th
                     key={c}
                     style={{
                       padding: "8px 10px",
+                      background: COMPANY_COLORS[ci % COMPANY_COLORS.length].head,
                       borderBottom: "2px solid var(--color-border)",
+                      borderLeft: "2px solid white",
                       textAlign: "center",
                       minWidth: 130,
                       fontWeight: 600,
@@ -270,13 +283,15 @@ export default function PollutionMappingTab({ caseId }) {
                       </button>
                     </div>
                   </td>
-                  {companies.map((c) => {
+                  {companies.map((c, ci) => {
                     const cell = getCell(s, c);
                     const style = LEVEL_STYLE[cell.level];
                     return (
                       <td
                         key={c}
                         style={{
+                          background: COMPANY_COLORS[ci % COMPANY_COLORS.length].col,
+                          borderLeft: "2px solid white",
                           borderBottom: "1px solid var(--color-border)",
                           padding: 6,
                           verticalAlign: "top",
