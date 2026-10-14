@@ -182,6 +182,10 @@ export default function CaseDetailPage() {
     effectiveModuleNumber = tool?.moduleNumber ?? 3;
   }
 
+  // 3.4 화면 아래 항공사진(사진 업로드·타임라인)은 documents 4번만 읽는다. 왼쪽 "참고 문서 업로드"가
+  // 3장 공용 3번에 저장하던 탓에 올린 사진이 항공사진 쪽에 안 나왔다 — 3.4에선 4번으로 올린다.
+  if (activeChapter === "3" && activeSubTab === "3.4") effectiveModuleNumber = 4;
+
   return (
     <div className="page">
       <div
@@ -414,7 +418,11 @@ export default function CaseDetailPage() {
       <div style={{ display: "flex", gap: 20 }}>
         {effectiveModuleNumber !== undefined && (
           <div className="card" style={{ width: 260, flexShrink: 0 }}>
-            <DocumentUpload caseId={id} moduleNumber={effectiveModuleNumber} />
+            {effectiveModuleNumber === 4 ? (
+              <DocumentUpload caseId={id} moduleNumber={4} title="항공사진·현장사진 업로드" status="required" />
+            ) : (
+              <DocumentUpload caseId={id} moduleNumber={effectiveModuleNumber} />
+            )}
           </div>
         )}
 

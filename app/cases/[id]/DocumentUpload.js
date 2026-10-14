@@ -8,7 +8,8 @@ function isImageFile(fileName) {
   return /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName || "");
 }
 
-export default function DocumentUpload({ caseId, moduleNumber }) {
+// title/status: 기본은 "참고 문서 업로드(참고용)". 3.4처럼 올린 파일이 보고서에 쓰이는 화면은 바꿔 넘긴다.
+export default function DocumentUpload({ caseId, moduleNumber, title = "참고 문서 업로드", status = "reference" }) {
   const [docs, setDocs] = useState([]);
   const [urlMap, setUrlMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -123,8 +124,8 @@ export default function DocumentUpload({ caseId, moduleNumber }) {
   return (
     <div>
       <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
-        참고 문서 업로드
-        <ReportStatusBadge status="reference" />
+        {title}
+        <ReportStatusBadge status={status} />
       </div>
 
       <label
