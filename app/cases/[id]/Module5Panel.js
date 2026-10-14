@@ -74,8 +74,18 @@ export default function Module5Panel({ caseId }) {
       )}
       {tab === "factory_history" && (
         <div className="card">
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>
-            공장등록 현황 (표5 — 팩토리온 공장(기업)조회 서비스 결과)
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <div style={{ fontWeight: 700 }}>공장등록 현황 (표5 — 팩토리온 공장(기업)조회 서비스 결과)</div>
+            {/* 로그인 안 돼 있으면 팩토리온이 로그인 화면을 먼저 보여 주고, 로그인 후 이 조회 화면으로 간다 */}
+            <a
+              href="https://www.factoryon.go.kr/fctry/search/fctryRegistSearch.do"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary"
+              style={{ fontSize: 14, padding: "6px 12px", whiteSpace: "nowrap" }}
+            >
+              팩토리온 공장(기업)조회 바로가기 ↗
+            </a>
           </div>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
             팩토리온(factoryon.go.kr) 로그인 → 민원서비스 → 공장(기업)조회 서비스에서 지역과 공장(기업)명으로
