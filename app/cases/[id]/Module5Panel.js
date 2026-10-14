@@ -19,12 +19,12 @@ const TABS = [
 // 입력했던 행은 DB에 그대로 있지만 화면·보고서엔 회사명만 이어서 보인다.
 // aliases: 결과 표를 붙여 넣을 때 머리글 이름이 조금 달라도 칸을 맞추기 위한 다른 이름들
 const FACTORY_HISTORY_FIELDS = [
-  { key: "company_name", label: "공장(기업)명", aliases: ["공장명", "기업명", "회사명", "업체명", "상호"] },
-  { key: "region", label: "지역", aliases: ["시군구", "소재지역"] },
-  { key: "industrial_complex", label: "산업단지명", aliases: ["산업단지", "단지명"] },
-  { key: "address", label: "대표주소", aliases: ["공장(기업) 대표주소", "공장대표주소", "주소", "소재지"] },
-  { key: "product", label: "생산품", aliases: ["생산제품", "주생산품"] },
-  { key: "raw_material", label: "원자재", aliases: ["원재료", "주원자재"] },
+  { key: "company_name", label: "공장(기업)명", width: "15%", aliases: ["공장명", "기업명", "회사명", "업체명", "상호"] },
+  { key: "region", label: "지역", width: "13%", aliases: ["시군구", "소재지역"] },
+  { key: "industrial_complex", label: "산업단지명", width: "17%", aliases: ["산업단지", "단지명"] },
+  { key: "address", label: "대표주소", width: "29%", aliases: ["공장(기업) 대표주소", "공장대표주소", "주소", "소재지"] },
+  { key: "product", label: "생산품", width: "11%", aliases: ["생산제품", "주생산품"] },
+  { key: "raw_material", label: "원자재", width: "11%", aliases: ["원재료", "주원자재"] },
 ];
 
 export default function Module5Panel({ caseId }) {
