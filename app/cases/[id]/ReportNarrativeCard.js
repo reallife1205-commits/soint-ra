@@ -163,7 +163,7 @@ export default function ReportNarrativeCard({
             className="btn-primary"
             onClick={makeDraft}
             disabled={!!draftDisabledReason}
-            style={{ fontSize: 14, padding: "6px 12px" }}
+            style={{ fontSize: 14, padding: "6px 12px", background: "var(--color-complete-bg)" }}
           >
             ✨ {draftButtonLabel}
           </button>
