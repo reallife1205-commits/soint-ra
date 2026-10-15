@@ -14,6 +14,45 @@ export default function SoilBanner() {
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: "block", width: "100%", height: "auto" }}
       >
+        {/* 마스코트 "담이" 움직임 — 통통 뛰기·새싹 살랑·눈 깜빡임, 마우스를 올리면 손 흔들기.
+            움직임 줄이기 설정(prefers-reduced-motion)이면 멈춘다. transform-box: fill-box로 각 부위 기준점을 잡음. */}
+        <style>{`
+          .dami { cursor: pointer; }
+          .dami-bounce, .dami-shadow, .dami-sprout, .dami-eye, .dami-arm-r {
+            transform-box: fill-box;
+          }
+          .dami-bounce { transform-origin: 50% 100%; animation: dami-bounce 2.4s ease-in-out infinite; }
+          .dami-shadow { transform-origin: 50% 50%; animation: dami-shadow 2.4s ease-in-out infinite; }
+          .dami-sprout { transform-origin: 50% 100%; animation: dami-sway 3s ease-in-out infinite; }
+          .dami-eye { transform-origin: 50% 50%; animation: dami-blink 4.5s infinite; }
+          .dami-arm-r { transform-origin: 0% 0%; }
+          .dami:hover .dami-arm-r { animation: dami-wave 0.5s ease-in-out 3; }
+          .dami:hover .dami-bounce { animation-duration: 0.9s; }
+          .dami:hover .dami-shadow { animation-duration: 0.9s; }
+          @keyframes dami-bounce {
+            0%, 100% { transform: translateY(0) scale(1.03, 0.97); }
+            50% { transform: translateY(-7px) scale(0.98, 1.02); }
+          }
+          @keyframes dami-shadow {
+            0%, 100% { transform: scale(1); opacity: 0.25; }
+            50% { transform: scale(0.8); opacity: 0.15; }
+          }
+          @keyframes dami-sway {
+            0%, 100% { transform: rotate(-7deg); }
+            50% { transform: rotate(7deg); }
+          }
+          @keyframes dami-blink {
+            0%, 92%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+          }
+          @keyframes dami-wave {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-35deg); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .dami-bounce, .dami-shadow, .dami-sprout, .dami-eye, .dami:hover .dami-arm-r { animation: none; }
+          }
+        `}</style>
         <defs>
           <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#faf5e8" />
@@ -93,9 +132,11 @@ export default function SoilBanner() {
         ))}
 
         {/* 마스코트: 흙덩이 캐릭터 "담이" */}
-        <g transform="translate(455, 118)">
+        <g transform="translate(455, 118)" className="dami">
+          <title>담이</title>
           {/* 그림자 */}
-          <ellipse cx="0" cy="4" rx="34" ry="6" fill="#5a4a2e" opacity="0.25" />
+          <ellipse className="dami-shadow" cx="0" cy="4" rx="34" ry="6" fill="#5a4a2e" opacity="0.25" />
+          <g className="dami-bounce">
           {/* 몸통 */}
           <path
             d="M-32,0 C-34,-30 -18,-46 0,-46 C18,-46 34,-30 32,0 C32,8 -32,8 -32,0 Z"
@@ -106,20 +147,23 @@ export default function SoilBanner() {
           {/* 배 하이라이트 */}
           <ellipse cx="0" cy="-14" rx="16" ry="12" fill="#c06a3f" opacity="0.6" />
           {/* 머리 위 새싹 */}
-          <line x1="0" y1="-46" x2="0" y2="-62" stroke="#5f7048" strokeWidth="3" strokeLinecap="round" />
-          <path d="M0,-58 C-11,-62 -15,-72 -10,-80 C0,-75 3,-64 0,-58 Z" fill="#6f8256" />
-          <path d="M0,-54 C11,-58 16,-69 11,-77 C1,-71 -2,-60 0,-54 Z" fill="#5f7048" />
+          <g className="dami-sprout">
+            <line x1="0" y1="-46" x2="0" y2="-62" stroke="#5f7048" strokeWidth="3" strokeLinecap="round" />
+            <path d="M0,-58 C-11,-62 -15,-72 -10,-80 C0,-75 3,-64 0,-58 Z" fill="#6f8256" />
+            <path d="M0,-54 C11,-58 16,-69 11,-77 C1,-71 -2,-60 0,-54 Z" fill="#5f7048" />
+          </g>
           {/* 볼터치 */}
           <circle cx="-14" cy="-20" r="4" fill="#e8967a" opacity="0.7" />
           <circle cx="14" cy="-20" r="4" fill="#e8967a" opacity="0.7" />
           {/* 눈 */}
-          <circle cx="-9" cy="-24" r="3.2" fill="#2c2418" />
-          <circle cx="9" cy="-24" r="3.2" fill="#2c2418" />
+          <circle className="dami-eye" cx="-9" cy="-24" r="3.2" fill="#2c2418" />
+          <circle className="dami-eye" cx="9" cy="-24" r="3.2" fill="#2c2418" />
           {/* 웃는 입 */}
           <path d="M-7,-14 C-3,-9 3,-9 7,-14" stroke="#2c2418" strokeWidth="2" fill="none" strokeLinecap="round" />
           {/* 팔(짧고 통통) */}
           <path d="M-30,-8 C-38,-6 -40,2 -34,6" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
-          <path d="M30,-8 C38,-6 40,2 34,6" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <path className="dami-arm-r" d="M30,-8 C38,-6 40,2 34,6" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
+          </g>
         </g>
       </svg>
     </div>
