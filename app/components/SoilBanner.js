@@ -18,15 +18,19 @@ export default function SoilBanner() {
             움직임 줄이기 설정(prefers-reduced-motion)이면 멈춘다. transform-box: fill-box로 각 부위 기준점을 잡음. */}
         <style>{`
           .dami { cursor: pointer; }
-          .dami-bounce, .dami-shadow, .dami-sprout, .dami-eye, .dami-arm-r {
+          .dami-bounce, .dami-shadow, .dami-sprout, .dami-eye, .dami-arm-up {
             transform-box: fill-box;
           }
           .dami-bounce { transform-origin: 50% 100%; animation: dami-bounce 2.4s ease-in-out infinite; }
           .dami-shadow { transform-origin: 50% 50%; animation: dami-shadow 2.4s ease-in-out infinite; }
           .dami-sprout { transform-origin: 50% 100%; animation: dami-sway 3s ease-in-out infinite; }
           .dami-eye { transform-origin: 50% 50%; animation: dami-blink 4.5s infinite; }
-          .dami-arm-r { transform-origin: 0% 0%; }
-          .dami:hover .dami-arm-r { animation: dami-wave 0.5s ease-in-out 3; }
+          /* 평소엔 내린 팔, 마우스를 올리면 든 팔로 바꿔 어깨(든 팔의 왼쪽 아래)를 축으로 좌우로 흔든다 */
+          .dami-arm-up, .dami-hello { opacity: 0; transition: opacity 0.15s; }
+          .dami-arm-up { transform-origin: 0% 100%; }
+          .dami:hover .dami-arm-r { opacity: 0; }
+          .dami:hover .dami-arm-up { opacity: 1; animation: dami-wave 0.45s ease-in-out infinite alternate; }
+          .dami:hover .dami-hello { opacity: 1; }
           .dami:hover .dami-bounce { animation-duration: 0.9s; }
           .dami:hover .dami-shadow { animation-duration: 0.9s; }
           @keyframes dami-bounce {
@@ -46,11 +50,11 @@ export default function SoilBanner() {
             95% { transform: scaleY(0.1); }
           }
           @keyframes dami-wave {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-35deg); }
+            from { transform: rotate(-12deg); }
+            to { transform: rotate(22deg); }
           }
           @media (prefers-reduced-motion: reduce) {
-            .dami-bounce, .dami-shadow, .dami-sprout, .dami-eye, .dami:hover .dami-arm-r { animation: none; }
+            .dami-bounce, .dami-shadow, .dami-sprout, .dami-eye, .dami:hover .dami-arm-up { animation: none; }
           }
         `}</style>
         <defs>
@@ -163,6 +167,17 @@ export default function SoilBanner() {
           {/* 팔(짧고 통통) */}
           <path d="M-30,-8 C-38,-6 -40,2 -34,6" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
           <path className="dami-arm-r" d="M30,-8 C38,-6 40,2 34,6" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
+          {/* 마우스를 올리면: 위로 든 팔(끝에 손) + "안녕!" 말풍선 */}
+          <g className="dami-arm-up">
+            <path d="M29,-14 C38,-20 42,-30 43,-40" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
+            <circle cx="43" cy="-43" r="5" fill="#a8562f" stroke="#8a4525" strokeWidth="2" />
+          </g>
+          <g className="dami-hello">
+            <rect x="48" y="-86" width="54" height="26" rx="13" fill="#ffffff" stroke="#8a4525" strokeWidth="1.5" />
+            <path d="M58,-61 L54,-52 L66,-61 Z" fill="#ffffff" stroke="#8a4525" strokeWidth="1.5" strokeLinejoin="round" />
+            <rect x="57" y="-63" width="10" height="3" fill="#ffffff" />
+            <text x="75" y="-68" textAnchor="middle" fontSize="13" fontWeight="700" fill="#5a3a22">안녕!</text>
+          </g>
           </g>
         </g>
       </svg>
