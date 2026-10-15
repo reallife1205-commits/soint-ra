@@ -51,6 +51,14 @@ export default function CaseDetailPage() {
   const [editingMeta, setEditingMeta] = useState(false);
   const [metaForm, setMetaForm] = useState({ case_number: "", company_name: "", address: "", manager: "", due_date: "" });
   const [savingMeta, setSavingMeta] = useState(false);
+  // 마감일은 관리자가 배정할 때 정하는 기한이라 관리자 로그인일 때만 바꿀 수 있게 한다(서버가 쿠키를 검증)
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    fetch("/api/admin-login")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(!!d.isAdmin))
+      .catch(() => setIsAdmin(false));
+  }, []);
 
   const loadCase = useCallback(async () => {
     const { data } = await supabase.from("cases").select("*").eq("id", id).single();
@@ -100,7 +108,7 @@ export default function CaseDetailPage() {
         company_name: metaForm.company_name.trim(),
         address: metaForm.address || null,
         manager: metaForm.manager || null,
-        due_date: metaForm.due_date || null,
+        ...(isAdmin ? { due_date: metaForm.due_date || null } : {}),
       })
       .eq("id", id);
     await loadCase();
@@ -277,13 +285,19 @@ export default function CaseDetailPage() {
                 onChange={(e) =>
                   setMetaForm((f) => ({ ...f, due_date: e.target.value }))
                 }
+                disabled={!isAdmin}
+                title={isAdmin ? "마감일" : "마감일은 관리자만 변경할 수 있어요 (메인 화면 배정 현황의 📅)"}
                 style={{
+                  opacity: isAdmin ? 1 : 0.6,
                   padding: "4px 8px",
                   borderRadius: 6,
                   border: "1px solid var(--color-border)",
                   fontSize: 14,
                 }}
               />
+              {!isAdmin && (
+                <span style={{ fontSize: 12, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>마감일은 관리자만</span>
+              )}
               <button
                 className="btn-primary"
                 onClick={saveMeta}
