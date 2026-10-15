@@ -167,16 +167,16 @@ export default function SoilBanner() {
           {/* 팔(짧고 통통) */}
           <path d="M-30,-8 C-38,-6 -40,2 -34,6" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
           <path className="dami-arm-r" d="M30,-8 C38,-6 40,2 34,6" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
-          {/* 마우스를 올리면: 위로 든 팔(끝에 손) + "안녕!" 말풍선 */}
+          {/* 마우스를 올리면: 위로 든 팔(끝에 손) + "반가워요!" 말풍선 */}
           <g className="dami-arm-up">
             <path d="M29,-14 C38,-20 42,-30 43,-40" stroke="#8a4525" strokeWidth="5" fill="none" strokeLinecap="round" />
             <circle cx="43" cy="-43" r="5" fill="#a8562f" stroke="#8a4525" strokeWidth="2" />
           </g>
           <g className="dami-hello">
-            <rect x="48" y="-86" width="54" height="26" rx="13" fill="#ffffff" stroke="#8a4525" strokeWidth="1.5" />
+            <rect x="48" y="-86" width="76" height="26" rx="13" fill="#ffffff" stroke="#8a4525" strokeWidth="1.5" />
             <path d="M58,-61 L54,-52 L66,-61 Z" fill="#ffffff" stroke="#8a4525" strokeWidth="1.5" strokeLinejoin="round" />
             <rect x="57" y="-63" width="10" height="3" fill="#ffffff" />
-            <text x="75" y="-68" textAnchor="middle" fontSize="13" fontWeight="700" fill="#5a3a22">안녕!</text>
+            <text x="86" y="-68" textAnchor="middle" fontSize="13" fontWeight="700" fill="#5a3a22">반가워요!</text>
           </g>
           </g>
         </g>
