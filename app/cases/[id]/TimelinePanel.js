@@ -51,8 +51,9 @@ export default function TimelinePanel({ caseId, onCountChange }) {
       })
     );
 
+    // 최신 연도부터(예: 2024 → 1996). 연도 없는 사진은 맨 뒤.
     withUrls.sort((a, b) => {
-      if (a.photo_year && b.photo_year) return a.photo_year - b.photo_year;
+      if (a.photo_year && b.photo_year) return b.photo_year - a.photo_year;
       if (a.photo_year) return -1;
       if (b.photo_year) return 1;
       return new Date(a.uploaded_at) - new Date(b.uploaded_at);
