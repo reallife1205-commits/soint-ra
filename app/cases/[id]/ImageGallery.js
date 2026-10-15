@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { shrinkImageForUpload } from "@/lib/shrinkImage";
 
 export default function ImageGallery({ caseId, moduleNumber = 1, category, title }) {
   const [docs, setDocs] = useState([]);
@@ -56,15 +57,16 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
   }, [docs]);
 
   async function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    const picked = e.target.files?.[0];
+    if (!picked) return;
+    if (!picked.type.startsWith("image/")) {
       setError("이미지 파일만 업로드할 수 있어요.");
       e.target.value = "";
       return;
     }
     setUploading(true);
     setError("");
+    const file = await shrinkImageForUpload(picked); // 큰 사진은 줄여서(용량 한도 초과 방지)
 
     const extMatch = file.name.match(/\.[^.]+$/);
     const ext = extMatch ? extMatch[0] : "";

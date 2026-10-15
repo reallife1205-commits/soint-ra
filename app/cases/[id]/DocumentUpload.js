@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ReportStatusBadge from "./ReportStatusBadge";
 import { yearFromFileName } from "@/lib/photoYear";
+import { shrinkImageForUpload } from "@/lib/shrinkImage";
 
 function isImageFile(fileName) {
   return /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName || "");
@@ -68,10 +69,11 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
   }, [docs]);
 
   async function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const picked = e.target.files?.[0];
+    if (!picked) return;
     setUploading(true);
     setError("");
+    const file = await shrinkImageForUpload(picked); // 큰 사진은 줄여서(용량 한도 초과 방지)
 
     // 파일 경로(내부 저장용 이름)는 영어/숫자만 남기고, 화면에 보여줄 이름은 원본 그대로 유지
     const extMatch = file.name.match(/\.[^.]+$/);

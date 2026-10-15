@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { shrinkImageForUpload } from "@/lib/shrinkImage";
 
 const FIELD_ITEMS_DEFAULT = [
   "특정토양오염관리대상시설의 설치장소 확인 및 물질의 보관상태",
@@ -237,9 +238,10 @@ function FieldPhotos({ caseId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
-  async function uploadFile(file, caption, key) {
+  async function uploadFile(picked, caption, key) {
     setUploadingKey(key);
     setError("");
+    const file = await shrinkImageForUpload(picked); // 큰 사진은 줄여서(용량 한도 초과 방지)
 
     const extMatch = file.name.match(/\.[^.]+$/);
     const ext = extMatch ? extMatch[0] : "";
