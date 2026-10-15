@@ -76,17 +76,17 @@ export default function SoilBanner() {
         />
 
         {/* 흙 띠 두 겹 + 흙 알갱이 */}
-        <rect x="0" y="168" width="1200" height="18" fill="#d2b893" />
-        <rect x="0" y="186" width="1200" height="14" fill="#b39672" />
+        <rect x="0" y="150" width="1200" height="24" fill="#d2b893" />
+        <rect x="0" y="174" width="1200" height="26" fill="#b39672" />
         <g fill="#9c7e5d" opacity="0.35">
           {[120, 380, 660, 940].map((x, i) => (
-            <circle key={i} cx={x} cy={i % 2 ? 194 : 190} r="2" />
+            <circle key={i} cx={x} cy={i % 2 ? 190 : 184} r="2" />
           ))}
         </g>
 
         {/* 새싹 3개 */}
         {[170, 790, 1010].map((x, i) => (
-          <g key={i} transform={`translate(${x}, 168)`}>
+          <g key={i} transform={`translate(${x}, 150)`}>
             <line x1="0" y1="0" x2="0" y2="-20" stroke="#5f7048" strokeWidth="2.5" strokeLinecap="round" />
             <path d="M0,-15 C-11,-18 -15,-29 -11,-37 C-2,-32 2,-21 0,-15 Z" fill="#6f8256" />
             <path d="M0,-10 C11,-13 17,-24 12,-32 C3,-27 -2,-17 0,-10 Z" fill="#5f7048" />
@@ -94,7 +94,7 @@ export default function SoilBanner() {
         ))}
 
         {/* 마스코트: 흙덩이 캐릭터 "담이" */}
-        <g transform="translate(455, 168)" className="dami">
+        <g transform="translate(455, 150)" className="dami">
           <title>담이</title>
           {/* 그림자 */}
           <ellipse className="dami-shadow" cx="0" cy="4" rx="34" ry="6" fill="#5a4a2e" opacity="0.25" />
