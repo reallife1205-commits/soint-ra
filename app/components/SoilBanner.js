@@ -57,86 +57,44 @@ export default function SoilBanner() {
             .dami-bounce, .dami-shadow, .dami-sprout, .dami-eye, .dami:hover .dami-arm-up { animation: none; }
           }
         `}</style>
-        <defs>
-          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#faf5e8" />
-            <stop offset="100%" stopColor="#f0e6cf" />
-          </linearGradient>
-        </defs>
-
-        {/* 하늘 */}
-        <rect x="0" y="0" width="1200" height="120" fill="url(#skyGrad)" />
+        {/* 배경(B2 "따뜻한 아침" 시안): 크림빛 하늘, 은은한 해, 세이지 능선 두 겹, 아래 얇은 흙 띠.
+            예전엔 진한 흙층 세 줄이 배너의 40%를 차지해 무겁고 촌스러워 보여서 바꿈 — 토양 느낌은 흙 띠로만. */}
+        <rect x="0" y="0" width="1200" height="200" fill="#fbf4ea" />
 
         {/* 해 */}
-        <circle cx="1080" cy="52" r="26" fill="#f0a94a" opacity="0.9" />
-        <g stroke="#f0a94a" strokeWidth="3" opacity="0.6" strokeLinecap="round">
-          <line x1="1080" y1="8" x2="1080" y2="-2" />
-          <line x1="1116" y1="24" x2="1124" y2="17" />
-          <line x1="1116" y1="80" x2="1124" y2="87" />
-        </g>
+        <circle cx="1050" cy="58" r="30" fill="#f8d9b0" opacity="0.9" />
+        <circle cx="1050" cy="58" r="20" fill="#f4c27f" opacity="0.9" />
 
-        {/* 완만한 능선 (연초록빛) */}
+        {/* 먼 능선 / 가까운 능선 */}
         <path
-          d="M0,105 C150,80 300,115 480,95 C650,76 820,108 1000,90 C1080,82 1150,92 1200,88 L1200,125 L0,125 Z"
-          fill="#a8c084"
-          opacity="0.65"
+          d="M0,112 C180,88 340,118 540,100 C740,82 920,112 1100,94 C1150,90 1180,94 1200,92 L1200,176 L0,176 Z"
+          fill="#dbe6cb"
+        />
+        <path
+          d="M0,146 C220,126 400,154 620,136 C840,120 1010,148 1200,134 L1200,178 L0,178 Z"
+          fill="#b5cf9e"
         />
 
-        {/* 잔디 라인 */}
-        <g stroke="#7fa35c" strokeWidth="2.5" strokeLinecap="round" opacity="0.85">
-          {Array.from({ length: 60 }).map((_, i) => {
-            const x = 10 + i * 20;
-            const h = 5 + ((i * 37) % 6);
-            return <line key={i} x1={x} y1="118" x2={x + (i % 2 ? 2 : -2)} y2={118 - h} />;
-          })}
+        {/* 흙 띠 두 겹 + 흙 알갱이 */}
+        <rect x="0" y="168" width="1200" height="18" fill="#d2b893" />
+        <rect x="0" y="186" width="1200" height="14" fill="#b39672" />
+        <g fill="#9c7e5d" opacity="0.35">
+          {[120, 380, 660, 940].map((x, i) => (
+            <circle key={i} cx={x} cy={i % 2 ? 194 : 190} r="2" />
+          ))}
         </g>
 
-        {/* 토양 단면 - 표토 */}
-        <rect x="0" y="118" width="1200" height="30" fill="#6b5a3a" />
-        {/* 심토(점토) */}
-        <rect x="0" y="148" width="1200" height="30" fill="#a8562f" />
-        {/* 모암/기반층 */}
-        <rect x="0" y="178" width="1200" height="22" fill="#7a4526" />
-
-        {/* 토양 입자 질감 (점) */}
-        <g fill="#5a4a2e" opacity="0.4">
-          <circle cx="90" cy="132" r="3" />
-          <circle cx="260" cy="138" r="2.5" />
-          <circle cx="430" cy="128" r="3" />
-          <circle cx="610" cy="140" r="2.5" />
-          <circle cx="790" cy="130" r="3" />
-          <circle cx="960" cy="138" r="2.5" />
-          <circle cx="1120" cy="128" r="3" />
-        </g>
-        <g fill="#8a4525" opacity="0.5">
-          <circle cx="150" cy="162" r="3" />
-          <circle cx="340" cy="158" r="2.5" />
-          <circle cx="520" cy="166" r="3" />
-          <circle cx="700" cy="158" r="2.5" />
-          <circle cx="880" cy="164" r="3" />
-          <circle cx="1050" cy="158" r="2.5" />
-        </g>
-
-        {/* 새싹 4개 (양 끝 균형 맞춤) */}
-        {[60, 220, 600, 980].map((x, i) => (
-          <g key={i} transform={`translate(${x}, 118)`}>
-            <line x1="0" y1="0" x2="0" y2="-26" stroke="#5f7048" strokeWidth="3" strokeLinecap="round" />
-            <path d="M0,-20 C-14,-24 -20,-38 -14,-48 C-2,-42 2,-28 0,-20 Z" fill="#6f8256" />
-            <path d="M0,-14 C14,-18 22,-32 16,-42 C4,-36 -2,-22 0,-14 Z" fill="#5f7048" />
-          </g>
-        ))}
-
-        {/* 조사 표식(측량 깃발) 2개 */}
-        {[340, 760].map((x, i) => (
-          <g key={i} transform={`translate(${x}, 118)`}>
-            <line x1="0" y1="0" x2="0" y2="-44" stroke="#8a7a63" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M0,-44 L26,-37 L0,-30 Z" fill="#a8562f" />
-            <circle cx="0" cy="0" r="4" fill="#8a7a63" />
+        {/* 새싹 3개 */}
+        {[170, 790, 1010].map((x, i) => (
+          <g key={i} transform={`translate(${x}, 168)`}>
+            <line x1="0" y1="0" x2="0" y2="-20" stroke="#5f7048" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M0,-15 C-11,-18 -15,-29 -11,-37 C-2,-32 2,-21 0,-15 Z" fill="#6f8256" />
+            <path d="M0,-10 C11,-13 17,-24 12,-32 C3,-27 -2,-17 0,-10 Z" fill="#5f7048" />
           </g>
         ))}
 
         {/* 마스코트: 흙덩이 캐릭터 "담이" */}
-        <g transform="translate(455, 118)" className="dami">
+        <g transform="translate(455, 168)" className="dami">
           <title>담이</title>
           {/* 그림자 */}
           <ellipse className="dami-shadow" cx="0" cy="4" rx="34" ry="6" fill="#5a4a2e" opacity="0.25" />
