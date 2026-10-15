@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -8,6 +8,7 @@ import { CHAPTER_COMPLETIONS, TOTAL_CHAPTERS, isChapterCompletionNumber } from "
 import TopNav from "@/app/components/TopNav";
 import SoilBanner from "@/app/components/SoilBanner";
 import { ddayInfo } from "@/lib/dday";
+import { TrashIcon, CalendarIcon, PencilIcon, XIcon } from "@/app/components/Icons";
 
 const STATUS_OPTIONS = ["전체", "작성중", "완료"];
 const CURRENT_YEAR = new Date().getFullYear();
@@ -351,9 +352,9 @@ export default function CasesPage() {
                 })
               }
               title="공지사항 수정 (관리자 전용)"
-              style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 13 }}
+              className="icon-btn"
             >
-              ✏️
+              <PencilIcon />
             </button>
           )}
         </div>
@@ -441,9 +442,7 @@ export default function CasesPage() {
             </div>
           </div>
         ) : announcement ? (
-          <div style={{ fontSize: announcementFontSize, color: announcementColor || undefined, whiteSpace: "pre-wrap" }}>
-            {announcement}
-          </div>
+          <NoticeText text={announcement} fontSize={announcementFontSize} color={announcementColor} />
         ) : (
           <div style={{ fontSize: 14, color: "var(--color-text-muted)" }}>등록된 공지사항이 없어요.</div>
         )}
@@ -522,7 +521,7 @@ export default function CasesPage() {
                 padding: "0 16px",
                 fontSize: 15,
                 cursor: "pointer",
-                background: viewMode === v.key ? "var(--color-primary)" : "white",
+                background: viewMode === v.key ? "var(--color-complete-bg)" : "white",
                 color: viewMode === v.key ? "white" : "var(--color-text)",
               }}
             >
@@ -581,7 +580,7 @@ export default function CasesPage() {
                         <td style={{ ...TD_STYLE, fontWeight: 600 }}>{c.company_name}</td>
                         <td style={TD_STYLE}>{c.manager || "-"}</td>
                         <td style={TD_STYLE}>
-                          <span className={`badge ${c.status === "완료" ? "badge-done" : "badge-blue"}`}>
+                          <span className={`badge ${c.status === "완료" ? "badge-done" : "badge-muted"}`}>
                             {c.status === "완료" ? "✓ 완료" : c.status}
                           </span>
                         </td>
@@ -610,26 +609,17 @@ export default function CasesPage() {
                   <Link
                     key={c.id}
                     href={`/cases/${c.id}`}
-                    className={`card${c.status === "완료" ? " card-done" : ""}`}
+                    className={`card case-card${c.status === "완료" ? " card-done" : ""}`}
                     style={{ display: "block", position: "relative", padding: "12px 14px" }}
                   >
                     <button
                       onClick={(e) => handleDeleteCase(e, c)}
                       disabled={deletingId === c.id}
                       title="안건 삭제 (관리자 전용)"
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        border: "none",
-                        background: "transparent",
-                        color: "var(--color-text-muted)",
-                        cursor: "pointer",
-                        fontSize: 13,
-                        padding: 2,
-                      }}
+                      className="icon-btn admin-action"
+                      style={{ position: "absolute", top: 8, right: 8 }}
                     >
-                      {deletingId === c.id ? "..." : "🗑️"}
+                      {deletingId === c.id ? "…" : <TrashIcon />}
                     </button>
                     <div
                       style={{
@@ -650,7 +640,7 @@ export default function CasesPage() {
                           </span>
                         )}
                         <span
-                          className={`badge ${c.status === "완료" ? "badge-done" : "badge-blue"}`}
+                          className={`badge ${c.status === "완료" ? "badge-done" : "badge-muted"}`}
                           style={{ fontSize: 12, padding: "2px 8px" }}
                         >
                           {c.status === "완료" ? "✓ 완료" : c.status}
@@ -696,7 +686,7 @@ export default function CasesPage() {
                         style={{
                           height: "100%",
                           width: `${(progress.done / TOTAL_CHAPTERS) * 100}%`,
-                          background: c.status === "완료" ? "var(--color-complete-bg)" : "var(--color-primary)",
+                          background: c.status === "완료" ? "var(--color-complete-bg)" : "#8fb67f",
                         }}
                       />
                     </div>
@@ -815,13 +805,13 @@ export default function CasesPage() {
                 </div>
               ) : (
                 assignedList.map((a) => {
-                  const dday = ddayInfo(a.due_date);
                   const Wrapper = a.registered ? Link : "div";
                   const wrapperProps = a.registered ? { href: `/cases/${a.linkedCase.id}` } : {};
                   return (
                     <div key={a.key}>
                     <Wrapper
                       {...wrapperProps}
+                      className="assign-row"
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -844,22 +834,9 @@ export default function CasesPage() {
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                        {dday !== null && a.linkedCase?.status !== "완료" && (
-                          <span className={`badge ${dday.badgeClass}`} style={{ fontSize: 11, padding: "1px 5px" }}>
-                            {dday.label}
-                          </span>
-                        )}
-                        {a.registered ? (
-                          <span
-                            className={`badge ${a.linkedCase.status === "완료" ? "badge-done" : "badge-blue"}`}
-                            style={{ fontSize: 11, padding: "1px 6px" }}
-                          >
-                            {a.linkedCase.status === "완료" ? "✓ 완료" : a.linkedCase.status}
-                          </span>
-                        ) : (
-                          <span className="badge" style={{ fontSize: 11, padding: "1px 5px" }}>
-                            미등록
-                          </span>
+                        {/* D-day·상태는 왼쪽 카드에 이미 있어 여기선 뺐다 — 카드에 없는 "미등록"만 표시 */}
+                        {!a.registered && (
+                          <span style={{ fontSize: 11, color: "var(--color-badge-red-text)", fontWeight: 600 }}>미등록</span>
                         )}
                         {a.registered && (
                           <button
@@ -871,9 +848,9 @@ export default function CasesPage() {
                               });
                             }}
                             title="마감일 지정 (관리자 전용)"
-                            style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
+                            className="icon-btn admin-action"
                           >
-                            📅
+                            <CalendarIcon size={13} />
                           </button>
                         )}
                         {!a.registered && (
@@ -886,9 +863,9 @@ export default function CasesPage() {
                                 );
                               }}
                               title="배정 안건 수정 (관리자 전용)"
-                              style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
+                              className="icon-btn admin-action"
                             >
-                              ✏️
+                              <PencilIcon size={13} />
                             </button>
                             <button
                               onClick={(e) => {
@@ -896,9 +873,9 @@ export default function CasesPage() {
                                 requireAdmin(() => deleteAssignedCase(a.assignedId));
                               }}
                               title="배정 목록에서 삭제 (관리자 전용)"
-                              style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
+                              className="icon-btn admin-action"
                             >
-                              ✕
+                              <XIcon size={13} />
                             </button>
                           </>
                         )}
@@ -1281,6 +1258,48 @@ function AddCaseModal({ onClose, onCreated }) {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+// 공지사항: 처음엔 4줄까지만 보이고, 넘치면 [더보기]로 펼친다(첫 화면에서 안건 목록이 밀리지 않게).
+function NoticeText({ text, fontSize, color }) {
+  const ref = useRef(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const lineHeight = 1.6;
+  const maxHeight = Math.round(fontSize * lineHeight * 4);
+
+  useLayoutEffect(() => {
+    if (ref.current) setOverflowing(ref.current.scrollHeight > maxHeight + 2);
+  }, [text, fontSize, maxHeight]);
+
+  return (
+    <div>
+      <div
+        ref={ref}
+        style={{
+          fontSize,
+          lineHeight,
+          color: color || undefined,
+          whiteSpace: "pre-wrap",
+          maxHeight: expanded ? "none" : maxHeight,
+          overflow: "hidden",
+          position: "relative",
+          WebkitMaskImage: !expanded && overflowing ? "linear-gradient(to bottom, black 70%, transparent)" : undefined,
+          maskImage: !expanded && overflowing ? "linear-gradient(to bottom, black 70%, transparent)" : undefined,
+        }}
+      >
+        {text}
+      </div>
+      {overflowing && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          style={{ border: "none", background: "transparent", color: "var(--color-chapter-active)", cursor: "pointer", fontSize: 14, fontWeight: 600, padding: "4px 0 0" }}
+        >
+          {expanded ? "접기 ▲" : "더보기 ▼"}
+        </button>
+      )}
     </div>
   );
 }

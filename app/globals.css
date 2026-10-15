@@ -105,14 +105,21 @@ textarea {
 }
 
 /* 완료된 안건 — 연한 badge-green은 작성중과 잘 구분이 안 돼서 진한 초록 바탕으로 */
+/* 기본 상태(작성중) — 눈에 덜 띄게 회색 톤 */
+.badge-muted {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+}
+
 .badge-done {
   background: var(--color-complete-bg);
   color: #ffffff;
 }
 
+/* 완료 카드 — 진한 테두리는 시선을 너무 끌어서 연한 초록으로 낮춤(배지 "✓ 완료"가 주 표시) */
 .card.card-done {
-  background: #eef5e8;
-  border: 2px solid var(--color-complete-bg);
+  background: #f5faf1;
+  border: 1.5px solid #9cc79f;
 }
 
 .link-back {
@@ -227,8 +234,9 @@ textarea {
   border-color: #c3d6b5;
 }
 
+/* 주요 동작 버튼(새 안건 등록) — 화면 주인공 색을 초록 하나로 맞춤(예전 파랑) */
 .btn-accent {
-  background: #2f6690;
+  background: var(--color-complete-bg);
   color: white;
   border: none;
   border-radius: 8px;
@@ -242,7 +250,41 @@ textarea {
 }
 
 .btn-accent:hover {
-  background: #244f70;
+  background: var(--color-complete-bg-hover);
+}
+
+/* 관리용 아이콘 버튼(휴지통·달력·연필·X) — 회색 선 아이콘으로 통일 */
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.icon-btn:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* 자주 쓰지 않는 관리 버튼은 카드·줄에 마우스를 올렸을 때만 보이게(마우스 없는 기기는 항상 보임) */
+.admin-action {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.case-card:hover .admin-action,
+.assign-row:hover .admin-action,
+.admin-action:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .admin-action {
+    opacity: 1;
+  }
 }
 
 .btn-accent:active {
