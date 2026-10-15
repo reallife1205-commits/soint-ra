@@ -451,7 +451,13 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
                 <MapView center={coords} radiusKm={radius} points={results} />
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, marginBottom: 16 }}>
-                <button className="btn-secondary" onClick={handleCaptureMap} disabled={capturing}>
+                {/* 보고서 2.2 그림으로 들어가는 동작이라 [초안 만들기]와 같은 초록으로 테두리·글자만 맞춤 */}
+                <button
+                  className="btn-secondary"
+                  onClick={handleCaptureMap}
+                  disabled={capturing}
+                  style={{ borderColor: "var(--color-complete-bg)", color: "var(--color-complete-bg)", fontWeight: 600 }}
+                >
                   {capturing ? "캡처 중..." : "📸 지금 화면 캡처해서 저장"}
                 </button>
               </div>
