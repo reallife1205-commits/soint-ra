@@ -17,6 +17,10 @@ const TD_STYLE = { padding: "10px 14px" };
 export default function CasesPage() {
   const router = useRouter();
   const [cases, setCases] = useState([]);
+  // 배정 현황에서 관리자가 등록된 안건의 마감일을 바로 지정할 때 — 펼친 안건 id와 입력 중인 날짜
+  const [dueEditId, setDueEditId] = useState(null);
+  const [dueDraft, setDueDraft] = useState("");
+  const [dueSaving, setDueSaving] = useState(false);
   const [progressByCase, setProgressByCase] = useState({});
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -161,6 +165,19 @@ export default function CasesPage() {
 
     setDeletingId(null);
     loadData();
+  }
+
+  async function saveCaseDueDate(caseId) {
+    setDueSaving(true);
+    const due_date = dueDraft || null;
+    const { error } = await supabase.from("cases").update({ due_date }).eq("id", caseId);
+    setDueSaving(false);
+    if (error) {
+      alert(`마감일을 저장하지 못했어요: ${error.message}`);
+      return;
+    }
+    setCases((prev) => prev.map((c) => (c.id === caseId ? { ...c, due_date } : c)));
+    setDueEditId(null);
   }
 
   async function saveAssignedCase(e) {
@@ -802,8 +819,8 @@ export default function CasesPage() {
                   const Wrapper = a.registered ? Link : "div";
                   const wrapperProps = a.registered ? { href: `/cases/${a.linkedCase.id}` } : {};
                   return (
+                    <div key={a.key}>
                     <Wrapper
-                      key={a.key}
                       {...wrapperProps}
                       style={{
                         display: "flex",
@@ -844,6 +861,21 @@ export default function CasesPage() {
                             미등록
                           </span>
                         )}
+                        {a.registered && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              requireAdmin(() => {
+                                setDueDraft(a.due_date || "");
+                                setDueEditId(dueEditId === a.linkedCase.id ? null : a.linkedCase.id);
+                              });
+                            }}
+                            title="마감일 지정 (관리자 전용)"
+                            style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}
+                          >
+                            📅
+                          </button>
+                        )}
                         {!a.registered && (
                           <>
                             <button
@@ -872,6 +904,24 @@ export default function CasesPage() {
                         )}
                       </div>
                     </Wrapper>
+                    {a.registered && dueEditId === a.linkedCase.id && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 0 8px", flexWrap: "wrap", borderBottom: "1px solid var(--color-border)" }}>
+                        <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>마감일</span>
+                        <input
+                          type="date"
+                          value={dueDraft}
+                          onChange={(e) => setDueDraft(e.target.value)}
+                          style={{ fontSize: 13, padding: "3px 6px", border: "1px solid var(--color-border)", borderRadius: 6 }}
+                        />
+                        <button className="btn-primary" onClick={() => saveCaseDueDate(a.linkedCase.id)} disabled={dueSaving} style={{ fontSize: 12, padding: "4px 10px" }}>
+                          {dueSaving ? "저장 중..." : "저장"}
+                        </button>
+                        <button className="btn-secondary" onClick={() => setDueEditId(null)} style={{ fontSize: 12, padding: "4px 10px" }}>
+                          취소
+                        </button>
+                      </div>
+                    )}
+                    </div>
                   );
                 })
               )}
