@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ReportStatusBadge from "./ReportStatusBadge";
+import { yearFromFileName } from "@/lib/photoYear";
 
 function isImageFile(fileName) {
   return /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName || "");
@@ -96,6 +97,8 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
         file_path: filePath,
         file_size: file.size,
         category,
+        // 항공사진(4번)은 파일 이름에 연도가 있으면 촬영연도로 바로 넣는다(예: "2024년.png")
+        ...(moduleNumber === 4 && yearFromFileName(file.name) ? { photo_year: yearFromFileName(file.name) } : {}),
       },
     ]);
 

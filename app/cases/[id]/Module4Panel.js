@@ -7,13 +7,15 @@ import { useModuleRows } from "@/lib/useModuleRows";
 import { useAerialTags } from "@/lib/useAerialTags";
 import { FACILITY_TYPES, FACILITY_LABEL, FACILITY_COLOR } from "@/lib/facilityTypes";
 import TimelinePanel from "./TimelinePanel";
+import ReportStatusBadge from "./ReportStatusBadge";
+import { yearFromFileName } from "@/lib/photoYear";
 const AerialMapView = dynamic(() => import("./AerialMapView"), { ssr: false });
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|webp|gif|bmp)$/i;
 
 const TABS = [
   { key: "map", label: "지도" },
-  { key: "upload", label: "사진 업로드" },
+  { key: "upload", label: "사진 연도·태깅" }, // 업로드는 왼쪽에서 하고, 여기선 고른 사진에 연도·시설 표시
   { key: "timeline", label: "타임라인" },
 ];
 
@@ -22,6 +24,16 @@ const MIN_BOX_SIZE = 0.01; // 이미지 대비 1% 미만이면 클릭으로 간�
 export default function Module4Panel({ caseId, caseInfo }) {
   const [tab, setTab] = useState("map");
   const [timelineCount, setTimelineCount] = useState(0);
+
+  // 타임라인 탭을 열기 전에도 사진 수가 보이게(예전엔 탭을 열어야 숫자가 채워져 "타임라인 0"으로 보였다)
+  useEffect(() => {
+    supabase
+      .from("documents")
+      .select("file_name")
+      .eq("case_id", caseId)
+      .eq("module_number", 4)
+      .then(({ data }) => setTimelineCount((data || []).filter((d) => IMAGE_EXT_RE.test(d.file_name)).length));
+  }, [caseId]);
 
   const coords =
     caseInfo?.lat && caseInfo?.lon
@@ -39,38 +51,26 @@ export default function Module4Panel({ caseId, caseInfo }) {
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          borderBottom: "1px solid var(--color-border)",
-          marginBottom: 16,
-        }}
-      >
+      {/* 3.4 출입가능성 아래에 붙는 별도 구역이라, 제목과 버튼형 탭으로 위 입력란과 구분한다 */}
+      <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 20, marginBottom: 12 }}>
+        <div style={{ fontSize: 17, fontWeight: 700 }}>
+          항공사진
+          <ReportStatusBadge status="required" />
+        </div>
+        <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginTop: 4 }}>
+          왼쪽 &quot;항공사진·현장사진 업로드&quot;에 올린 사진에 촬영연도를 넣으면 타임라인과 보고서 항공사진 표(오래된 연도부터)에 들어가요.
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            style={{
-              border: "none",
-              background: "transparent",
-              padding: "8px 14px",
-              fontSize: 15,
-              cursor: "pointer",
-              fontWeight: tab === t.key ? 700 : 400,
-              borderBottom:
-                tab === t.key
-                  ? "2px solid var(--color-primary)"
-                  : "2px solid transparent",
-              color: tab === t.key ? "var(--color-primary)" : "var(--color-text)",
-            }}
+            className={tab === t.key ? "btn-primary" : "btn-secondary"}
+            style={{ fontSize: 14 }}
           >
             {t.label}
-            {t.key === "timeline" && (
-              <span style={{ marginLeft: 4, color: "var(--color-text-muted)" }}>
-                {timelineCount}
-              </span>
-            )}
+            {t.key === "timeline" && <span style={{ marginLeft: 4, opacity: 0.75 }}>{timelineCount}</span>}
           </button>
         ))}
       </div>
@@ -236,6 +236,12 @@ function UploadTaggingSection({ caseId }) {
 
   const selectedDoc = docs.find((d) => d.id === selectedDocId) || null;
 
+  // 연도가 비어 있지만 파일 이름에 연도가 있는 사진(예: "2024년.png") — 버튼 한 번으로 채운다
+  const yearFillable = docs.filter((d) => !d.photo_year && yearFromFileName(d.file_name));
+  async function fillYearsFromNames() {
+    for (const d of yearFillable) await updateYear(d.id, String(yearFromFileName(d.file_name)));
+  }
+
   useEffect(() => {
     let cancelled = false;
     async function fetchUrl() {
@@ -291,6 +297,11 @@ function UploadTaggingSection({ caseId }) {
               보고서에는 아래 연도 순서(오래된 연도부터)로 채워져요. 업로드 순서와 촬영 연도가
               다르면 사진마다 연도를 입력해주세요.
             </div>
+            {yearFillable.length > 0 && (
+              <button className="btn-secondary" onClick={fillYearsFromNames} style={{ fontSize: 14, marginBottom: 10 }}>
+                파일 이름에서 연도 채우기 ({yearFillable.length}장)
+              </button>
+            )}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {docs.map((doc) => {
                 const isImage = IMAGE_EXT_RE.test(doc.file_name);
