@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { shrinkImageForUpload } from "@/lib/shrinkImage";
+import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
 
 export default function ImageGallery({ caseId, moduleNumber = 1, category, title }) {
   const [docs, setDocs] = useState([]);
@@ -59,6 +59,12 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
   async function handleFileChange(e) {
     const picked = e.target.files?.[0];
     if (!picked) return;
+    const blocked = uploadBlockReason(picked);
+    if (blocked) {
+      setError(blocked);
+      e.target.value = "";
+      return;
+    }
     if (!picked.type.startsWith("image/")) {
       setError("이미지 파일만 업로드할 수 있어요.");
       e.target.value = "";
@@ -78,7 +84,7 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
       .upload(filePath, file);
 
     if (uploadError) {
-      setError(`업로드에 실패했어요: ${uploadError.message}`);
+      setError(friendlyUploadError(uploadError.message));
       setUploading(false);
       return;
     }

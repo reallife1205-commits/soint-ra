@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { shrinkImageForUpload } from "@/lib/shrinkImage";
+import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
 
 const FIELD_ITEMS_DEFAULT = [
   "특정토양오염관리대상시설의 설치장소 확인 및 물질의 보관상태",
@@ -239,6 +239,11 @@ function FieldPhotos({ caseId }) {
   }, [caseId]);
 
   async function uploadFile(picked, caption, key) {
+    const blocked = uploadBlockReason(picked);
+    if (blocked) {
+      setError(blocked);
+      return;
+    }
     setUploadingKey(key);
     setError("");
     const file = await shrinkImageForUpload(picked); // 큰 사진은 줄여서(용량 한도 초과 방지)
@@ -253,7 +258,7 @@ function FieldPhotos({ caseId }) {
       .upload(filePath, file);
 
     if (uploadError) {
-      setError(`업로드에 실패했어요: ${uploadError.message}`);
+      setError(friendlyUploadError(uploadError.message));
       setUploadingKey("");
       return;
     }

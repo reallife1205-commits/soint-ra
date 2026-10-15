@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ReportStatusBadge from "./ReportStatusBadge";
 import { yearFromFileName } from "@/lib/photoYear";
-import { shrinkImageForUpload } from "@/lib/shrinkImage";
+import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
 
 function isImageFile(fileName) {
   return /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName || "");
@@ -71,6 +71,12 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
   async function handleFileChange(e) {
     const picked = e.target.files?.[0];
     if (!picked) return;
+    const blocked = uploadBlockReason(picked);
+    if (blocked) {
+      setError(blocked);
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     setError("");
     const file = await shrinkImageForUpload(picked); // 큰 사진은 줄여서(용량 한도 초과 방지)
@@ -86,7 +92,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
       .upload(filePath, file);
 
     if (uploadError) {
-      setError(`업로드에 실패했어요: ${uploadError.message}`);
+      setError(friendlyUploadError(uploadError.message));
       setUploading(false);
       return;
     }
