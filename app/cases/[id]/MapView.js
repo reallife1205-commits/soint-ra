@@ -15,10 +15,13 @@ L.Icon.Default.mergeOptions({
 export default function MapView({ center, radiusKm, points }) {
   return (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {/* preferCanvas: 원·점을 SVG 대신 캔버스로 그린다. SVG로 그리면 지도를 끌어 옮긴 뒤 "화면 캡처해서
+          저장"(html2canvas)할 때 이동분 위치 보정이 빠져 반경 원이 엉뚱한 자리에 찍혔다. */}
       <MapContainer
+        preferCanvas
         center={[center.lat, center.lon]}
         zoom={13}
-        style={{ height: 500, width: "100%" }}
+        style={{ height: 400, width: "100%" }}
       >
         <TileLayer
           attribution='&copy; OpenStreetMap contributors'
