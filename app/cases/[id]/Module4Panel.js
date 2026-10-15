@@ -236,6 +236,14 @@ function UploadTaggingSection({ caseId }) {
 
   const selectedDoc = docs.find((d) => d.id === selectedDocId) || null;
 
+  // 목록은 보고서 순서와 같게 오래된 연도부터(1996 → 2021), 같은 연도는 파일 이름순, 연도 없는 사진은 맨 뒤
+  const sortedDocs = [...docs].sort((a, b) => {
+    if (a.photo_year && b.photo_year && a.photo_year !== b.photo_year) return a.photo_year - b.photo_year;
+    if (a.photo_year && !b.photo_year) return -1;
+    if (!a.photo_year && b.photo_year) return 1;
+    return (a.file_name || "").localeCompare(b.file_name || "", "ko", { numeric: true });
+  });
+
   // 연도가 비어 있지만 파일 이름에 연도가 있는 사진(예: "2024년.png") — 버튼 한 번으로 채운다
   const yearFillable = docs.filter((d) => !d.photo_year && yearFromFileName(d.file_name));
   async function fillYearsFromNames() {
@@ -303,7 +311,7 @@ function UploadTaggingSection({ caseId }) {
               </button>
             )}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {docs.map((doc) => {
+              {sortedDocs.map((doc) => {
                 const isImage = IMAGE_EXT_RE.test(doc.file_name);
                 const isActive = doc.id === selectedDocId;
                 return (
@@ -467,9 +475,13 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                 setDrafting(null);
               }
             }}
+            // 세로로 긴 사진(원본 항공사진 타일 모양 그대로)이 화면을 다 차지하지 않게 높이를 제한하고 가운데 둔다.
+            // 태그 좌표는 이 상자 기준 비율이라, 상자가 그림 크기에 딱 맞도록 fit-content로 감싼다.
             style={{
               position: "relative",
-              width: "100%",
+              width: "fit-content",
+              maxWidth: "100%",
+              margin: "0 auto",
               userSelect: "none",
               cursor: pendingBox ? "default" : "crosshair",
               lineHeight: 0,
@@ -480,7 +492,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
               src={imageUrl}
               alt="항공사진"
               draggable={false}
-              style={{ width: "100%", display: "block", pointerEvents: "none" }}
+              style={{ maxWidth: "100%", maxHeight: 640, width: "auto", height: "auto", display: "block", pointerEvents: "none" }}
             />
 
             {tags.map((tag) => (
