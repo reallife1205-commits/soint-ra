@@ -8,13 +8,16 @@
 export default function ReportStatusBadge({ status, superscript = false }) {
   if (status === "required") {
     return (
+      // 화면 글자·탭이 대부분 초록 계열이라 초록 배지는 묻혀서 진분홍으로 눈에 띄게
       <span
-        className="badge badge-green"
-        style={
-          superscript
+        className="badge"
+        style={{
+          ...(superscript
             ? { fontSize: 10, padding: "0 5px", marginLeft: 2, verticalAlign: "super", lineHeight: 1.4 }
-            : { fontSize: 11, padding: "1px 6px", marginLeft: 6, verticalAlign: "middle" }
-        }
+            : { fontSize: 11, padding: "1px 6px", marginLeft: 6, verticalAlign: "middle" }),
+          background: "#fde2ec",
+          color: "#c2185b",
+        }}
         title="이 화면에 입력한 내용이 보고서에 반영돼요"
       >
         필수작성
