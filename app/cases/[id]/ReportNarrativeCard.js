@@ -15,12 +15,16 @@ export default function ReportNarrativeCard({
   sourceOptions, // [{ key, label }] — key "other"는 자료명 입력칸이 붙는다
   checkboxLine, // (sources, otherText) => 보고서에 들어갈 □/☑ 줄
   getDefaultSources, // async () => 저장된 값이 없을 때의 기본 체크
+  liveDefaultSources, // (선택) 저장 전까지 따라갈 기본 체크 — 화면 데이터(2.2 검색 결과)가 늦게 들어오는 경우용
   buildDraft, // async (sources) => 초안 문자열
   draftButtonLabel,
   draftDisabledReason, // 초안을 만들 수 없을 때 이유(버튼 비활성 + 안내)
 }) {
   const [loading, setLoading] = useState(true);
   const [sources, setSources] = useState([]);
+  // 저장된 행이 없고 사용자가 체크를 아직 안 바꿨으면 true — 그동안은 liveDefaultSources를 따라간다
+  // (2.2는 카드가 먼저 열리고 검색 결과가 나중에 들어와서, 처음 기본값이 실제 결과와 달랐다).
+  const [followingDefault, setFollowingDefault] = useState(false);
   const [otherText, setOtherText] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
@@ -51,7 +55,8 @@ export default function ReportNarrativeCard({
           content: row.row_data.content || "",
         };
       } else {
-        next = { sources: await getDefaultSources(), other_text: "", content: "" };
+        next = { sources: liveDefaultSources ?? (await getDefaultSources()), other_text: "", content: "" };
+        setFollowingDefault(true);
       }
       setSources(next.sources);
       setOtherText(next.other_text);
@@ -64,6 +69,7 @@ export default function ReportNarrativeCard({
   }, [caseId, moduleNumber, category]);
 
   function save(next) {
+    setFollowingDefault(false); // 한 번 저장하면 그 값이 보고서에 쓰이니 더는 기본값을 따라가지 않는다
     pending.current = pending.current.then(() => saveNow(next));
     return pending.current;
   }
@@ -100,7 +106,14 @@ export default function ReportNarrativeCard({
 
   const current = (overrides = {}) => ({ sources, other_text: otherText, content, ...overrides });
 
+  const liveKey = JSON.stringify(liveDefaultSources ?? null);
+  useEffect(() => {
+    if (followingDefault && liveDefaultSources) setSources(liveDefaultSources);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [followingDefault, liveKey]);
+
   function toggleSource(key) {
+    setFollowingDefault(false);
     const nextSources = sources.includes(key) ? sources.filter((k) => k !== key) : [...sources, key];
     setSources(nextSources);
     save(current({ sources: nextSources }));

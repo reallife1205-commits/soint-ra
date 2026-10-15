@@ -398,9 +398,9 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
         description="보고서 2.2의 <그림> 주변부지 토양오염 조사 지점 위에 들어가요. 비워 두면 내보낼 때 검색 결과로 자동 작성돼요."
         sourceOptions={SURROUNDING_SOURCE_OPTIONS}
         checkboxLine={surroundingCheckboxLine}
-        getDefaultSources={async () =>
-          searched ? defaultSurroundingSources(networkResults, surveyResults) : SURROUNDING_SOURCE_OPTIONS.map((o) => o.key)
-        }
+        getDefaultSources={async () => SURROUNDING_SOURCE_OPTIONS.map((o) => o.key)}
+        // 검색 결과가 들어오면 그 결과대로(측정망 있으면 ☑, 실태조사 있으면 ☑) — 보고서 내보내기의 기본값과 같은 규칙
+        liveDefaultSources={searched && !searching ? defaultSurroundingSources(networkResults, surveyResults) : undefined}
         buildDraft={async () =>
           buildSurroundingDraft({
             networkRows: networkResults,
