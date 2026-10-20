@@ -21,7 +21,7 @@ const TABS = [
 
 const MIN_BOX_SIZE = 0.01; // 이미지 대비 1% 미만이면 클릭으로 간주하고 무시
 
-export default function Module4Panel({ caseId, caseInfo }) {
+export default function Module4Panel({ caseId, caseInfo, onCaseUpdated }) {
   const [tab, setTab] = useState("map");
   const [timelineCount, setTimelineCount] = useState(0);
 
@@ -46,7 +46,9 @@ export default function Module4Panel({ caseId, caseInfo }) {
       .from("cases")
       .update({ boundary_points: value })
       .eq("id", caseId);
-    if (typeof window !== "undefined") window.location.reload();
+    // 예전엔 페이지 전체를 새로고침해서 1. 개요로 돌아갔다 — 안건 정보만 다시 불러와 이 화면에 그대로 머문다
+    if (onCaseUpdated) await onCaseUpdated();
+    else if (typeof window !== "undefined") window.location.reload();
   }
 
   return (

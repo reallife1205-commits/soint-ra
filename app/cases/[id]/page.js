@@ -511,7 +511,7 @@ export default function CaseDetailPage() {
                 <AccessSection caseId={id} />
               </div>
               <div style={{ marginTop: 16 }}>
-                <Module4Panel caseId={id} caseInfo={caseInfo} />
+                <Module4Panel caseId={id} caseInfo={caseInfo} onCaseUpdated={loadCase} />
               </div>
             </>
           )}
