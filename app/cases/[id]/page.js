@@ -583,6 +583,7 @@ function ToolTabs({ tabs, active, onSelect }) {
       {tabs.map((t) => (
         <button
           key={t.key}
+          data-view
           onClick={() => onSelect(t.key)}
           className={active === t.key ? "btn-primary" : "btn-secondary"}
           style={{ fontSize: 14 }}
