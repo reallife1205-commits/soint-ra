@@ -34,7 +34,12 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
     else if (includeLegacy) query = query.or(`category.eq.${category},category.is.null`);
     else query = query.eq("category", category);
     const { data } = await query.order("uploaded_at", { ascending: false });
-    setDocs(data || []);
+    // 3.4 항공사진(4번)은 타임라인·보고서처럼 오래된 연도부터(1996이 맨 위). 연도 없는 사진은 맨 아래에 올린 순서대로.
+    const sorted =
+      moduleNumber === 4
+        ? [...(data || [])].sort((a, b) => (a.photo_year ?? Infinity) - (b.photo_year ?? Infinity))
+        : data || [];
+    setDocs(sorted);
     setLoading(false);
   }
 
