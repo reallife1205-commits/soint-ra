@@ -70,6 +70,15 @@ function judgmentByCategory(rowDataList, category) {
 // 지정한 photo_year(오래된 연도부터)로 정렬한다 — 항공사진처럼 "표에 넣는 순서 = 촬영 연도
 // 순서"라 업로드한 순서(uploaded_at)와는 무관해야 하는 경우에 씀. 연도를 안 지정한 사진은
 // 뒤로 밀려 남은 칸에 채워진다.
+// 현장 사진 제목은 사이트에 적은 이름 그대로(항목 칸 사진은 항목명, 추가 사진은 적은 설명·바꾼 이름).
+// 설명 없이 올리면 화면이 파일 이름을 설명 자리에 대신 넣어 두는데(IMG_1234.jpg, 캡처_2026-… 등),
+// 이건 사용자가 적은 게 아니라서 보고서에는 빈칸으로 둔다.
+function photoCaption(doc) {
+  const note = (doc.photo_note || "").trim();
+  if (!note || note === doc.file_name || /^캡처_\d{4}-\d{2}-\d{2}_\d{6}(\.\w+)?$/.test(note)) return "";
+  return note;
+}
+
 async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = false) {
   let query = supabaseAdmin
     .from("documents")
@@ -91,7 +100,7 @@ async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = 
       const { data: blob, error } = await supabaseAdmin.storage.from("documents").download(doc.file_path);
       if (error || !blob) return null;
       const buf = Buffer.from(await blob.arrayBuffer());
-      return { data: buf, type, caption: doc.photo_note || "" };
+      return { data: buf, type, caption: photoCaption(doc) };
     })
   );
 
