@@ -7,19 +7,20 @@ import OwnershipTableUpload from "./OwnershipTableUpload";
 import ImageGallery from "./ImageGallery";
 
 const OWNERSHIP_FIELDS = [
-  { key: "owner_name", label: "소유자명" },
-  { key: "acquired_date", label: "취득일", placeholder: "예: 1989.9 또는 1989-09-08" },
-  { key: "disposed_date", label: "처분일", placeholder: "예: 2008 또는 현재" },
-  { key: "acquisition_reason", label: "취득원인" },
+  // 업종은 너비를 안 줘서 남는 폭을 전부 가져가게 한다(업종 설명이 가장 길다)
+  { key: "owner_name", label: "소유자명", width: "20%" },
+  { key: "acquired_date", label: "취득일", width: "13%" },
+  { key: "disposed_date", label: "처분일", width: "10%" },
+  { key: "acquisition_reason", label: "취득원인", width: "10%" },
   { key: "business_type", label: "업종" },
-  { key: "note", label: "비고" },
+  { key: "note", label: "비고", width: "15%" },
 ];
 
 const LEASE_FIELDS = [
   { key: "tenant_name", label: "임차인명" },
   { key: "business_type", label: "업종" },
-  { key: "lease_start", label: "임차 시작", placeholder: "예: 2015.4 또는 2015-04-28" },
-  { key: "lease_end", label: "임차 종료", placeholder: "예: 2020 또는 현재" },
+  { key: "lease_start", label: "임차 시작" },
+  { key: "lease_end", label: "임차 종료" },
   { key: "lease_type", label: "유형" },
   { key: "note", label: "비고" },
 ];
