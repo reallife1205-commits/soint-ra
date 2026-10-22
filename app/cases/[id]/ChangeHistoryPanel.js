@@ -79,8 +79,13 @@ export default function ChangeHistoryPanel({ caseId, scope, screenLabel, locked,
 
   return (
     <>
-      <button className="btn-secondary" onClick={() => setOpen(true)} title="이 안건에서 입력·수정·삭제한 내용을 보고 예전 값으로 되돌려요">
-        🕘 변경 이력
+      <button
+        onClick={() => setOpen(true)}
+        title="변경 이력 — 이 안건에서 입력·수정·삭제한 내용을 보고 예전 값으로 되돌려요"
+        aria-label="변경 이력"
+        style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 18, padding: "4px 6px", opacity: 0.7 }}
+      >
+        🕘
       </button>
 
       {open && (
