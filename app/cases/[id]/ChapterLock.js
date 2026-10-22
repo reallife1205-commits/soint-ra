@@ -92,8 +92,8 @@ export default function ChapterLock({ locked, chapterKey, children, showBanner =
             borderRadius: 8,
             fontSize: 14,
             transition: "background 0.2s, color 0.2s",
-            background: warned ? "var(--color-badge-red-bg)" : "var(--color-complete-done-bg)",
-            color: warned ? "var(--color-badge-red-text)" : "var(--color-complete-done-text)",
+            background: warned ? "var(--color-badge-yellow-bg)" : "var(--color-complete-done-bg)",
+            color: warned ? "var(--color-badge-yellow-text)" : "var(--color-complete-done-text)",
           }}
         >
           🔒 {chapterKey}장은 완료 처리돼 있어 수정할 수 없어요. 고치려면 오른쪽 위 <b>완료 취소</b>를 눌러주세요.
