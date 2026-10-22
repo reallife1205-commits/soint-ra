@@ -6,6 +6,15 @@ import { supabase } from "@/lib/supabaseClient";
 import { useModuleRows } from "@/lib/useModuleRows";
 import { useAerialTags } from "@/lib/useAerialTags";
 import { FACILITY_TYPES, FACILITY_LABEL, FACILITY_COLOR } from "@/lib/facilityTypes";
+
+// 항공사진은 초록·회색이 많아 갈색 얇은 선이 묻혔다 — 그리는 중인 박스는 형광 노랑 굵은 점선에
+// 안팎으로 어두운 테두리를 둘러 밝은 사진(콘크리트 지붕 등)에서도 보이게 한다.
+const DRAFT_BOX_STYLE = {
+  border: "3px dashed #ffea00",
+  boxShadow: "0 0 0 1px rgba(0,0,0,0.75), inset 0 0 0 1px rgba(0,0,0,0.75)",
+};
+// 저장된 태그는 시설 종류 색 실선 그대로 두고, 굵기와 어두운 테두리만 더해 사진 위에서 덜 묻히게
+const SAVED_BOX_SHADOW = "0 0 0 1px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.6)";
 import TimelinePanel from "./TimelinePanel";
 import ReportStatusBadge from "./ReportStatusBadge";
 import { yearFromFileName } from "@/lib/photoYear";
@@ -508,7 +517,8 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                   top: `${tag.y * 100}%`,
                   width: `${tag.width * 100}%`,
                   height: `${tag.height * 100}%`,
-                  border: `2px solid ${FACILITY_COLOR[tag.facility_type] || "#6b7269"}`,
+                  border: `3px solid ${FACILITY_COLOR[tag.facility_type] || "#6b7269"}`,
+                  boxShadow: SAVED_BOX_SHADOW,
                   background:
                     hoveredTagId === tag.id
                       ? `${FACILITY_COLOR[tag.facility_type]}22`
@@ -544,8 +554,8 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                   top: `${drafting.y * 100}%`,
                   width: `${drafting.width * 100}%`,
                   height: `${drafting.height * 100}%`,
-                  border: "2px dashed var(--color-primary)",
-                  background: "rgba(31,138,95,0.08)",
+                  ...DRAFT_BOX_STYLE,
+                  background: "rgba(255,234,0,0.12)",
                   boxSizing: "border-box",
                   pointerEvents: "none",
                 }}
@@ -560,7 +570,7 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                   top: `${pendingBox.y * 100}%`,
                   width: `${pendingBox.width * 100}%`,
                   height: `${pendingBox.height * 100}%`,
-                  border: "2px solid var(--color-primary)",
+                  ...DRAFT_BOX_STYLE,
                   boxSizing: "border-box",
                   pointerEvents: "none",
                 }}
