@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
 import { PasteZone, RenameButton, RenameInput, splitExt, withOriginalExt } from "./UploadHelpers";
+import { PHOTO_CATEGORIES } from "@/lib/fieldPhotos";
 
 const FIELD_ITEMS_DEFAULT = [
   "특정토양오염관리대상시설의 설치장소 확인 및 물질의 보관상태",
@@ -19,15 +20,6 @@ const INTERVIEW_ITEMS_DEFAULT = [
   "토양오염물질, 유해화학물질 및 유독물 등의 관리 상태",
   "오염사고 사례",
   "기타 부지환경 상태를 확인할 수 있는 사항",
-];
-
-const PHOTO_CATEGORIES = [
-  "특정토양오염관리대상시설",
-  "토양 표면상태, 식물 생장상태",
-  "지하수 관측시설 설치 및 사용",
-  "오염지역의 누출흔적",
-  "각종 폐기물의 매립 또는 방치",
-  "기타",
 ];
 
 export default function Module6Panel({ caseId }) {
@@ -318,6 +310,18 @@ function FieldPhotos({ caseId }) {
     load();
   }
 
+  // 항목 칸 사진의 보고서 제목(documents.caption, sql/027). 칸 이름(photo_note)은 칸 구분용이라 그대로 둔다.
+  async function saveCaption(doc, value) {
+    const caption = value.trim() || null;
+    if (caption === (doc.caption || null)) return;
+    const { error: captionError } = await supabase.from("documents").update({ caption }).eq("id", doc.id);
+    if (captionError) {
+      setError(`제목을 저장하지 못했어요: ${captionError.message}`);
+      return;
+    }
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, caption } : d)));
+  }
+
   function docForCategory(category) {
     return docs.find((d) => d.photo_note === category);
   }
@@ -381,6 +385,24 @@ function FieldPhotos({ caseId }) {
                 >
                   {category}
                 </div>
+                {doc && (
+                  <input
+                    key={doc.id}
+                    defaultValue={doc.caption || ""}
+                    onBlur={(e) => saveCaption(doc, e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && e.target.blur()}
+                    placeholder="보고서 사진 제목 (비우면 빈칸)"
+                    title="보고서의 사진 아래에 들어갈 제목이에요. 비워 두면 보고서에도 빈칸으로 들어가요."
+                    style={{
+                      width: "100%",
+                      marginBottom: 8,
+                      padding: "6px 8px",
+                      fontSize: 13,
+                      borderRadius: 6,
+                      border: "1px solid var(--color-border)",
+                    }}
+                  />
+                )}
                 <div style={{ display: "flex", gap: 6 }}>
                   <UploadButton
                     label={busy ? "..." : "📷 촬영"}

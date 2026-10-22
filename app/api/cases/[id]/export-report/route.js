@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
 import { currentOwnerNames } from "@/lib/currentOwner";
+import { PHOTO_CATEGORIES } from "@/lib/fieldPhotos";
 import {
   SITE_CONTAMINATION_CATEGORY,
   defaultSources,
@@ -70,13 +71,23 @@ function judgmentByCategory(rowDataList, category) {
 // 지정한 photo_year(오래된 연도부터)로 정렬한다 — 항공사진처럼 "표에 넣는 순서 = 촬영 연도
 // 순서"라 업로드한 순서(uploaded_at)와는 무관해야 하는 경우에 씀. 연도를 안 지정한 사진은
 // 뒤로 밀려 남은 칸에 채워진다.
-// 현장 사진 제목은 사이트에 적은 이름 그대로(항목 칸 사진은 항목명, 추가 사진은 적은 설명·바꾼 이름).
-// 설명 없이 올리면 화면이 파일 이름을 설명 자리에 대신 넣어 두는데(IMG_1234.jpg, 캡처_2026-… 등),
-// 이건 사용자가 적은 게 아니라서 보고서에는 빈칸으로 둔다.
+// 현장 사진 제목은 사용자가 적은 것만 쓴다. 항목 칸 사진은 칸마다 적는 "보고서 사진 제목"(caption, sql/027)이고,
+// 칸 이름(photo_note = "특정토양오염관리대상시설" 등)은 사용자가 쓴 게 아니라 칸 구분용이라 제목으로 쓰지 않는다.
+// 추가 사진은 적은 설명·바꾼 이름(photo_note)인데, 설명 없이 올리면 화면이 파일 이름을 대신 넣어 두므로
+// (IMG_1234.jpg, 캡처_2026-… 등) 그것도 빈칸으로 둔다.
 function photoCaption(doc) {
+  const caption = (doc.caption || "").trim();
+  if (caption) return caption;
   const note = (doc.photo_note || "").trim();
-  if (!note || note === doc.file_name || /^캡처_\d{4}-\d{2}-\d{2}_\d{6}(\.\w+)?$/.test(note)) return "";
+  if (!note || PHOTO_CATEGORIES.includes(note)) return "";
+  if (note === doc.file_name || /^캡처_\d{4}-\d{2}-\d{2}_\d{6}(\.\w+)?$/.test(note)) return "";
   return note;
+}
+
+// 현장 사진은 화면의 항목 칸 순서대로, 그 뒤에 추가 사진을 올린 순서대로 싣는다.
+function fieldPhotoOrder(doc) {
+  const i = PHOTO_CATEGORIES.indexOf(doc.photo_note);
+  return i === -1 ? PHOTO_CATEGORIES.length : i;
 }
 
 async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = false) {
@@ -91,6 +102,8 @@ async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = 
   const { data: docs } = await query.order("uploaded_at", { ascending: !orderByYear }).limit(limit);
 
   if (!docs?.length) return [];
+  // 현장 사진(6번)은 항목 칸 순서 → 추가 사진 순서(같은 순위 안에서는 올린 순서 유지 — sort는 안정 정렬)
+  if (moduleNumber === 6) docs.sort((a, b) => fieldPhotoOrder(a) - fieldPhotoOrder(b));
 
   const images = await Promise.all(
     docs.map(async (doc) => {
