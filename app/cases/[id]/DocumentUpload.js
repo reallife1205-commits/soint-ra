@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ReportStatusBadge from "./ReportStatusBadge";
 import { yearFromFileName } from "@/lib/photoYear";
@@ -20,6 +20,8 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [renaming, setRenaming] = useState(null); // { id, draft } — 이름 바꾸는 중인 문서
+  const renameCancelled = useRef(false); // Esc로 취소할 때 뒤따르는 blur가 저장해버리지 않게
 
   async function load() {
     setLoading(true);
@@ -88,10 +90,11 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
     const pad = (n) => String(n).padStart(2, "0");
     const ext = image.type === "image/jpeg" ? ".jpg" : ".png";
     const name = `캡처_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${ext}`;
-    await uploadFile(new File([image], name, { type: image.type }));
+    await uploadFile(new File([image], name, { type: image.type }), { fromPaste: true });
   }
 
-  async function uploadFile(picked) {
+  // fromPaste: 캡처 이름의 날짜(2026…)가 항공사진 촬영연도로 들어가지 않게 하고, 올린 뒤 바로 이름 바꾸기 칸을 연다
+  async function uploadFile(picked, { fromPaste = false } = {}) {
     if (uploading) return;
     const blocked = uploadBlockReason(picked);
     if (blocked) {
@@ -118,18 +121,24 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
       return;
     }
 
-    const { error: insertError } = await supabase.from("documents").insert([
-      {
-        case_id: caseId,
-        module_number: moduleNumber,
-        file_name: file.name,
-        file_path: filePath,
-        file_size: file.size,
-        category,
-        // 항공사진(4번)은 파일 이름에 연도가 있으면 촬영연도로 바로 넣는다(예: "2024년.png")
-        ...(moduleNumber === 4 && yearFromFileName(file.name) ? { photo_year: yearFromFileName(file.name) } : {}),
-      },
-    ]);
+    const { data: inserted, error: insertError } = await supabase
+      .from("documents")
+      .insert([
+        {
+          case_id: caseId,
+          module_number: moduleNumber,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          category,
+          // 항공사진(4번)은 파일 이름에 연도가 있으면 촬영연도로 바로 넣는다(예: "2024년.png")
+          ...(moduleNumber === 4 && !fromPaste && yearFromFileName(file.name)
+            ? { photo_year: yearFromFileName(file.name) }
+            : {}),
+        },
+      ])
+      .select()
+      .single();
 
     if (insertError) {
       await supabase.storage.from("documents").remove([filePath]);
@@ -139,6 +148,41 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
     }
 
     setUploading(false);
+    await load();
+    if (fromPaste && inserted) startRename(inserted);
+  }
+
+  function splitExt(name) {
+    const m = String(name).match(/^(.*?)(\.[^.]+)?$/);
+    return { base: m[1], ext: m[2] || "" };
+  }
+
+  function startRename(doc) {
+    renameCancelled.current = false;
+    setRenaming({ id: doc.id, draft: splitExt(doc.file_name).base });
+  }
+
+  // 이름만 바꾼다(저장된 파일은 그대로). 확장자는 원래 것을 유지해야 사진 미리보기·보고서가 그림으로 알아본다.
+  // 3.4 항공사진은 새 이름에 연도가 있으면 촬영연도도 그 연도로 맞춘다(예: "1996년 항공사진").
+  async function saveRename(doc) {
+    if (renameCancelled.current) {
+      renameCancelled.current = false;
+      return;
+    }
+    const draft = (renaming?.draft || "").trim();
+    setRenaming(null);
+    const { base, ext } = splitExt(doc.file_name);
+    if (!draft || draft === base) return;
+    const newName = draft.toLowerCase().endsWith(ext.toLowerCase()) ? draft : `${draft}${ext}`;
+    const year = moduleNumber === 4 ? yearFromFileName(draft) : null;
+    const { error: renameError } = await supabase
+      .from("documents")
+      .update({ file_name: newName, ...(year ? { photo_year: year } : {}) })
+      .eq("id", doc.id);
+    if (renameError) {
+      setError(`이름을 바꾸지 못했어요: ${renameError.message}`);
+      return;
+    }
     load();
   }
 
@@ -240,6 +284,31 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
                     gap: 6,
                   }}
                 >
+                  {renaming?.id === doc.id ? (
+                    <input
+                      autoFocus
+                      value={renaming.draft}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setRenaming({ id: doc.id, draft: e.target.value })}
+                      onBlur={() => saveRename(doc)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.nativeEvent.isComposing) e.target.blur();
+                        if (e.key === "Escape") {
+                          renameCancelled.current = true;
+                          setRenaming(null);
+                        }
+                      }}
+                      placeholder="새 이름 입력 후 Enter"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "4px 6px",
+                        fontSize: 14,
+                        border: "1px solid var(--color-primary)",
+                        borderRadius: 4,
+                      }}
+                    />
+                  ) : (
                   <button
                     data-view onClick={() =>
                       isImage && urlMap[doc.id]
@@ -290,6 +359,22 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
                     >
                       {doc.file_name}
                     </span>
+                  </button>
+                  )}
+                  <button
+                    onClick={() => startRename(doc)}
+                    title="이름 바꾸기"
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--color-text-muted)",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                      marginLeft: "auto",
+                      padding: "0 2px",
+                    }}
+                  >
+                    ✏️
                   </button>
                   <button
                     onClick={() => handleDelete(doc)}
