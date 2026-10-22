@@ -22,6 +22,8 @@ import ModuleCompletionToggle from "./ModuleCompletionToggle";
 import DocumentUpload from "./DocumentUpload";
 import Module8ScientificAnalysis from "./Module8ScientificAnalysis";
 import ReportStatusBadge from "./ReportStatusBadge";
+import ChangeHistoryPanel from "./ChangeHistoryPanel";
+import { screenScope } from "@/lib/changeHistory";
 
 // status: "required"(보고서에 반영됨) | "reference"(입력해도 보고서엔 안 들어감, 화면엔 남겨둠).
 const SUB_TAB_31 = [
@@ -51,6 +53,8 @@ export default function CaseDetailPage() {
   const [editingMeta, setEditingMeta] = useState(false);
   const [metaForm, setMetaForm] = useState({ case_number: "", company_name: "", address: "", manager: "", due_date: "" });
   const [savingMeta, setSavingMeta] = useState(false);
+  // 변경 이력에서 되돌리면 각 화면이 들고 있던 입력값이 옛 것이라, 이 값을 바꿔 화면을 새로 불러오게 한다
+  const [contentVersion, setContentVersion] = useState(0);
   // 마감일은 관리자가 배정할 때 정하는 기한이라 관리자 로그인일 때만 바꿀 수 있게 한다(서버가 쿠키를 검증)
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
@@ -428,14 +432,25 @@ export default function CaseDetailPage() {
         }}
       >
         <div style={{ fontSize: 17, fontWeight: 700 }}>{headingLabel}</div>
-        <ModuleCompletionToggle
-          caseId={id}
-          chapterKey={activeChapter}
-          moduleStatus={moduleStatus}
-          caseStatus={caseInfo.status}
-          reloadModuleStatus={loadModuleStatus}
-          reloadCase={loadCase}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ChangeHistoryPanel
+            caseId={id}
+            scope={screenScope(activeChapter, activeSubTab)}
+            screenLabel={activeSubTabMeta?.label || activeChapterMeta?.label}
+            onRestored={() => {
+              setContentVersion((v) => v + 1);
+              loadCase();
+            }}
+          />
+          <ModuleCompletionToggle
+            caseId={id}
+            chapterKey={activeChapter}
+            moduleStatus={moduleStatus}
+            caseStatus={caseInfo.status}
+            reloadModuleStatus={loadModuleStatus}
+            reloadCase={loadCase}
+          />
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 20 }}>
@@ -455,7 +470,7 @@ export default function CaseDetailPage() {
         )}
 
         {/* minWidth 0: 없으면 타임라인처럼 넓은 내용에 맞춰 이 칸이 늘어나 페이지 전체가 가로로 스크롤된다 */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div key={contentVersion} style={{ flex: 1, minWidth: 0 }}>
           {activeChapter === "1" && (
             <Module0Overview
               caseId={id}
