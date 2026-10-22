@@ -71,10 +71,31 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
   async function handleFileChange(e) {
     const picked = e.target.files?.[0];
     if (!picked) return;
+    await uploadFile(picked);
+    e.target.value = "";
+  }
+
+  // 화면 캡처(PrintScreen, Win+Shift+S 등)를 붙여넣기 칸에 Ctrl+V로 바로 올린다.
+  // 클립보드 이미지는 이름이 "image.png"뿐이라 언제 캡처했는지 알 수 있게 이름을 붙인다.
+  async function handlePaste(e) {
+    const image = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith("image/"));
+    if (!image) {
+      setError("붙여넣은 내용에 이미지가 없어요. 화면을 캡처(PrintScreen 또는 Win+Shift+S)한 뒤 다시 붙여넣어 주세요.");
+      return;
+    }
+    e.preventDefault();
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const ext = image.type === "image/jpeg" ? ".jpg" : ".png";
+    const name = `캡처_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${ext}`;
+    await uploadFile(new File([image], name, { type: image.type }));
+  }
+
+  async function uploadFile(picked) {
+    if (uploading) return;
     const blocked = uploadBlockReason(picked);
     if (blocked) {
       setError(blocked);
-      e.target.value = "";
       return;
     }
     setUploading(true);
@@ -118,7 +139,6 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
     }
 
     setUploading(false);
-    e.target.value = "";
     load();
   }
 
@@ -161,6 +181,27 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
           style={{ display: "none" }}
         />
       </label>
+
+      <div
+        tabIndex={0}
+        onPaste={handlePaste}
+        title="캡처한 화면을 여기에 붙여넣으면 바로 올라가요"
+        className="paste-zone"
+        style={{
+          marginTop: 8,
+          padding: "10px 8px",
+          border: "1px dashed var(--color-border)",
+          borderRadius: 8,
+          fontSize: 13,
+          color: "var(--color-text-muted)",
+          textAlign: "center",
+          cursor: "pointer",
+          outline: "none",
+        }}
+      >
+        📋 캡처 붙여넣기
+        <div style={{ fontSize: 12 }}>여기를 클릭하고 Ctrl+V</div>
+      </div>
 
       {error && (
         <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginTop: 8 }}>

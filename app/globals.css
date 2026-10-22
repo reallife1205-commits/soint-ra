@@ -308,3 +308,10 @@ textarea {
   cursor: not-allowed;
   opacity: 0.55;
 }
+
+/* 참고 문서·사진 업로드의 "캡처 붙여넣기" 칸: 클릭해 두면 Ctrl+V를 받을 준비가 된 걸 보여준다 */
+.paste-zone:focus {
+  border-color: var(--color-primary) !important;
+  background: var(--color-surface-alt);
+  color: var(--color-primary) !important;
+}
