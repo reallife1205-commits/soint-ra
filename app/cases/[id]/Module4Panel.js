@@ -7,14 +7,13 @@ import { useModuleRows } from "@/lib/useModuleRows";
 import { useAerialTags } from "@/lib/useAerialTags";
 import { FACILITY_TYPES, FACILITY_LABEL, FACILITY_COLOR } from "@/lib/facilityTypes";
 
-// 항공사진은 초록·회색이 많아 갈색 얇은 선이 묻혔다 — 그리는 중인 박스는 형광 노랑 굵은 점선에
-// 안팎으로 어두운 테두리를 둘러 밝은 사진(콘크리트 지붕 등)에서도 보이게 한다.
+// 항공사진은 초록·회색이 많아 시설 종류 색(특히 회색 '기타 시설')의 얇은 선이 묻혔다 — 그리는 중이든
+// 저장된 태그든 박스는 형광 노랑 굵은 점선에 안팎으로 어두운 테두리를 둘러 어떤 사진에서도 보이게 한다.
+// 시설 종류는 박스 위 이름표 색으로 구분한다.
 const DRAFT_BOX_STYLE = {
   border: "3px dashed #ffea00",
   boxShadow: "0 0 0 1px rgba(0,0,0,0.75), inset 0 0 0 1px rgba(0,0,0,0.75)",
 };
-// 저장된 태그는 시설 종류 색 실선 그대로 두고, 굵기와 어두운 테두리만 더해 사진 위에서 덜 묻히게
-const SAVED_BOX_SHADOW = "0 0 0 1px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.6)";
 import TimelinePanel from "./TimelinePanel";
 import ReportStatusBadge from "./ReportStatusBadge";
 import { yearFromFileName } from "@/lib/photoYear";
@@ -517,12 +516,8 @@ function TaggingArea({ caseId, documentId, imageUrl, imageLoading }) {
                   top: `${tag.y * 100}%`,
                   width: `${tag.width * 100}%`,
                   height: `${tag.height * 100}%`,
-                  border: `3px solid ${FACILITY_COLOR[tag.facility_type] || "#6b7269"}`,
-                  boxShadow: SAVED_BOX_SHADOW,
-                  background:
-                    hoveredTagId === tag.id
-                      ? `${FACILITY_COLOR[tag.facility_type]}22`
-                      : "transparent",
+                  ...DRAFT_BOX_STYLE,
+                  background: hoveredTagId === tag.id ? "rgba(255,234,0,0.18)" : "transparent",
                   boxSizing: "border-box",
                   pointerEvents: "auto",
                 }}
