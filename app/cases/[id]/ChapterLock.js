@@ -100,6 +100,31 @@ export default function ChapterLock({ locked, label, children, showBanner = true
         </div>
       )}
       {children}
+      {/* 위 안내 줄은 화면을 내려 두면 안 보여서, 막힌 버튼을 눌러도 아무 반응이 없는 것처럼 보였다
+          (3.4 "배치도 등" 이미지 선택) — 막힐 때마다 화면 아래쪽에도 잠깐 띄운다. */}
+      {locked && warned && (
+        <div
+          role="status"
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: 24,
+            transform: "translateX(-50%)",
+            zIndex: 200,
+            padding: "10px 16px",
+            borderRadius: 8,
+            fontSize: 14,
+            background: "var(--color-badge-yellow-bg)",
+            color: "var(--color-badge-yellow-text)",
+            border: "1px solid var(--color-badge-yellow-text)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          🔒 완료 처리된 화면({label})이라 수정할 수 없어요. 고치려면 맨 위 <b>완료 취소</b>를 눌러주세요.
+        </div>
+      )}
     </div>
   );
 }
