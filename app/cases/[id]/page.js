@@ -23,6 +23,7 @@ import DocumentUpload from "./DocumentUpload";
 import Module8ScientificAnalysis from "./Module8ScientificAnalysis";
 import ReportStatusBadge from "./ReportStatusBadge";
 import ChangeHistoryPanel from "./ChangeHistoryPanel";
+import ChapterLock from "./ChapterLock";
 import { screenScope } from "@/lib/changeHistory";
 
 // status: "required"(보고서에 반영됨) | "reference"(입력해도 보고서엔 안 들어감, 화면엔 남겨둠).
@@ -437,6 +438,7 @@ export default function CaseDetailPage() {
             caseId={id}
             scope={screenScope(activeChapter, activeSubTab)}
             screenLabel={activeSubTabMeta?.label || activeChapterMeta?.label}
+            locked={isChapterDone(activeChapter)}
             onRestored={() => {
               setContentVersion((v) => v + 1);
               loadCase();
@@ -453,6 +455,7 @@ export default function CaseDetailPage() {
         </div>
       </div>
 
+      <ChapterLock locked={isChapterDone(activeChapter)} chapterKey={activeChapter}>
       <div style={{ display: "flex", gap: 20 }}>
         {effectiveModuleNumber !== undefined && (
           <div className="card" style={{ width: 260, flexShrink: 0 }}>
@@ -569,6 +572,7 @@ export default function CaseDetailPage() {
           )}
         </div>
       </div>
+      </ChapterLock>
     </div>
   );
 }

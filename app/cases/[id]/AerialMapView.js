@@ -177,14 +177,14 @@ export default function AerialMapView({
             <button
               key={t.key}
               className={mapType === t.key ? "btn-primary" : "btn-secondary"}
-              onClick={() => setMapType(t.key)}
+              data-view onClick={() => setMapType(t.key)}
             >
               {t.label}
             </button>
           ))}
           <button
             className={showParcel ? "btn-primary" : "btn-secondary"}
-            onClick={() => setShowParcel((v) => !v)}
+            data-view onClick={() => setShowParcel((v) => !v)}
           >
             ⬜ 대상 필지
           </button>

@@ -423,7 +423,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
                 return (
                   <button
                     key={tabKey}
-                    onClick={() => setActiveTab(tabKey)}
+                    data-view onClick={() => setActiveTab(tabKey)}
                     style={{
                       border: "none",
                       background: "transparent",

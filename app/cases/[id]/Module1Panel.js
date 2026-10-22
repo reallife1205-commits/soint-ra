@@ -27,7 +27,7 @@ export default function Module1Panel({ caseId, caseInfo }) {
         {TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            data-view onClick={() => setTab(t.key)}
             style={{
               border: "none",
               background: "transparent",

@@ -200,7 +200,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
                   }}
                 >
                   <button
-                    onClick={() =>
+                    data-view onClick={() =>
                       isImage && urlMap[doc.id]
                         ? setPreviewDoc(doc)
                         : handleDownload(doc)
@@ -298,7 +298,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, gap: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{previewDoc.file_name}</div>
               <button
-                onClick={() => setPreviewDoc(null)}
+                data-view onClick={() => setPreviewDoc(null)}
                 style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 19 }}
               >
                 ✕

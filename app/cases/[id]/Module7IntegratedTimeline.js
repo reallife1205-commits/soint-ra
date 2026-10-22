@@ -349,7 +349,7 @@ export default function IntegratedTimeline({ caseId }) {
                 {photoDocs.map((doc) => (
                   <button
                     key={doc.id}
-                    onClick={() => openPhoto(doc)}
+                    data-view onClick={() => openPhoto(doc)}
                     title={doc.photo_note || doc.file_name}
                     style={{
                       position: "absolute",
@@ -446,7 +446,7 @@ export default function IntegratedTimeline({ caseId }) {
                 {selectedPhoto.photo_year}년 · {selectedPhoto.photo_note || selectedPhoto.file_name}
               </div>
               <button
-                onClick={() => setSelectedPhoto(null)}
+                data-view onClick={() => setSelectedPhoto(null)}
                 style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 19 }}
               >
                 ✕

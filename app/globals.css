@@ -295,3 +295,16 @@ textarea {
   background: #e8c9b4;
   color: var(--color-text);
 }
+
+/* 완료 처리한 장(ChapterLock): 입력칸·수정 버튼이 잠긴 걸 눈으로 알 수 있게 */
+.chapter-locked input,
+.chapter-locked textarea,
+.chapter-locked select {
+  cursor: default;
+  color: var(--color-text-muted);
+}
+.chapter-locked button:not([data-view]):not([data-view] *),
+.chapter-locked label {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

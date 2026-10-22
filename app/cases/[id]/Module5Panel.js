@@ -43,7 +43,7 @@ export default function Module5Panel({ caseId }) {
         {TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            data-view onClick={() => setTab(t.key)}
             style={{
               border: "none",
               background: "transparent",
@@ -254,7 +254,7 @@ function DartSearchTab({ caseId, onResultsChanged }) {
     <div>
       <div className="card" style={{ marginBottom: 16 }}>
         <button
-          onClick={() => setShowInfo((v) => !v)}
+          data-view onClick={() => setShowInfo((v) => !v)}
           style={{
             border: "none",
             background: "transparent",

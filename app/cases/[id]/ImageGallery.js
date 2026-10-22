@@ -167,7 +167,7 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
             {docs.map((doc) => (
               <div key={doc.id} style={{ width: 140 }}>
                 <button
-                  onClick={() => setSelectedDoc(doc)}
+                  data-view onClick={() => setSelectedDoc(doc)}
                   style={{
                     border: "1px solid var(--color-border)",
                     borderRadius: 8,
@@ -273,7 +273,7 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, gap: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{selectedDoc.file_name}</div>
               <button
-                onClick={() => setSelectedDoc(null)}
+                data-view onClick={() => setSelectedDoc(null)}
                 style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 19 }}
               >
                 ✕

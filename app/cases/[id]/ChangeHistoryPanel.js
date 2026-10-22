@@ -35,7 +35,7 @@ const VALUE_STYLE = {
 };
 
 // 장 제목 옆 "변경 이력" 버튼 + 이력 창. 되돌린 뒤에는 onRestored로 화면을 다시 불러오게 한다.
-export default function ChangeHistoryPanel({ caseId, scope, screenLabel, onRestored }) {
+export default function ChangeHistoryPanel({ caseId, scope, screenLabel, locked, onRestored }) {
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -56,6 +56,10 @@ export default function ChangeHistoryPanel({ caseId, scope, screenLabel, onResto
   }, [open, load]);
 
   async function run(action, confirmMessage) {
+    if (locked) {
+      alert("완료 처리된 장이라 되돌릴 수 없어요. 먼저 '완료 취소'를 눌러주세요.");
+      return;
+    }
     if (confirmMessage && !confirm(confirmMessage)) return;
     setBusy(true);
     const { error } = await action();

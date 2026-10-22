@@ -67,7 +67,7 @@ export default function Module4Panel({ caseId, caseInfo, onCaseUpdated }) {
         {TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            data-view onClick={() => setTab(t.key)}
             className={tab === t.key ? "btn-primary" : "btn-secondary"}
             style={{ fontSize: 14 }}
           >
@@ -190,10 +190,10 @@ function ExternalAerialLinks({ coords, address }) {
       <span style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
         과거 항공사진 찾기:
       </span>
-      <button className="btn-secondary" onClick={openKakaoSkyview}>
+      <button className="btn-secondary" data-view onClick={openKakaoSkyview}>
         🛰️ 카카오맵에서 정확한 위치 바로 보기
       </button>
-      <button className="btn-secondary" onClick={openNgii}>
+      <button className="btn-secondary" data-view onClick={openNgii}>
         📍 국토지리정보원 항공사진 찾기 {copied && "(주소 복사됨!)"}
       </button>
     </div>
@@ -322,7 +322,7 @@ function UploadTaggingSection({ caseId }) {
                     style={{ display: "flex", alignItems: "center", gap: 4 }}
                   >
                     <button
-                      onClick={() => isImage && setSelectedDocId(doc.id)}
+                      data-view onClick={() => isImage && setSelectedDocId(doc.id)}
                       disabled={!isImage}
                       title={
                         isImage

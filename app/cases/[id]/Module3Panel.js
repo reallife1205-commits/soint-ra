@@ -61,7 +61,7 @@ export function OwnershipLeaseSection({ caseId }) {
         {OWNERSHIP_SUB_TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setSubTab(t.key)}
+            data-view onClick={() => setSubTab(t.key)}
             style={{
               border: "none",
               background: "transparent",
