@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { PasteZone, RenameButton, RenameInput, renameDocument, splitExt } from "./UploadHelpers";
 
 const CATEGORY = "ownership_table";
 const MODULE_NUMBER = 3;
@@ -21,6 +22,7 @@ export default function OwnershipTableUpload({ caseId }) {
   const [matchingText, setMatchingText] = useState("");
   const [matchingRowId, setMatchingRowId] = useState(null);
   const [matchingSaving, setMatchingSaving] = useState(false);
+  const [renamingId, setRenamingId] = useState(null);
 
   useEffect(() => {
     async function loadMatching() {
@@ -116,9 +118,15 @@ export default function OwnershipTableUpload({ caseId }) {
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    await uploadFile(file);
+    e.target.value = "";
+  }
+
+  // fromPaste: 캡처를 붙여넣었으면 올린 뒤 바로 이름 바꾸기 칸을 연다
+  async function uploadFile(file, { fromPaste = false } = {}) {
+    if (uploading) return;
     if (!/\.(png|jpe?g|gif|webp|pdf)$/i.test(file.name)) {
       setError("이미지(jpg/png/webp/gif) 또는 PDF 파일만 올릴 수 있어요.");
-      e.target.value = "";
       return;
     }
     setUploading(true);
@@ -139,16 +147,20 @@ export default function OwnershipTableUpload({ caseId }) {
       return;
     }
 
-    const { error: insertError } = await supabase.from("documents").insert([
-      {
-        case_id: caseId,
-        module_number: MODULE_NUMBER,
-        category: CATEGORY,
-        file_name: file.name,
-        file_path: filePath,
-        file_size: file.size,
-      },
-    ]);
+    const { data: inserted, error: insertError } = await supabase
+      .from("documents")
+      .insert([
+        {
+          case_id: caseId,
+          module_number: MODULE_NUMBER,
+          category: CATEGORY,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+        },
+      ])
+      .select()
+      .single();
 
     if (insertError) {
       await supabase.storage.from("documents").remove([filePath]);
@@ -158,7 +170,17 @@ export default function OwnershipTableUpload({ caseId }) {
     }
 
     setUploading(false);
-    e.target.value = "";
+    await load();
+    if (fromPaste && inserted) setRenamingId(inserted.id);
+  }
+
+  async function saveRename(doc, draft) {
+    setRenamingId(null);
+    const { error: renameError } = await renameDocument(doc, draft);
+    if (renameError) {
+      setError(`이름을 바꾸지 못했어요: ${renameError.message}`);
+      return;
+    }
     load();
   }
 
@@ -234,6 +256,13 @@ export default function OwnershipTableUpload({ caseId }) {
         />
       </label>
 
+      <PasteZone
+        compact
+        onFile={(file) => uploadFile(file, { fromPaste: true })}
+        onError={setError}
+        style={{ marginTop: 8, maxWidth: 320 }}
+      />
+
       {error && (
         <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginTop: 8 }}>
           {error}
@@ -264,23 +293,33 @@ export default function OwnershipTableUpload({ caseId }) {
                       {isImageFile(doc.file_name) ? "🖼️" : "📄"}
                     </span>
                   )}
-                  <a
-                    href={urlMap[doc.id] || "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      color: "var(--color-primary)",
-                      fontSize: 15,
-                    }}
-                    title={doc.file_name}
-                  >
-                    {doc.file_name}
-                  </a>
+                  {renamingId === doc.id ? (
+                    <RenameInput
+                      initial={splitExt(doc.file_name).base}
+                      onSave={(draft) => saveRename(doc, draft)}
+                      onCancel={() => setRenamingId(null)}
+                      style={{ flex: 1 }}
+                    />
+                  ) : (
+                    <a
+                      href={urlMap[doc.id] || "#"}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        color: "var(--color-primary)",
+                        fontSize: 15,
+                      }}
+                      title={doc.file_name}
+                    >
+                      {doc.file_name}
+                    </a>
+                  )}
+                  <RenameButton onClick={() => setRenamingId(doc.id)} />
                   <button
                     onClick={() => handleDelete(doc)}
                     style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer", flexShrink: 0 }}

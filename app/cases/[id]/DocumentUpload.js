@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ReportStatusBadge from "./ReportStatusBadge";
+import { PasteZone, RenameButton, RenameInput, renameDocument, splitExt } from "./UploadHelpers";
 import { yearFromFileName } from "@/lib/photoYear";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
 
@@ -20,8 +21,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [previewDoc, setPreviewDoc] = useState(null);
-  const [renaming, setRenaming] = useState(null); // { id, draft } — 이름 바꾸는 중인 문서
-  const renameCancelled = useRef(false); // Esc로 취소할 때 뒤따르는 blur가 저장해버리지 않게
+  const [renamingId, setRenamingId] = useState(null); // 이름 바꾸는 중인 문서
 
   async function load() {
     setLoading(true);
@@ -75,22 +75,6 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
     if (!picked) return;
     await uploadFile(picked);
     e.target.value = "";
-  }
-
-  // 화면 캡처(PrintScreen, Win+Shift+S 등)를 붙여넣기 칸에 Ctrl+V로 바로 올린다.
-  // 클립보드 이미지는 이름이 "image.png"뿐이라 언제 캡처했는지 알 수 있게 이름을 붙인다.
-  async function handlePaste(e) {
-    const image = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith("image/"));
-    if (!image) {
-      setError("붙여넣은 내용에 이미지가 없어요. 화면을 캡처(PrintScreen 또는 Win+Shift+S)한 뒤 다시 붙여넣어 주세요.");
-      return;
-    }
-    e.preventDefault();
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, "0");
-    const ext = image.type === "image/jpeg" ? ".jpg" : ".png";
-    const name = `캡처_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${ext}`;
-    await uploadFile(new File([image], name, { type: image.type }), { fromPaste: true });
   }
 
   // fromPaste: 캡처 이름의 날짜(2026…)가 항공사진 촬영연도로 들어가지 않게 하고, 올린 뒤 바로 이름 바꾸기 칸을 연다
@@ -149,36 +133,14 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
 
     setUploading(false);
     await load();
-    if (fromPaste && inserted) startRename(inserted);
+    if (fromPaste && inserted) setRenamingId(inserted.id);
   }
 
-  function splitExt(name) {
-    const m = String(name).match(/^(.*?)(\.[^.]+)?$/);
-    return { base: m[1], ext: m[2] || "" };
-  }
-
-  function startRename(doc) {
-    renameCancelled.current = false;
-    setRenaming({ id: doc.id, draft: splitExt(doc.file_name).base });
-  }
-
-  // 이름만 바꾼다(저장된 파일은 그대로). 확장자는 원래 것을 유지해야 사진 미리보기·보고서가 그림으로 알아본다.
-  // 3.4 항공사진은 새 이름에 연도가 있으면 촬영연도도 그 연도로 맞춘다(예: "1996년 항공사진").
-  async function saveRename(doc) {
-    if (renameCancelled.current) {
-      renameCancelled.current = false;
-      return;
-    }
-    const draft = (renaming?.draft || "").trim();
-    setRenaming(null);
-    const { base, ext } = splitExt(doc.file_name);
-    if (!draft || draft === base) return;
-    const newName = draft.toLowerCase().endsWith(ext.toLowerCase()) ? draft : `${draft}${ext}`;
+  // 3.4 항공사진은 새 이름에 연도가 있으면 촬영연도도 그 연도로 맞춘다(예: "2014", "1996년 항공사진").
+  async function saveRename(doc, draft) {
+    setRenamingId(null);
     const year = moduleNumber === 4 ? yearFromFileName(draft) : null;
-    const { error: renameError } = await supabase
-      .from("documents")
-      .update({ file_name: newName, ...(year ? { photo_year: year } : {}) })
-      .eq("id", doc.id);
+    const { error: renameError } = await renameDocument(doc, draft, year ? { photo_year: year } : {});
     if (renameError) {
       setError(`이름을 바꾸지 못했어요: ${renameError.message}`);
       return;
@@ -226,26 +188,11 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
         />
       </label>
 
-      <div
-        tabIndex={0}
-        onPaste={handlePaste}
-        title="캡처한 화면을 여기에 붙여넣으면 바로 올라가요"
-        className="paste-zone"
-        style={{
-          marginTop: 8,
-          padding: "10px 8px",
-          border: "1px dashed var(--color-border)",
-          borderRadius: 8,
-          fontSize: 13,
-          color: "var(--color-text-muted)",
-          textAlign: "center",
-          cursor: "pointer",
-          outline: "none",
-        }}
-      >
-        📋 캡처 붙여넣기
-        <div style={{ fontSize: 12 }}>여기를 클릭하고 Ctrl+V</div>
-      </div>
+      <PasteZone
+        onFile={(file) => uploadFile(file, { fromPaste: true })}
+        onError={setError}
+        style={{ marginTop: 8 }}
+      />
 
       {error && (
         <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginTop: 8 }}>
@@ -284,29 +231,12 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
                     gap: 6,
                   }}
                 >
-                  {renaming?.id === doc.id ? (
-                    <input
-                      autoFocus
-                      value={renaming.draft}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => setRenaming({ id: doc.id, draft: e.target.value })}
-                      onBlur={() => saveRename(doc)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.nativeEvent.isComposing) e.target.blur();
-                        if (e.key === "Escape") {
-                          renameCancelled.current = true;
-                          setRenaming(null);
-                        }
-                      }}
-                      placeholder="새 이름 입력 후 Enter"
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        padding: "4px 6px",
-                        fontSize: 14,
-                        border: "1px solid var(--color-primary)",
-                        borderRadius: 4,
-                      }}
+                  {renamingId === doc.id ? (
+                    <RenameInput
+                      initial={splitExt(doc.file_name).base}
+                      onSave={(draft) => saveRename(doc, draft)}
+                      onCancel={() => setRenamingId(null)}
+                      style={{ flex: 1 }}
                     />
                   ) : (
                   <button
@@ -361,21 +291,8 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
                     </span>
                   </button>
                   )}
-                  <button
-                    onClick={() => startRename(doc)}
-                    title="이름 바꾸기"
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      color: "var(--color-text-muted)",
-                      cursor: "pointer",
-                      flexShrink: 0,
-                      marginLeft: "auto",
-                      padding: "0 2px",
-                    }}
-                  >
-                    ✏️
-                  </button>
+                  <span style={{ marginLeft: "auto" }} />
+                  <RenameButton onClick={() => setRenamingId(doc.id)} />
                   <button
                     onClick={() => handleDelete(doc)}
                     style={{

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
+import { PasteZone, RenameButton, RenameInput, renameDocument, splitExt } from "./UploadHelpers";
 
 export default function ImageGallery({ caseId, moduleNumber = 1, category, title }) {
   const [docs, setDocs] = useState([]);
@@ -11,6 +12,7 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [renamingId, setRenamingId] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -59,15 +61,20 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
   async function handleFileChange(e) {
     const picked = e.target.files?.[0];
     if (!picked) return;
+    await uploadFile(picked);
+    e.target.value = "";
+  }
+
+  // fromPaste: 캡처를 붙여넣었으면 올린 뒤 바로 이름 바꾸기 칸을 연다
+  async function uploadFile(picked, { fromPaste = false } = {}) {
+    if (uploading) return;
     const blocked = uploadBlockReason(picked);
     if (blocked) {
       setError(blocked);
-      e.target.value = "";
       return;
     }
     if (!picked.type.startsWith("image/")) {
       setError("이미지 파일만 업로드할 수 있어요.");
-      e.target.value = "";
       return;
     }
     setUploading(true);
@@ -89,16 +96,20 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
       return;
     }
 
-    const { error: insertError } = await supabase.from("documents").insert([
-      {
-        case_id: caseId,
-        module_number: moduleNumber,
-        category,
-        file_name: file.name,
-        file_path: filePath,
-        file_size: file.size,
-      },
-    ]);
+    const { data: inserted, error: insertError } = await supabase
+      .from("documents")
+      .insert([
+        {
+          case_id: caseId,
+          module_number: moduleNumber,
+          category,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+        },
+      ])
+      .select()
+      .single();
 
     if (insertError) {
       await supabase.storage.from("documents").remove([filePath]);
@@ -108,7 +119,17 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
     }
 
     setUploading(false);
-    e.target.value = "";
+    await load();
+    if (fromPaste && inserted) setRenamingId(inserted.id);
+  }
+
+  async function saveRename(doc, draft) {
+    setRenamingId(null);
+    const { error: renameError } = await renameDocument(doc, draft);
+    if (renameError) {
+      setError(`이름을 바꾸지 못했어요: ${renameError.message}`);
+      return;
+    }
     load();
   }
 
@@ -141,6 +162,13 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
           style={{ display: "none" }}
         />
       </label>
+
+      <PasteZone
+        compact
+        onFile={(file) => uploadFile(file, { fromPaste: true })}
+        onError={setError}
+        style={{ marginTop: 8, maxWidth: 320 }}
+      />
 
       {error && (
         <div style={{ color: "var(--color-badge-red-text)", fontSize: 14, marginTop: 8 }}>
@@ -213,18 +241,29 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
                     gap: 4,
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: 13,
-                      color: "var(--color-text-muted)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                    title={doc.file_name}
-                  >
-                    {doc.file_name}
-                  </span>
+                  {renamingId === doc.id ? (
+                    <RenameInput
+                      initial={splitExt(doc.file_name).base}
+                      onSave={(draft) => saveRename(doc, draft)}
+                      onCancel={() => setRenamingId(null)}
+                      style={{ flex: 1, fontSize: 13 }}
+                    />
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: 13,
+                        color: "var(--color-text-muted)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={doc.file_name}
+                    >
+                      {doc.file_name}
+                    </span>
+                  )}
+                  <span style={{ marginLeft: "auto" }} />
+                  <RenameButton onClick={() => setRenamingId(doc.id)} />
                   <button
                     onClick={() => handleDelete(doc)}
                     style={{

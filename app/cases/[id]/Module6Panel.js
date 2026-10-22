@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
+import { PasteZone, RenameButton, RenameInput, splitExt, withOriginalExt } from "./UploadHelpers";
 
 const FIELD_ITEMS_DEFAULT = [
   "특정토양오염관리대상시설의 설치장소 확인 및 물질의 보관상태",
@@ -220,6 +221,7 @@ function FieldPhotos({ caseId }) {
   const [uploadingKey, setUploadingKey] = useState("");
   const [error, setError] = useState("");
   const [captionInput, setCaptionInput] = useState("");
+  const [renamingId, setRenamingId] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -263,16 +265,20 @@ function FieldPhotos({ caseId }) {
       return;
     }
 
-    const { error: insertError } = await supabase.from("documents").insert([
-      {
-        case_id: caseId,
-        module_number: 6,
-        file_name: file.name,
-        file_path: filePath,
-        file_size: file.size,
-        photo_note: caption,
-      },
-    ]);
+    const { data: inserted, error: insertError } = await supabase
+      .from("documents")
+      .insert([
+        {
+          case_id: caseId,
+          module_number: 6,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          photo_note: caption,
+        },
+      ])
+      .select()
+      .single();
 
     if (insertError) {
       await supabase.storage.from("documents").remove([filePath]);
@@ -282,7 +288,28 @@ function FieldPhotos({ caseId }) {
     }
 
     setUploadingKey("");
+    await load();
+    return inserted;
+  }
+
+  // 추가 사진은 화면에 보이는 이름이 사진 설명(photo_note)이라 그걸 바꾼다. 파일 이름도 같이 맞춘다.
+  async function saveRename(doc, draft) {
+    setRenamingId(null);
+    const { error: renameError } = await supabase
+      .from("documents")
+      .update({ photo_note: draft, file_name: withOriginalExt(doc.file_name, draft) })
+      .eq("id", doc.id);
+    if (renameError) {
+      setError(`이름을 바꾸지 못했어요: ${renameError.message}`);
+      return;
+    }
     load();
+  }
+
+  // 캡처를 붙여넣은 추가 사진: 설명 칸을 비워 뒀으면 올린 뒤 바로 이름(설명) 칸을 연다
+  async function pasteExtra(file) {
+    const inserted = await uploadFile(file, captionInput || file.name, "extra");
+    if (inserted && !captionInput) setRenamingId(inserted.id);
   }
 
   async function handleDelete(doc) {
@@ -367,6 +394,12 @@ function FieldPhotos({ caseId }) {
                     onSelect={(file) => uploadFile(file, category, category)}
                   />
                 </div>
+                <PasteZone
+                  compact
+                  onFile={(file) => uploadFile(file, category, category)}
+                  onError={setError}
+                  style={{ marginTop: 6, fontSize: 12 }}
+                />
                 {doc && (
                   <button
                     onClick={() => handleDelete(doc)}
@@ -406,6 +439,7 @@ function FieldPhotos({ caseId }) {
           disabled={uploadingKey === "extra"}
           onSelect={(file) => uploadFile(file, captionInput || file.name, "extra")}
         />
+        <PasteZone compact onFile={pasteExtra} onError={setError} style={{ flexShrink: 0 }} />
       </div>
 
       {loading ? (
@@ -426,9 +460,20 @@ function FieldPhotos({ caseId }) {
                   <PhotoThumb doc={doc} />
                 </div>
                 <div style={{ padding: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4 }}>
-                  <span style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {doc.photo_note || doc.file_name}
-                  </span>
+                  {renamingId === doc.id ? (
+                    <RenameInput
+                      initial={doc.photo_note || splitExt(doc.file_name).base}
+                      onSave={(draft) => saveRename(doc, draft)}
+                      onCancel={() => setRenamingId(null)}
+                      style={{ flex: 1, fontSize: 13 }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {doc.photo_note || doc.file_name}
+                    </span>
+                  )}
+                  <span style={{ marginLeft: "auto" }} />
+                  <RenameButton onClick={() => setRenamingId(doc.id)} />
                   <button
                     onClick={() => handleDelete(doc)}
                     style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer" }}
