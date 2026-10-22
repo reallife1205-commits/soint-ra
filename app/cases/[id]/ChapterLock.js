@@ -16,7 +16,7 @@ function isTextField(el) {
 
 const INTERACTIVE = "button, input, select, textarea, label, [role='button']";
 
-export default function ChapterLock({ locked, chapterKey, children, showBanner = true }) {
+export default function ChapterLock({ locked, label, children, showBanner = true }) {
   const [warned, setWarned] = useState(false);
   const timer = useRef(null);
 
@@ -96,7 +96,7 @@ export default function ChapterLock({ locked, chapterKey, children, showBanner =
             color: warned ? "var(--color-badge-yellow-text)" : "var(--color-complete-done-text)",
           }}
         >
-          🔒 {chapterKey}장은 완료 처리돼 있어 수정할 수 없어요. 고치려면 오른쪽 위 <b>완료 취소</b>를 눌러주세요.
+          🔒 완료 처리된 화면({label})이라 수정할 수 없어요. 고치려면 오른쪽 위 <b>완료 취소</b>를 눌러주세요.
         </div>
       )}
       {children}

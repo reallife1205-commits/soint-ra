@@ -4,7 +4,15 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { CHAPTERS, TOTAL_CHAPTERS, chapterCompletionNumber, isChapterCompletionNumber } from "@/lib/modules";
+import {
+  CHAPTERS,
+  TOTAL_CHAPTERS,
+  SUBTAB_COMPLETION_CHAPTERS,
+  chapterCompletionNumber,
+  completionTarget,
+  isChapterCompletionNumber,
+  subTabCompletionNumber,
+} from "@/lib/modules";
 import { ddayInfo } from "@/lib/dday";
 import Module0Overview from "./Module0Overview";
 import Module1Panel from "./Module1Panel";
@@ -126,6 +134,11 @@ export default function CaseDetailPage() {
     (m) => m.is_completed && isChapterCompletionNumber(m.module_number)
   ).length;
   const isChapterDone = (key) => !!moduleStatus[chapterCompletionNumber(key)]?.is_completed;
+  // 지금 화면이 잠겼는지: 2장처럼 하위 항목별로 완료하는 장은 그 하위 항목(2.1/2.2) 기준
+  const lockTarget = completionTarget(activeChapter, activeSubTab);
+  const isLocked = !!(lockTarget && moduleStatus[lockTarget.number]?.is_completed);
+  const isSubTabDone = (chapterKey, subKey) =>
+    SUBTAB_COMPLETION_CHAPTERS.includes(chapterKey) && !!moduleStatus[subTabCompletionNumber(subKey)]?.is_completed;
   const dday = ddayInfo(caseInfo?.due_date);
 
   function selectChapter(chapterKey) {
@@ -415,6 +428,9 @@ export default function CaseDetailPage() {
                   color: isActive ? "var(--color-secondary)" : "var(--color-text-muted)",
                 }}
               >
+                {isSubTabDone(activeChapter, s.key) && (
+                  <span title="완료" style={{ color: "var(--color-chapter-active)", fontSize: 12, marginRight: 2 }}>✓</span>
+                )}
                 {s.label}
                 <ReportStatusBadge status={s.reportStatus} superscript />
               </button>
@@ -438,7 +454,7 @@ export default function CaseDetailPage() {
             caseId={id}
             scope={screenScope(activeChapter, activeSubTab)}
             screenLabel={activeSubTabMeta?.label || activeChapterMeta?.label}
-            locked={isChapterDone(activeChapter)}
+            locked={isLocked}
             onRestored={() => {
               setContentVersion((v) => v + 1);
               loadCase();
@@ -447,6 +463,7 @@ export default function CaseDetailPage() {
           <ModuleCompletionToggle
             caseId={id}
             chapterKey={activeChapter}
+            subTabKey={activeSubTab}
             moduleStatus={moduleStatus}
             caseStatus={caseInfo.status}
             reloadModuleStatus={loadModuleStatus}
@@ -455,7 +472,7 @@ export default function CaseDetailPage() {
         </div>
       </div>
 
-      <ChapterLock locked={isChapterDone(activeChapter)} chapterKey={activeChapter}>
+      <ChapterLock locked={isLocked} label={lockTarget?.label}>
       <div style={{ display: "flex", gap: 20 }}>
         {effectiveModuleNumber !== undefined && (
           <div className="card" style={{ width: 260, flexShrink: 0 }}>
