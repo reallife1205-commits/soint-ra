@@ -17,6 +17,7 @@ const DRAFT_BOX_STYLE = {
 import TimelinePanel from "./TimelinePanel";
 import ReportStatusBadge from "./ReportStatusBadge";
 import { yearFromFileName } from "@/lib/photoYear";
+import { splitExt } from "./UploadHelpers";
 const AerialMapView = dynamic(() => import("./AerialMapView"), { ssr: false });
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|webp|gif|bmp)$/i;
@@ -236,6 +237,15 @@ function UploadTaggingSection({ caseId }) {
     loadDocs();
   }, [loadDocs]);
 
+  // 왼쪽 업로드 목록에서 사진을 올리거나 이름(=연도)을 바꾸면 여기 목록도 바로 새로 불러온다
+  useEffect(() => {
+    function onChanged(e) {
+      if (e.detail?.caseId === caseId && e.detail?.moduleNumber === 4) loadDocs();
+    }
+    window.addEventListener("documents-changed", onChanged);
+    return () => window.removeEventListener("documents-changed", onChanged);
+  }, [caseId, loadDocs]);
+
   // 보고서 내보내기가 이 연도 순서로 항공사진을 채워서(오래된 연도부터), 업로드한 순서와
   // 실제 촬영 연도가 다르면 꼭 여기서 연도를 지정해줘야 순서가 맞음.
   async function updateYear(docId, year) {
@@ -312,8 +322,8 @@ function UploadTaggingSection({ caseId }) {
         ) : (
           <>
             <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 8 }}>
-              보고서에는 아래 연도 순서(오래된 연도부터)로 채워져요. 업로드 순서와 촬영 연도가
-              다르면 사진마다 연도를 입력해주세요.
+              보고서에는 오래된 연도부터 들어가요. 연도가 없는 사진만 옆 칸에 연도를 넣어주세요.
+              (연도를 고치려면 왼쪽 목록에서 ✏️로 이름을 연도로 바꾸면 돼요)
             </div>
             {yearFillable.length > 0 && (
               <button className="btn-secondary" onClick={fillYearsFromNames} style={{ fontSize: 14, marginBottom: 10 }}>
@@ -324,6 +334,14 @@ function UploadTaggingSection({ caseId }) {
               {sortedDocs.map((doc) => {
                 const isImage = IMAGE_EXT_RE.test(doc.file_name);
                 const isActive = doc.id === selectedDocId;
+                // 버튼엔 연도만. 파일 이름에 그 연도가 없을 때만 이름을 짧게 덧붙인다(예: "2014 · 공장전경").
+                const base = splitExt(doc.file_name).base;
+                const hasYear = doc.photo_year != null && doc.photo_year !== "";
+                const chipLabel = !hasYear
+                  ? base
+                  : base.includes(String(doc.photo_year))
+                  ? String(doc.photo_year)
+                  : `${doc.photo_year} · ${base}`;
                 return (
                   <div
                     key={doc.id}
@@ -347,19 +365,21 @@ function UploadTaggingSection({ caseId }) {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {isImage ? "🖼️" : "📄"} {doc.file_name}
+                      {isImage ? "🖼️" : "📄"} {chipLabel}
                     </button>
-                    {isImage && (
+                    {isImage && !hasYear && (
                       <input
                         type="number"
                         placeholder="연도"
-                        value={doc.photo_year ?? ""}
-                        onChange={(e) => updateYear(doc.id, e.target.value)}
+                        title="촬영 연도를 넣어주세요"
+                        onBlur={(e) => /^(19|20)\d{2}$/.test(e.target.value) && updateYear(doc.id, e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
                         style={{
                           width: 64,
                           padding: "6px 6px",
                           borderRadius: 8,
-                          border: "1px solid var(--color-border)",
+                          border: "1px solid var(--color-badge-yellow-text)",
+                          background: "var(--color-badge-yellow-bg)",
                           fontSize: 14,
                         }}
                       />

@@ -43,6 +43,12 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
     setLoading(false);
   }
 
+  // 올리기·이름 바꾸기·지우기 뒤에는 같은 사진을 보여주는 다른 칸(3.4 오른쪽 사진 연도·태깅 등)도 새로 불러오게 알린다
+  async function reloadAndNotify() {
+    await load();
+    window.dispatchEvent(new CustomEvent("documents-changed", { detail: { caseId, moduleNumber } }));
+  }
+
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,7 +143,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
     }
 
     setUploading(false);
-    await load();
+    await reloadAndNotify();
     if (fromPaste && inserted) setRenamingId(inserted.id);
   }
 
@@ -150,13 +156,13 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
       setError(`이름을 바꾸지 못했어요: ${renameError.message}`);
       return;
     }
-    load();
+    reloadAndNotify();
   }
 
   async function handleDelete(doc) {
     await supabase.storage.from("documents").remove([doc.file_path]);
     await supabase.from("documents").delete().eq("id", doc.id);
-    load();
+    reloadAndNotify();
   }
 
   async function handleDownload(doc) {
