@@ -11,13 +11,49 @@ const supabaseAdmin = createClient(
 );
 
 const MEDIA_TYPE_BY_EXT = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
-const MAX_SITE_PLAN_IMAGES = 3;
+// AI에게 같이 보여줄 사진 수. 가운데 "배치도 등"은 배치도 → 부지전경 → 나머지(최근 올린 것부터),
+// 왼쪽 항공사진은 오래된 연도부터(많으면 처음·끝 연도를 포함해 고르게 뽑음). 예전엔 "배치도 등"에서
+// 가장 먼저 올린 3장만 보내서 배치도가 빠지고 항공사진은 메모 글자만 들어갔다.
+const MAX_SITE_PLAN_IMAGES = 6;
+const MAX_AERIAL_IMAGES = 6;
+const SITE_PLAN_NAME_PRIORITY = ["배치도", "부지전경"]; // export-report의 3.4 배치도면 우선순위와 같게
+
+function sitePlanRank(doc) {
+  const base = doc.file_name.replace(/\.[^.]+$/, "").replace(/\s/g, "");
+  const i = SITE_PLAN_NAME_PRIORITY.findIndex((k) => base.includes(k));
+  return i === -1 ? SITE_PLAN_NAME_PRIORITY.length : i;
+}
+
+function spreadPick(list, max) {
+  if (list.length <= max) return list;
+  return Array.from({ length: max }, (_, i) => list[Math.round((i * (list.length - 1)) / (max - 1))]);
+}
+
+async function toImageBlocks(doc, label) {
+  const ext = (doc.file_name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
+  const mediaType = MEDIA_TYPE_BY_EXT[ext];
+  if (!mediaType) return [];
+  const { data: blob } = await supabaseAdmin.storage.from("documents").download(doc.file_path);
+  if (!blob) return [];
+  return [
+    { type: "text", text: label },
+    {
+      type: "image",
+      source: { type: "base64", media_type: mediaType, data: Buffer.from(await blob.arrayBuffer()).toString("base64") },
+    },
+  ];
+}
 
 // 3.4 "토양오염이 발생한 토지로의 출입 가능성 또는 용이성" 초안. 지침(제16조 제2항 제7호,
 // 제17조)에 맞춰 "오염 발생 당시 출입 가능성"을 중심으로, "정화 시 출입 용이성"을 한두 줄 덧붙인다.
 const PROMPT = `당신은 토양환경보전법에 따른 토양정화자문위원회의 기술검토를 지원하는 보조자입니다.
-아래 [사건 자료]와 첨부 이미지(배치도·위치도 등)만 근거로, 기술검토 보고서 "3.4 토양오염이 발생한
+아래 [사건 자료]와 첨부 이미지만 근거로, 기술검토 보고서 "3.4 토양오염이 발생한
 토지로의 출입 가능성 또는 용이성" 항목의 본문을 작성해주세요.
+
+첨부 이미지는 이미지마다 바로 앞에 종류가 적혀 있음: [배치도], [부지전경], [배치도 등 기타 자료](현장사진·위치도 등),
+[항공사진 OOOO년](오래된 연도부터). 한 종류만 보지 말고 모두 함께 비교해서 쓰기 — 배치도·부지전경으로 시설 배치와
+오염 지점 위치를, 연도별 항공사진으로 그 시설·야적 구역이 언제부터 언제까지 있었는지(시기별 변화)를 확인하고,
+이를 [사건 자료]의 소유·운영 기간과 맞춰 시간 순서로 정리하기.
 
 형식(반드시 이 형식 그대로, 두 단락 사이에 빈 줄 하나):
 (오염 발생 당시 출입 가능성) 본문
@@ -35,7 +71,7 @@ const PROMPT = `당신은 토양환경보전법에 따른 토양정화자문위�
 - 자료에 있는 사실만 객관적으로 쓰기. 자료로 알 수 없는 내용(추정, 가능성, 의도)은 쓰지 않기.
   "추정", "~로 보임", "~일 수 있음", "확인 필요" 같은 표현 금지
 - "정화책임자로 판단", "책임이 있음" 같은 판단·결론 표현 금지(판단은 위원회 몫)
-- 이미지(배치도·위치도)는 "배치도상 ~로 표시됨", "위치도상 ~로 덮여 있음"처럼 보이는 그대로만 쓰고,
+- 이미지는 "배치도상 ~로 표시됨", "2008년 항공사진상 ~가 확인됨", "부지전경상 ~로 덮여 있음"처럼 보이는 그대로만 쓰고,
   "접근이 제한됨", "~용도로 사용됨" 같은 해석은 쓰지 않기
 - 업체는 "업체명(대표자 OOO)" 형식, "주식회사"·"(주)"는 빼고 나머지 글자는 자료 그대로
 - 이름·연도·지번은 자료 표기 그대로. 가려진 이름(예: 허*필)은 "*"까지 그대로 쓰기
@@ -86,7 +122,7 @@ export async function POST(req) {
       supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 1),
       supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 3),
       supabaseAdmin.from("module_rows").select("row_data").eq("case_id", caseId).eq("module_number", 5),
-      supabaseAdmin.from("documents").select("file_name, photo_year, photo_note").eq("case_id", caseId).eq("module_number", 4),
+      supabaseAdmin.from("documents").select("file_name, file_path, photo_year, photo_note").eq("case_id", caseId).eq("module_number", 4),
       supabaseAdmin.from("timeline_analyses").select("content").eq("case_id", caseId).maybeSingle(),
       supabaseAdmin.from("field_surveys").select("*").eq("case_id", caseId).maybeSingle(),
       supabaseAdmin
@@ -95,8 +131,7 @@ export async function POST(req) {
         .eq("case_id", caseId)
         .eq("module_number", 3)
         .eq("category", "site_plan")
-        .order("uploaded_at", { ascending: true })
-        .limit(MAX_SITE_PLAN_IMAGES),
+        .order("uploaded_at", { ascending: false }),
     ]);
 
     if (!caseInfo) return Response.json({ error: "해당 안건을 찾을 수 없어요" }, { status: 404 });
@@ -141,26 +176,32 @@ export async function POST(req) {
       .filter(([, body]) => body && String(body).trim())
       .map(([title, body]) => `【${title}】\n${String(body).trim()}`);
 
-    if (sections.length <= 1 && !sitePlanDocs?.length) {
+    if (sections.length <= 1 && !sitePlanDocs?.length && !aerialDocs?.length) {
       return Response.json(
         { error: "초안을 쓸 자료가 없어요. 3.1 소유 이력이나 항공사진 메모 등을 먼저 입력해주세요" },
         { status: 400 }
       );
     }
 
-    const content = [];
-    for (const d of sitePlanDocs || []) {
-      const ext = (d.file_name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
-      const mediaType = MEDIA_TYPE_BY_EXT[ext];
-      if (!mediaType) continue;
-      const { data: blob } = await supabaseAdmin.storage.from("documents").download(d.file_path);
-      if (!blob) continue;
-      content.push({ type: "text", text: `[배치도·위치도] ${d.file_name}` });
-      content.push({
-        type: "image",
-        source: { type: "base64", media_type: mediaType, data: Buffer.from(await blob.arrayBuffer()).toString("base64") },
-      });
-    }
+    // sort는 안정 정렬이라 같은 순위 안에서는 최근 올린 순서가 유지된다
+    const plans = [...(sitePlanDocs || [])]
+      .sort((a, b) => sitePlanRank(a) - sitePlanRank(b))
+      .slice(0, MAX_SITE_PLAN_IMAGES);
+    const aerials = spreadPick(
+      [...(aerialDocs || [])].sort((a, b) => (a.photo_year || 9999) - (b.photo_year || 9999)),
+      MAX_AERIAL_IMAGES
+    );
+    const planLabel = (d) => ["[배치도]", "[부지전경]", "[배치도 등 기타 자료]"][sitePlanRank(d)];
+    const blocks = await Promise.all([
+      ...plans.map((d) => toImageBlocks(d, `${planLabel(d)} ${d.file_name}`)),
+      ...aerials.map((d) =>
+        toImageBlocks(
+          d,
+          `[항공사진 ${d.photo_year ? `${d.photo_year}년` : "연도 미지정"}] ${d.file_name}${d.photo_note ? ` — 메모: ${d.photo_note}` : ""}`
+        )
+      ),
+    ]);
+    const content = blocks.flat();
     content.push({ type: "text", text: `${PROMPT}\n\n[사건 자료]\n${sections.join("\n\n")}` });
 
     const controller = new AbortController();
