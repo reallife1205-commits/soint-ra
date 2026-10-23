@@ -187,6 +187,15 @@ export function AccessSection({ caseId }) {
           moduleNumber={3}
           category="site_plan"
           title="배치도 등 (항공사진 외 출입가능성 증빙 자료)"
+          // 실제 고르는 규칙은 export-report의 fetchSitePlanImage — 바꾸면 이 안내도 같이 고칠 것
+          hint={
+            <>
+              보고서 3.4 <b>&lt;그림&gt; 배치도면</b> 자리에는 아래 순서로 사진 한 장이 들어가요.
+              <br />① 이름에 <b>배치도</b>가 들어간 사진 → ② 이름에 <b>부지전경</b>이 들어간 사진 → ③ 둘 다 없으면 항공사진 중{" "}
+              <b>가장 최근 연도</b> 사진
+              <br />같은 이름이 여러 장이면 가장 최근에 올린 사진이 쓰여요. 이름은 사진 아래 ✏️로 바꿀 수 있어요(띄어쓰기는 상관없음).
+            </>
+          }
         />
       </div>
     </>

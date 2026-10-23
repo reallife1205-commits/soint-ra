@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
 import { PasteZone, RenameButton, RenameInput, renameDocument, splitExt } from "./UploadHelpers";
 
-export default function ImageGallery({ caseId, moduleNumber = 1, category, title }) {
+export default function ImageGallery({ caseId, moduleNumber = 1, category, title, hint }) {
   const [docs, setDocs] = useState([]);
   const [urlMap, setUrlMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -143,6 +143,11 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
   return (
     <div className="card">
       <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>{title}</div>
+      {hint && (
+        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 10, lineHeight: 1.6 }}>
+          {hint}
+        </div>
+      )}
 
       <label
         className="btn-secondary"

@@ -90,7 +90,10 @@ function fieldPhotoOrder(doc) {
   return i === -1 ? PHOTO_CATEGORIES.length : i;
 }
 
-async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = false) {
+// latest: 사진 한 장만 들어가는 자리(배치도·오염분포도 등)용. 오래된 것부터 limit장을 자르면
+// limit장보다 많이 올렸을 때 최근 사진이 잘려나가 엉뚱한 사진이 들어갔다 — 최근 limit장을 가져와
+// 오래된 순으로 돌려준다(latestImage가 배열의 마지막을 씀).
+async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = false, latest = false) {
   let query = supabaseAdmin
     .from("documents")
     .select("*")
@@ -99,25 +102,62 @@ async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = 
   if (category === null) query = query.is("category", null);
   else if (category !== undefined) query = query.eq("category", category);
   if (orderByYear) query = query.order("photo_year", { ascending: true, nullsFirst: false });
-  const { data: docs } = await query.order("uploaded_at", { ascending: !orderByYear }).limit(limit);
+  const { data: docs } = await query.order("uploaded_at", { ascending: !orderByYear && !latest }).limit(limit);
 
   if (!docs?.length) return [];
+  if (latest) docs.reverse();
   // 현장 사진(6번)은 항목 칸 순서 → 추가 사진 순서(같은 순위 안에서는 올린 순서 유지 — sort는 안정 정렬)
   if (moduleNumber === 6) docs.sort((a, b) => fieldPhotoOrder(a) - fieldPhotoOrder(b));
 
-  const images = await Promise.all(
-    docs.map(async (doc) => {
-      const ext = (doc.file_name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
-      const type = IMAGE_TYPE_BY_EXT[ext];
-      if (!type) return null;
-      const { data: blob, error } = await supabaseAdmin.storage.from("documents").download(doc.file_path);
-      if (error || !blob) return null;
-      const buf = Buffer.from(await blob.arrayBuffer());
-      return { data: buf, type, caption: photoCaption(doc) };
-    })
-  );
-
+  const images = await Promise.all(docs.map(downloadImage));
   return images.filter(Boolean);
+}
+
+async function downloadImage(doc) {
+  const ext = (doc.file_name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
+  const type = IMAGE_TYPE_BY_EXT[ext];
+  if (!type) return null;
+  const { data: blob, error } = await supabaseAdmin.storage.from("documents").download(doc.file_path);
+  if (error || !blob) return null;
+  const buf = Buffer.from(await blob.arrayBuffer());
+  return { data: buf, type, caption: photoCaption(doc) };
+}
+
+// 3.4 "<그림> 배치도면" 자리에 넣을 사진 한 장. 우선순위(화면 Module3Panel 안내문과 같게):
+// ① 챕터03 "배치도 등"에 올린 사진 중 이름에 "배치도"가 들어간 것 → ② "부지전경"이 들어간 것
+// → ③ 항공사진 중 가장 최근 연도(연도 안 적은 사진은 뒤로, 같은 연도면 나중에 올린 것).
+// 같은 이름이 여러 장이면 가장 최근에 올린 것. 이름은 띄어쓰기 무시("부지 전경"도 인정).
+const SITE_PLAN_NAME_PRIORITY = ["배치도", "부지전경"];
+
+async function fetchSitePlanImage(caseId) {
+  const { data: plans } = await supabaseAdmin
+    .from("documents")
+    .select("*")
+    .eq("case_id", caseId)
+    .eq("module_number", 3)
+    .eq("category", "site_plan")
+    .order("uploaded_at", { ascending: false });
+  const nameOf = (doc) => doc.file_name.replace(/\.[^.]+$/, "").replace(/\s/g, "");
+  for (const keyword of SITE_PLAN_NAME_PRIORITY) {
+    for (const doc of (plans || []).filter((d) => nameOf(d).includes(keyword))) {
+      const img = await downloadImage(doc);
+      if (img) return [img];
+    }
+  }
+
+  const { data: aerials } = await supabaseAdmin
+    .from("documents")
+    .select("*")
+    .eq("case_id", caseId)
+    .eq("module_number", 4)
+    .order("photo_year", { ascending: false, nullsFirst: false })
+    .order("uploaded_at", { ascending: false })
+    .limit(5);
+  for (const doc of aerials || []) {
+    const img = await downloadImage(doc);
+    if (img) return [img];
+  }
+  return [];
 }
 
 async function fetchCaseData(caseId) {
@@ -190,14 +230,14 @@ async function fetchCaseData(caseId) {
     fetchImages(caseId, 4, 8, undefined, true),
     fetchImages(caseId, 6, MAX_PHOTOS),
     // "그림 시료채취지점" 자리의 대체용(오염분포도가 없을 때만 씀) — category=sample_points
-    fetchImages(caseId, 1, 5, "sample_points"),
+    fetchImages(caseId, 1, 5, "sample_points", false, true),
     // 2.1 "<그림> 토양시료 채취 지점 및 기준 초과 현황"엔 오염분포도가 들어간다(챕터01
     // "오염분포도" 탭 업로드, category=pollution_map)
-    fetchImages(caseId, 1, 5, "pollution_map"),
+    fetchImages(caseId, 1, 5, "pollution_map", false, true),
     // 2.2 "주변부지 조사 지점" 지도 캡처(챕터02 지도 화면의 "화면 캡처해서 저장" 버튼)
-    fetchImages(caseId, 2, 5, "surrounding_map"),
-    // 3.4 "배치도 등" 업로드(챕터03 출입가능성 화면)
-    fetchImages(caseId, 3, 5, "site_plan"),
+    fetchImages(caseId, 2, 5, "surrounding_map", false, true),
+    // 3.4 배치도면: 이름 "배치도" → "부지전경" → 최근 연도 항공사진 순(fetchSitePlanImage 주석)
+    fetchSitePlanImage(caseId),
   ]);
   const networkRows = soilDataRows.filter((r) => r.source_type === "측정망");
   const surveyRows = soilDataRows.filter((r) => r.source_type === "실태조사");
