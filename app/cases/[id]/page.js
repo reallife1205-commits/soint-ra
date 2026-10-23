@@ -477,7 +477,7 @@ export default function CaseDetailPage() {
         {effectiveModuleNumber !== undefined && (
           <div className="card" style={{ width: 260, flexShrink: 0 }}>
             {effectiveModuleNumber === 4 ? (
-              <DocumentUpload caseId={id} moduleNumber={4} title="항공사진·현장사진 업로드" status="required" />
+              <DocumentUpload caseId={id} moduleNumber={4} title="항공사진 업로드 (보고서엔 연도순 최대 8장)" status="required" />
             ) : (
               <DocumentUpload
                 caseId={id}
