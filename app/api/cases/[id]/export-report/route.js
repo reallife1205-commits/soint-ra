@@ -4,6 +4,7 @@ import path from "path";
 import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
 import { currentOwnerNames } from "@/lib/currentOwner";
 import { PHOTO_CATEGORIES } from "@/lib/fieldPhotos";
+import { yearFromFileName } from "@/lib/photoYear";
 import {
   SITE_CONTAMINATION_CATEGORY,
   defaultSources,
@@ -120,7 +121,8 @@ async function downloadImage(doc) {
   const { data: blob, error } = await supabaseAdmin.storage.from("documents").download(doc.file_path);
   if (error || !blob) return null;
   const buf = Buffer.from(await blob.arrayBuffer());
-  return { data: buf, type, caption: photoCaption(doc) };
+  // year: 항공사진 칸 아래 "OOOO년" 글자용 — 화면에서 지정한 연도, 없으면 파일 이름의 연도
+  return { data: buf, type, caption: photoCaption(doc), year: doc.photo_year || yearFromFileName(doc.file_name) };
 }
 
 // 3.4 "<그림> 배치도면" 자리에 넣을 사진 한 장. 우선순위(화면 Module3Panel 안내문과 같게):
