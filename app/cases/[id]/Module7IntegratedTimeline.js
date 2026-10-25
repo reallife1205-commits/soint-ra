@@ -89,13 +89,16 @@ const OWNER_COLORS = [
   { bg: "#9ccc65", fg: "#1b3a1d" },
   { bg: "#f4c430", fg: "#4a3b00" },
 ];
-// 임차인은 소유자(초록 계열)와 헷갈리지 않게 갈색 계열
+// 임차인은 소유자(초록 계열)와 헷갈리지 않으면서 눈에 덜 띄게 옅은 청회색 두 가지(갈색은 번잡해 보였다)
 const TENANT_COLORS = [
-  { bg: "#a8562f", fg: "white" },
-  { bg: "#d9a066", fg: "#3d2310" },
+  { bg: "#b4c6dc", fg: "#22344a" },
+  { bg: "#d5e0ec", fg: "#22344a" },
 ];
 const BAR_HEIGHT = 28;
 const LANE_HEIGHT = 32;
+// 임차인은 업체가 많아 줄이 여러 개라 막대를 얇게
+const TENANT_BAR_HEIGHT = 18;
+const TENANT_LANE_HEIGHT = 21;
 
 function toBars(list, colorCount) {
   const thisYear = new Date().getFullYear();
@@ -116,12 +119,12 @@ function barColor(bars, i, colors) {
   return colors[(b ? b.colorIdx : i) % colors.length].bg;
 }
 
-function BarRow({ label, bars, colors, xFor }) {
+function BarRow({ label, bars, colors, xFor, barHeight = BAR_HEIGHT, laneHeight = LANE_HEIGHT }) {
   const lanes = Math.max(1, ...bars.map((b) => b.lane + 1));
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{label}</div>
-      <div style={{ position: "relative", height: lanes * LANE_HEIGHT + 8 }}>
+      <div style={{ position: "relative", height: lanes * laneHeight + 8 }}>
         {bars.map((b) => {
           const left = xFor(b.s);
           // 1px 간격을 둬서 이어지는 막대끼리 경계가 보이게
@@ -134,11 +137,11 @@ function BarRow({ label, bars, colors, xFor }) {
                 position: "absolute",
                 left,
                 width,
-                height: BAR_HEIGHT,
-                top: 4 + b.lane * LANE_HEIGHT,
+                height: barHeight,
+                top: 4 + b.lane * laneHeight,
                 background: colors[b.colorIdx % colors.length].bg,
                 color: colors[b.colorIdx % colors.length].fg,
-                fontSize: 13,
+                fontSize: barHeight < BAR_HEIGHT ? 12 : 13,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -344,7 +347,14 @@ export default function IntegratedTimeline({ caseId }) {
 
             {/* 임차인 행 */}
             {tenants.length > 0 && (
-              <BarRow label="임차인" bars={tenantBars} colors={TENANT_COLORS} xFor={xForYearFraction} />
+              <BarRow
+                label="임차인"
+                bars={tenantBars}
+                colors={TENANT_COLORS}
+                xFor={xForYearFraction}
+                barHeight={TENANT_BAR_HEIGHT}
+                laneHeight={TENANT_LANE_HEIGHT}
+              />
             )}
 
             {/* 항공사진 행 */}
