@@ -375,16 +375,6 @@ function FieldPhotos({ caseId }) {
                 )}
               </div>
               <div style={{ padding: 10 }}>
-                <div
-                  style={{
-                    fontSize: 14,
-                    textAlign: "center",
-                    marginBottom: 8,
-                    color: "var(--color-text-muted)",
-                  }}
-                >
-                  {category}
-                </div>
                 {doc && (
                   <input
                     key={doc.id}
