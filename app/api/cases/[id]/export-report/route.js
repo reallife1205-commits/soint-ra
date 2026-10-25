@@ -312,8 +312,10 @@ export async function GET(req, { params }) {
     const templatePath = path.join(process.cwd(), "templates", "report-template.hwpx");
     const templateBuffer = fs.readFileSync(templatePath);
     const buffer = await buildReportHwpx(templateBuffer, payload);
+    // 안건 번호 뒤에 업체명을 붙인다. 윈도우 파일 이름에 못 쓰는 글자는 뺀다.
+    const company = String(payload.caseInfo.company_name || "").replace(/[\\/:*?"<>|]/g, "").trim();
     const fileName = encodeURIComponent(
-      `기술검토보고서_초안_${payload.caseInfo.case_number || caseId}.hwpx`
+      `기술검토보고서_초안_${payload.caseInfo.case_number || caseId}${company ? `_${company}` : ""}.hwpx`
     );
 
     return new Response(buffer, {
