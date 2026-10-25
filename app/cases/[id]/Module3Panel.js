@@ -9,16 +9,20 @@ import { useModuleRows } from "@/lib/useModuleRows";
 import { isEmptyLeaseRow } from "@/lib/currentOwner";
 
 // 보고서 [표 4] "기간/소유자/점유자/업종"과 같은 모양으로, 소유와 점유(임차)를 한 표에 적는다.
+// 한 행 = 점유 업체 하나. 소유자가 바뀐 때와 점유 업체가 바뀐 때가 달라서 소유 기간(owner_period, 글자 하나)을
+// 따로 적는다. 점유 기간은 예전 취득일·처분일 칸(acquired_date/disposed_date)을 그대로 쓴다 — 지금까지 적힌 값이
+// 실제로는 점유 기간이었다.
 // 예전 "임대차 이력"(category lease, tenant_name 등)은 화면에서 뺐고, 남아 있으면 LegacyLeaseRows로 옮긴다.
 // 예전에 적은 취득원인(acquisition_reason)은 row_data에 남아 있지만 화면·보고서에는 쓰지 않는다.
 const OWNERSHIP_FIELDS = [
   // 업종은 너비를 안 줘서 남는 폭을 전부 가져가게 한다(업종 설명이 가장 길다)
-  { key: "owner_name", label: "소유자", width: "17%" },
-  { key: "occupant_name", label: "점유자", width: "17%" },
-  { key: "acquired_date", label: "취득일", width: "11%" },
-  { key: "disposed_date", label: "처분일", width: "11%" },
+  { key: "owner_name", label: "소유자", width: "14%" },
+  { key: "owner_period", label: "소유 기간", width: "13%", placeholder: "예: 1986~2014" },
+  { key: "occupant_name", label: "점유자", width: "14%" },
+  { key: "acquired_date", label: "점유 시작", width: "9%" },
+  { key: "disposed_date", label: "점유 종료", width: "9%" },
   { key: "business_type", label: "업종" },
-  { key: "note", label: "비고", width: "14%" },
+  { key: "note", label: "비고", width: "12%" },
 ];
 
 const COST_CAPACITY_FIELDS = [
@@ -82,8 +86,8 @@ export function OwnershipLeaseSection({ caseId }) {
       {subTab === "ownership" && (
         <>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-            등기부등본 갑구 기준 소유권 변동 이력과 그 기간의 점유자(직접 사용하면 소유자와 같은 이름, 임차인이 썼으면
-            임차인)를 입력하세요. 보고서 [표 4] 소유·점유 현황에 이 순서대로 들어가요.
+            한 줄에 점유 업체 하나씩 적고, 그때의 소유자와 소유 기간(토지대장 날짜)을 옆에 적어 주세요. 소유자가 직접
+            썼으면 점유자에 같은 이름을 적어요. 보고서 [표 4]에는 기간 = 점유 기간, 소유자 = 이름(소유 기간)으로 들어가요.
           </div>
           <LegacyLeaseRows caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
           <OwnerToOccupant key={`fix-${tableVersion}`} caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />

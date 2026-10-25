@@ -41,7 +41,7 @@ function buildPrompt(ctx) {
   const ownerLines = m3
     .map((r) => r.row_data)
     .filter((d) => d.category === "ownership")
-    .map((d) => `- 소유자 ${d.owner_name || "미상"}${d.occupant_name ? `, 점유자 ${d.occupant_name}` : ""} (${d.acquired_date || "?"} ~ ${d.disposed_date || "현재"}), 업종: ${d.business_type || "미상"}`)
+    .map((d) => `- 소유자 ${d.owner_name || "미상"}${d.owner_period ? `(소유 ${d.owner_period})` : ""}${d.occupant_name ? `, 점유자 ${d.occupant_name}` : ""} (점유 ${d.acquired_date || "?"} ~ ${d.disposed_date || "현재"}), 업종: ${d.business_type || "미상"}`)
     .join("\n");
 
   const leaseLines = m3

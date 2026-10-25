@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { ownerPeriod } from "@/lib/currentOwner";
 
 const LEGAL_REFERENCE_DATE = "1996-01-06"; // 토양환경보전법 시행일 기준
 const PX_PER_YEAR = 30; // 연도 간격. 50이면 막대가 너무 길어 한눈에 안 들어와서 줄임
@@ -179,12 +180,11 @@ export default function IntegratedTimeline({ caseId }) {
       const tenantList = [];
       (rows || []).forEach((r) => {
         const d = r.row_data || {};
+        // 소유자 줄은 소유 기간 칸으로. 한 소유자가 점유 업체마다 여러 행에 반복되므로 같은 소유자·기간은 한 번만.
         if (d.category === "ownership" && d.owner_name) {
-          ownerList.push({
-            name: d.owner_name,
-            start: d.acquired_date || null,
-            end: d.disposed_date || null,
-          });
+          const { start, end } = ownerPeriod(d);
+          const dup = ownerList.some((o) => o.name === d.owner_name && o.start === (start || null) && o.end === (end || null));
+          if (!dup) ownerList.push({ name: d.owner_name, start: start || null, end: end || null });
         }
         // 소유·점유 표의 점유자는 소유자와 다를 때만 임차인 줄에 — 소유자가 직접 쓴 기간은 소유자 줄로 충분하다
         if (d.category === "ownership" && d.occupant_name && d.occupant_name.trim() !== (d.owner_name || "").trim()) {

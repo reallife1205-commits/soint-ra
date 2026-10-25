@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { useModuleRows } from "@/lib/useModuleRows";
+import { ownerPeriod } from "@/lib/currentOwner";
 import { useAerialTags } from "@/lib/useAerialTags";
 import { FACILITY_TYPES, FACILITY_LABEL, FACILITY_COLOR } from "@/lib/facilityTypes";
 
@@ -122,7 +123,8 @@ function InflectionYearsHint({ caseId }) {
     if (!match) return;
     const year = match[0];
     if (!byYear[year]) byYear[year] = [];
-    byYear[year].push(label);
+    // 한 소유자가 점유 업체마다 여러 행에 반복돼 같은 문구가 겹친다
+    if (!byYear[year].includes(label)) byYear[year].push(label);
   }
 
   rows.forEach((r) => {
@@ -132,8 +134,9 @@ function InflectionYearsHint({ caseId }) {
       const occupant = (d.occupant_name || "").trim();
       if (d.owner_name || !occupant) {
         const who = d.owner_name || "소유자 미상";
-        addEvent(d.acquired_date, `${who} 소유 시작${biz}`);
-        addEvent(d.disposed_date, `${who} 소유 종료`);
+        const { start, end } = ownerPeriod(d);
+        addEvent(start, `${who} 소유 시작`);
+        addEvent(end, `${who} 소유 종료`);
       }
       if (occupant && occupant !== (d.owner_name || "").trim()) {
         addEvent(d.acquired_date, `${occupant} 점유 시작${biz}`);

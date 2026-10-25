@@ -160,7 +160,7 @@ export async function POST(req) {
     const sections = [
       ["안건", [line("주소(자문대상)", overview.advisory_subject || caseInfo.address), line("안건명", caseInfo.title)].filter(Boolean).join("\n")],
       ["오염 현황", rowsText(contamination, [["contaminant", "오염물질"], ["depth", "심도"], ["max_concentration", "최고농도(mg/kg)"], ["area", "면적"], ["note", "비고"]])],
-      ["소유·점유 이력(3.1 표)", rowsText(ownership, [["owner_name", "소유자"], ["occupant_name", "점유자"], ["acquired_date", "취득"], ["disposed_date", "처분"], ["business_type", "업종"], ["note", "비고"]])],
+      ["소유·점유 이력(3.1 표)", rowsText(ownership, [["owner_name", "소유자"], ["owner_period", "소유 기간"], ["occupant_name", "점유자"], ["acquired_date", "점유 시작"], ["disposed_date", "점유 종료"], ["business_type", "업종"], ["note", "비고"]])],
       ["임대차 이력(3.1 표)", rowsText(lease, [["tenant_name", "임차인"], ["business_type", "업종"], ["lease_start", "시작"], ["lease_end", "종료"], ["lease_type", "유형"], ["note", "비고"]])],
       ["업체–대표자 매칭", partyMatching],
       ["증빙 표 종합 AI 분석(3.1)", ownershipAnalysis],
