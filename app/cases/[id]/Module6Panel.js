@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
-import { PasteZone, RenameButton, RenameInput, splitExt, withOriginalExt } from "./UploadHelpers";
-import { PHOTO_CATEGORIES } from "@/lib/fieldPhotos";
+import { PasteZone } from "./UploadHelpers";
+import { PHOTO_CATEGORIES, MAX_FIELD_PHOTOS, fieldPhotoCaption, sortFieldPhotos } from "@/lib/fieldPhotos";
 
 const FIELD_ITEMS_DEFAULT = [
   "특정토양오염관리대상시설의 설치장소 확인 및 물질의 보관상태",
@@ -210,13 +210,11 @@ function ChecklistCard({ title, note, items, onChange, onBlur }) {
 function FieldPhotos({ caseId }) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [uploadingKey, setUploadingKey] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [captionInput, setCaptionInput] = useState("");
-  const [renamingId, setRenamingId] = useState(null);
 
+  // 처음 한 번만 "불러오는 중"을 띄운다 — 여러 장을 올릴 때 장마다 목록이 사라졌다 나타나지 않게
   async function load() {
-    setLoading(true);
     const { data } = await supabase
       .from("documents")
       .select("*")
@@ -232,13 +230,14 @@ function FieldPhotos({ caseId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
-  async function uploadFile(picked, caption, key) {
+  // 제목(caption)은 올린 뒤 사진마다 적는다. photo_note는 예전 항목 칸 구분용이라 새 사진에는 넣지 않는다.
+  async function uploadFile(picked) {
     const blocked = uploadBlockReason(picked);
     if (blocked) {
       setError(blocked);
       return;
     }
-    setUploadingKey(key);
+    setUploading(true);
     setError("");
     const file = await shrinkImageForUpload(picked); // 큰 사진은 줄여서(용량 한도 초과 방지)
 
@@ -253,7 +252,7 @@ function FieldPhotos({ caseId }) {
 
     if (uploadError) {
       setError(friendlyUploadError(uploadError.message));
-      setUploadingKey("");
+      setUploading(false);
       return;
     }
 
@@ -266,7 +265,6 @@ function FieldPhotos({ caseId }) {
           file_name: file.name,
           file_path: filePath,
           file_size: file.size,
-          photo_note: caption,
         },
       ])
       .select()
@@ -275,33 +273,20 @@ function FieldPhotos({ caseId }) {
     if (insertError) {
       await supabase.storage.from("documents").remove([filePath]);
       setError(`업로드에 실패했어요: ${insertError.message}`);
-      setUploadingKey("");
+      setUploading(false);
       return;
     }
 
-    setUploadingKey("");
+    setUploading(false);
     await load();
     return inserted;
   }
 
-  // 추가 사진은 화면에 보이는 이름이 사진 설명(photo_note)이라 그걸 바꾼다. 파일 이름도 같이 맞춘다.
-  async function saveRename(doc, draft) {
-    setRenamingId(null);
-    const { error: renameError } = await supabase
-      .from("documents")
-      .update({ photo_note: draft, file_name: withOriginalExt(doc.file_name, draft) })
-      .eq("id", doc.id);
-    if (renameError) {
-      setError(`이름을 바꾸지 못했어요: ${renameError.message}`);
-      return;
+  // 앨범에서 여러 장 고르면 한 장씩 차례로 올린다(올린 순서 = 보고서 순서)
+  async function uploadFiles(files) {
+    for (const file of files) {
+      if (!(await uploadFile(file))) break;
     }
-    load();
-  }
-
-  // 캡처를 붙여넣은 추가 사진: 설명 칸을 비워 뒀으면 올린 뒤 바로 이름(설명) 칸을 연다
-  async function pasteExtra(file) {
-    const inserted = await uploadFile(file, captionInput || file.name, "extra");
-    if (inserted && !captionInput) setRenamingId(inserted.id);
   }
 
   async function handleDelete(doc) {
@@ -310,27 +295,29 @@ function FieldPhotos({ caseId }) {
     load();
   }
 
-  // 항목 칸 사진의 보고서 제목(documents.caption, sql/027). 칸 이름(photo_note)은 칸 구분용이라 그대로 둔다.
+  // 보고서 사진 제목(documents.caption, sql/027). 예전 추가 사진은 올릴 때 적은 설명(photo_note)이 제목이었는데,
+  // 입력칸에 그 설명을 보여 주므로 저장할 때 caption으로 옮기고 지운다 — 안 지우면 제목을 비워도 옛 설명이 다시 나온다.
+  // 예전 항목 칸 이름(PHOTO_CATEGORIES)은 순서에 쓰므로 그대로 둔다.
   async function saveCaption(doc, value) {
     const caption = value.trim() || null;
-    if (caption === (doc.caption || null)) return;
-    const { error: captionError } = await supabase.from("documents").update({ caption }).eq("id", doc.id);
+    if (caption === (fieldPhotoCaption(doc) || null)) return;
+    const patch = { caption };
+    if (doc.photo_note && !PHOTO_CATEGORIES.includes(doc.photo_note)) patch.photo_note = null;
+    const { error: captionError } = await supabase.from("documents").update(patch).eq("id", doc.id);
     if (captionError) {
       setError(`제목을 저장하지 못했어요: ${captionError.message}`);
       return;
     }
-    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, caption } : d)));
+    setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, ...patch } : d)));
   }
 
-  function docForCategory(category) {
-    return docs.find((d) => d.photo_note === category);
-  }
+  const photos = sortFieldPhotos(docs);
 
   return (
     <div className="card">
       <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>현장 사진</div>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 14 }}>
-        항목별로 사진을 찍거나 앨범에서 선택해서 올려주세요.
+        사진을 찍거나 앨범에서 골라 올려주세요. 보고서에는 이 순서대로 앞에서부터 {MAX_FIELD_PHOTOS}장이 들어가요.
       </div>
 
       {error && (
@@ -339,169 +326,99 @@ function FieldPhotos({ caseId }) {
         </div>
       )}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: 14,
-          marginBottom: 20,
-        }}
-      >
-        {PHOTO_CATEGORIES.map((category) => {
-          const doc = docForCategory(category);
-          const busy = uploadingKey === category;
-          return (
-            <div
-              key={category}
-              style={{
-                border: "1px solid var(--color-border)",
-                borderRadius: 10,
-                overflow: "hidden",
-              }}
-            >
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, maxWidth: 560 }}>
+        <UploadButton
+          label={uploading ? "업로드 중..." : "📷 촬영"}
+          capture
+          disabled={uploading}
+          onSelect={uploadFiles}
+        />
+        <UploadButton
+          label={uploading ? "업로드 중..." : "🖼 앨범 (여러 장)"}
+          multiple
+          disabled={uploading}
+          onSelect={uploadFiles}
+        />
+        <PasteZone compact onFile={(file) => uploadFile(file)} onError={setError} style={{ flexShrink: 0 }} />
+      </div>
+
+      {loading ? (
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
+      ) : photos.length === 0 ? (
+        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>아직 올린 사진이 없어요.</div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+            gap: 14,
+          }}
+        >
+          {photos.map((doc, i) => {
+            const excluded = i >= MAX_FIELD_PHOTOS;
+            return (
               <div
+                key={doc.id}
                 style={{
-                  height: 110,
-                  background: "var(--color-surface-alt)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  opacity: excluded ? 0.5 : 1,
                 }}
               >
-                {doc ? (
+                <div style={{ height: 130, background: "var(--color-surface-alt)", position: "relative" }}>
                   <PhotoThumb doc={doc} />
-                ) : (
-                  <span style={{ fontSize: 28, color: "var(--color-text-muted)" }}>📷</span>
-                )}
-              </div>
-              <div style={{ padding: 10 }}>
-                {doc && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 6,
+                      left: 6,
+                      padding: "1px 7px",
+                      borderRadius: 10,
+                      fontSize: 12,
+                      background: "rgba(0,0,0,0.55)",
+                      color: "#fff",
+                    }}
+                  >
+                    {excluded ? "보고서 제외" : i + 1}
+                  </span>
+                </div>
+                <div style={{ padding: 8, display: "flex", gap: 4, alignItems: "center" }}>
                   <input
                     key={doc.id}
-                    defaultValue={doc.caption || ""}
+                    defaultValue={fieldPhotoCaption(doc)}
                     onBlur={(e) => saveCaption(doc, e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && e.target.blur()}
                     placeholder="보고서 사진 제목 (비우면 빈칸)"
                     title="보고서의 사진 아래에 들어갈 제목이에요. 비워 두면 보고서에도 빈칸으로 들어가요."
                     style={{
-                      width: "100%",
-                      marginBottom: 8,
+                      flex: 1,
+                      minWidth: 0,
                       padding: "6px 8px",
                       fontSize: 13,
                       borderRadius: 6,
                       border: "1px solid var(--color-border)",
                     }}
                   />
-                )}
-                <div style={{ display: "flex", gap: 6 }}>
-                  <UploadButton
-                    label={busy ? "..." : "📷 촬영"}
-                    capture
-                    disabled={busy}
-                    onSelect={(file) => uploadFile(file, category, category)}
-                  />
-                  <UploadButton
-                    label={busy ? "..." : "🖼 앨범"}
-                    disabled={busy}
-                    onSelect={(file) => uploadFile(file, category, category)}
-                  />
-                </div>
-                <PasteZone
-                  compact
-                  onFile={(file) => uploadFile(file, category, category)}
-                  onError={setError}
-                  style={{ marginTop: 6, fontSize: 12 }}
-                />
-                {doc && (
                   <button
                     onClick={() => handleDelete(doc)}
-                    style={{
-                      marginTop: 6,
-                      width: "100%",
-                      border: "none",
-                      background: "transparent",
-                      color: "var(--color-badge-red-text)",
-                      fontSize: 14,
-                      cursor: "pointer",
-                    }}
-                  >
-                    삭제
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
-        <input
-          value={captionInput}
-          onChange={(e) => setCaptionInput(e.target.value)}
-          placeholder="사진 설명 (예: 배관 부식 상태)"
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            borderRadius: 8,
-            border: "1px solid var(--color-border)",
-          }}
-        />
-        <UploadButton
-          label={uploadingKey === "extra" ? "업로드 중..." : "+ 추가 사진 업로드"}
-          disabled={uploadingKey === "extra"}
-          onSelect={(file) => uploadFile(file, captionInput || file.name, "extra")}
-        />
-        <PasteZone compact onFile={pasteExtra} onError={setError} style={{ flexShrink: 0 }} />
-      </div>
-
-      {loading ? (
-        <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>불러오는 중...</div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-            gap: 12,
-          }}
-        >
-          {docs
-            .filter((d) => !PHOTO_CATEGORIES.includes(d.photo_note))
-            .map((doc) => (
-              <div key={doc.id} style={{ borderRadius: 10, overflow: "hidden", border: "1px solid var(--color-border)" }}>
-                <div style={{ height: 100, background: "var(--color-surface-alt)" }}>
-                  <PhotoThumb doc={doc} />
-                </div>
-                <div style={{ padding: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4 }}>
-                  {renamingId === doc.id ? (
-                    <RenameInput
-                      initial={doc.photo_note || splitExt(doc.file_name).base}
-                      onSave={(draft) => saveRename(doc, draft)}
-                      onCancel={() => setRenamingId(null)}
-                      style={{ flex: 1, fontSize: 13 }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {doc.photo_note || doc.file_name}
-                    </span>
-                  )}
-                  <span style={{ marginLeft: "auto" }} />
-                  <RenameButton onClick={() => setRenamingId(doc.id)} />
-                  <button
-                    onClick={() => handleDelete(doc)}
+                    title="사진 삭제"
                     style={{ border: "none", background: "transparent", color: "var(--color-text-muted)", cursor: "pointer" }}
                   >
                     ✕
                   </button>
                 </div>
               </div>
-            ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-function UploadButton({ label, capture, disabled, onSelect }) {
+// onSelect는 고른 파일 배열을 받는다(multiple이 아니면 한 장)
+function UploadButton({ label, capture, multiple, disabled, onSelect }) {
   return (
     <label
       className="btn-secondary"
@@ -519,11 +436,12 @@ function UploadButton({ label, capture, disabled, onSelect }) {
         type="file"
         accept="image/*"
         capture={capture ? "environment" : undefined}
+        multiple={multiple}
         disabled={disabled}
         style={{ display: "none" }}
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onSelect(file);
+          const files = Array.from(e.target.files || []);
+          if (files.length) onSelect(files);
           e.target.value = "";
         }}
       />

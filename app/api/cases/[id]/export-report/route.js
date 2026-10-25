@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
 import { currentOwnerNames } from "@/lib/currentOwner";
-import { PHOTO_CATEGORIES } from "@/lib/fieldPhotos";
+import { MAX_FIELD_PHOTOS, fieldPhotoCaption, sortFieldPhotos } from "@/lib/fieldPhotos";
 import { yearFromFileName } from "@/lib/photoYear";
 import {
   SITE_CONTAMINATION_CATEGORY,
@@ -31,7 +31,6 @@ const supabaseAdmin = createClient(
 );
 
 const DEFAULT_RADIUS_KM = 4;
-const MAX_PHOTOS = 9;
 const IMAGE_TYPE_BY_EXT = { png: "png", jpg: "jpg", jpeg: "jpg", gif: "gif", bmp: "bmp" };
 
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -72,24 +71,7 @@ function judgmentByCategory(rowDataList, category) {
 // 지정한 photo_year(오래된 연도부터)로 정렬한다 — 항공사진처럼 "표에 넣는 순서 = 촬영 연도
 // 순서"라 업로드한 순서(uploaded_at)와는 무관해야 하는 경우에 씀. 연도를 안 지정한 사진은
 // 뒤로 밀려 남은 칸에 채워진다.
-// 현장 사진 제목은 사용자가 적은 것만 쓴다. 항목 칸 사진은 칸마다 적는 "보고서 사진 제목"(caption, sql/027)이고,
-// 칸 이름(photo_note = "특정토양오염관리대상시설" 등)은 사용자가 쓴 게 아니라 칸 구분용이라 제목으로 쓰지 않는다.
-// 추가 사진은 적은 설명·바꾼 이름(photo_note)인데, 설명 없이 올리면 화면이 파일 이름을 대신 넣어 두므로
-// (IMG_1234.jpg, 캡처_2026-… 등) 그것도 빈칸으로 둔다.
-function photoCaption(doc) {
-  const caption = (doc.caption || "").trim();
-  if (caption) return caption;
-  const note = (doc.photo_note || "").trim();
-  if (!note || PHOTO_CATEGORIES.includes(note)) return "";
-  if (note === doc.file_name || /^캡처_\d{4}-\d{2}-\d{2}_\d{6}(\.\w+)?$/.test(note)) return "";
-  return note;
-}
-
-// 현장 사진은 화면의 항목 칸 순서대로, 그 뒤에 추가 사진을 올린 순서대로 싣는다.
-function fieldPhotoOrder(doc) {
-  const i = PHOTO_CATEGORIES.indexOf(doc.photo_note);
-  return i === -1 ? PHOTO_CATEGORIES.length : i;
-}
+// 사진 제목·현장 사진 순서 규칙은 4장 화면과 같이 쓰도록 lib/fieldPhotos.js에 있다.
 
 // latest: 사진 한 장만 들어가는 자리(배치도·오염분포도 등)용. 오래된 것부터 limit장을 자르면
 // limit장보다 많이 올렸을 때 최근 사진이 잘려나가 엉뚱한 사진이 들어갔다 — 최근 limit장을 가져와
@@ -103,12 +85,14 @@ async function fetchImages(caseId, moduleNumber, limit, category, orderByYear = 
   if (category === null) query = query.is("category", null);
   else if (category !== undefined) query = query.eq("category", category);
   if (orderByYear) query = query.order("photo_year", { ascending: true, nullsFirst: false });
-  const { data: docs } = await query.order("uploaded_at", { ascending: !orderByYear && !latest }).limit(limit);
+  query = query.order("uploaded_at", { ascending: !orderByYear && !latest });
+  // 현장 사진(6번)은 4장 화면과 같은 순서로 정렬한 뒤 앞에서부터 자른다 — 올린 순서로 먼저 자르면
+  // 예전 항목 칸 사진이 잘려나갈 수 있다.
+  let { data: docs } = await (moduleNumber === 6 ? query : query.limit(limit));
 
   if (!docs?.length) return [];
   if (latest) docs.reverse();
-  // 현장 사진(6번)은 항목 칸 순서 → 추가 사진 순서(같은 순위 안에서는 올린 순서 유지 — sort는 안정 정렬)
-  if (moduleNumber === 6) docs.sort((a, b) => fieldPhotoOrder(a) - fieldPhotoOrder(b));
+  if (moduleNumber === 6) docs = sortFieldPhotos(docs).slice(0, limit);
 
   const images = await Promise.all(docs.map(downloadImage));
   return images.filter(Boolean);
@@ -122,7 +106,7 @@ async function downloadImage(doc) {
   if (error || !blob) return null;
   const buf = Buffer.from(await blob.arrayBuffer());
   // year: 항공사진 칸 아래 "OOOO년" 글자용 — 화면에서 지정한 연도, 없으면 파일 이름의 연도
-  return { data: buf, type, caption: photoCaption(doc), year: doc.photo_year || yearFromFileName(doc.file_name) };
+  return { data: buf, type, caption: fieldPhotoCaption(doc), year: doc.photo_year || yearFromFileName(doc.file_name) };
 }
 
 // 3.4 "<그림> 배치도면" 자리에 넣을 사진 한 장. 우선순위(화면 Module3Panel 안내문과 같게):
@@ -230,7 +214,7 @@ async function fetchCaseData(caseId) {
     // 항공사진은 표에 "오래된 연도부터" 채워지므로 업로드 순서가 아니라 사진마다 지정한
     // photo_year 순으로 가져온다(4번 모듈 태깅 화면에서 연도 입력).
     fetchImages(caseId, 4, 8, undefined, true),
-    fetchImages(caseId, 6, MAX_PHOTOS),
+    fetchImages(caseId, 6, MAX_FIELD_PHOTOS),
     // "그림 시료채취지점" 자리의 대체용(오염분포도가 없을 때만 씀) — category=sample_points
     fetchImages(caseId, 1, 5, "sample_points", false, true),
     // 2.1 "<그림> 토양시료 채취 지점 및 기준 초과 현황"엔 오염분포도가 들어간다(챕터01
