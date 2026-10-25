@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { useModuleRows } from "@/lib/useModuleRows";
-import { ownerPeriod } from "@/lib/currentOwner";
+import { ownerPeriod, occupantPeriod } from "@/lib/currentOwner";
 import { useAerialTags } from "@/lib/useAerialTags";
 import { FACILITY_TYPES, FACILITY_LABEL, FACILITY_COLOR } from "@/lib/facilityTypes";
 
@@ -139,8 +139,9 @@ function InflectionYearsHint({ caseId }) {
         addEvent(end, `${who} 소유 종료`);
       }
       if (occupant && occupant !== (d.owner_name || "").trim()) {
-        addEvent(d.acquired_date, `${occupant} 점유 시작${biz}`);
-        addEvent(d.disposed_date, `${occupant} 점유 종료`);
+        const { start, end } = occupantPeriod(d);
+        addEvent(start, `${occupant} 점유 시작${biz}`);
+        addEvent(end, `${occupant} 점유 종료`);
       }
     } else if (d.category === "lease") {
       const who = d.tenant_name || "임차인 미상";

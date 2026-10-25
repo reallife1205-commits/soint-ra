@@ -48,8 +48,18 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
     }));
   }
 
+  // field.fallback(row_data): 그 칸에 아직 저장된 값이 없을 때 대신 보여 줄 값(예전 칸에서 읽은 값).
+  // 행을 저장할 때 원래 행 기준으로 굳혀 둔다 — 안 그러면 다른 칸을 고친 뒤 fallback 결과가 바뀔 수 있다.
+  function displayValue(localRow, f) {
+    if (localRow[f.key] != null) return localRow[f.key];
+    return f.fallback ? f.fallback(localRow) : "";
+  }
+
   function handleBlurSave(row, key) {
-    const newData = localValues[row.id] || row.row_data;
+    let newData = localValues[row.id] || row.row_data;
+    fields.forEach((f) => {
+      if (f.fallback && newData[f.key] == null) newData = { ...newData, [f.key]: f.fallback(row.row_data) };
+    });
     if (JSON.stringify(newData) !== JSON.stringify(row.row_data)) {
       updateRow(row.id, newData);
     }
@@ -122,7 +132,7 @@ export default function CategorizedRowsTable({ caseId, moduleNumber, category, f
                           />
                         ) : (
                           <input
-                            value={localRow[f.key] || ""}
+                            value={displayValue(localRow, f) || ""}
                             onChange={(e) => handleLocalChange(row.id, f.key, e.target.value)}
                             onBlur={() => handleBlurSave(row, f.key)}
                             placeholder={f.placeholder || ""}
