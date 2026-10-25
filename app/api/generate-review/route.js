@@ -41,7 +41,7 @@ function buildPrompt(ctx) {
   const ownerLines = m3
     .map((r) => r.row_data)
     .filter((d) => d.category === "ownership")
-    .map((d) => `- 소유자 ${d.owner_name} (${d.acquired_date || "?"} ~ ${d.disposed_date || "현재"}), 업종: ${d.business_type || "미상"}`)
+    .map((d) => `- 소유자 ${d.owner_name || "미상"}${d.occupant_name ? `, 점유자 ${d.occupant_name}` : ""} (${d.acquired_date || "?"} ~ ${d.disposed_date || "현재"}), 업종: ${d.business_type || "미상"}`)
     .join("\n");
 
   const leaseLines = m3
@@ -64,7 +64,11 @@ function buildPrompt(ctx) {
   const historyCompanies = new Set(
     m3
       .map((r) => r.row_data || {})
-      .flatMap((d) => [d.category === "ownership" && d.owner_name, d.category === "lease" && d.tenant_name])
+      .flatMap((d) => [
+        d.category === "ownership" && d.owner_name,
+        d.category === "ownership" && d.occupant_name,
+        d.category === "lease" && d.tenant_name,
+      ])
       .filter(Boolean)
       .map((n) => n.trim())
   );

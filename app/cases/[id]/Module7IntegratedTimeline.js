@@ -186,6 +186,14 @@ export default function IntegratedTimeline({ caseId }) {
             end: d.disposed_date || null,
           });
         }
+        // 소유·점유 표의 점유자는 소유자와 다를 때만 임차인 줄에 — 소유자가 직접 쓴 기간은 소유자 줄로 충분하다
+        if (d.category === "ownership" && d.occupant_name && d.occupant_name.trim() !== (d.owner_name || "").trim()) {
+          tenantList.push({
+            name: d.occupant_name,
+            start: d.acquired_date || null,
+            end: d.disposed_date || null,
+          });
+        }
         if (d.category === "lease" && d.tenant_name) {
           tenantList.push({
             name: d.tenant_name,

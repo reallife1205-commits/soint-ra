@@ -5,24 +5,19 @@ import CategorizedRowsTable from "./CategorizedRowsTable";
 import ChecklistJudgmentForm from "./ChecklistJudgmentForm";
 import OwnershipTableUpload from "./OwnershipTableUpload";
 import ImageGallery from "./ImageGallery";
+import { useModuleRows } from "@/lib/useModuleRows";
 
+// 보고서 [표 4] "기간/소유자/점유자/업종"과 같은 모양으로, 소유와 점유(임차)를 한 표에 적는다.
+// 예전 "임대차 이력"(category lease, tenant_name 등)은 화면에서 뺐고, 남아 있으면 LegacyLeaseRows로 옮긴다.
+// 예전에 적은 취득원인(acquisition_reason)은 row_data에 남아 있지만 화면·보고서에는 쓰지 않는다.
 const OWNERSHIP_FIELDS = [
   // 업종은 너비를 안 줘서 남는 폭을 전부 가져가게 한다(업종 설명이 가장 길다)
-  { key: "owner_name", label: "소유자명", width: "20%" },
-  { key: "acquired_date", label: "취득일", width: "13%" },
-  { key: "disposed_date", label: "처분일", width: "10%" },
-  { key: "acquisition_reason", label: "취득원인", width: "10%" },
+  { key: "owner_name", label: "소유자", width: "17%" },
+  { key: "occupant_name", label: "점유자", width: "17%" },
+  { key: "acquired_date", label: "취득일", width: "11%" },
+  { key: "disposed_date", label: "처분일", width: "11%" },
   { key: "business_type", label: "업종" },
-  { key: "note", label: "비고", width: "15%" },
-];
-
-const LEASE_FIELDS = [
-  { key: "tenant_name", label: "임차인명" },
-  { key: "business_type", label: "업종" },
-  { key: "lease_start", label: "임차 시작" },
-  { key: "lease_end", label: "임차 종료" },
-  { key: "lease_type", label: "유형" },
-  { key: "note", label: "비고" },
+  { key: "note", label: "비고", width: "14%" },
 ];
 
 const COST_CAPACITY_FIELDS = [
@@ -32,14 +27,15 @@ const COST_CAPACITY_FIELDS = [
 ];
 
 const OWNERSHIP_SUB_TABS = [
-  { key: "ownership", label: "소유 이력" },
-  { key: "lease", label: "임대차 이력" },
+  { key: "ownership", label: "소유·점유 이력" },
   { key: "table", label: "증빙 표" },
 ];
 
-// 3.1 소유·점유·운영 안의 "소유·임대차 이력" 도구. (항공사진/DART는 별도 컴포넌트를 그대로 씀)
+// 3.1 소유·점유·운영 안의 "소유·점유 이력" 도구. (항공사진/DART는 별도 컴포넌트를 그대로 씀)
 export function OwnershipLeaseSection({ caseId }) {
   const [subTab, setSubTab] = useState("ownership");
+  // 예전 임대차 행을 옮긴 뒤 표를 다시 불러오도록(표와 옮기기 칸이 행을 각자 불러온다)
+  const [tableVersion, setTableVersion] = useState(0);
 
   return (
     <div>
@@ -85,34 +81,82 @@ export function OwnershipLeaseSection({ caseId }) {
       {subTab === "ownership" && (
         <>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-            등기부등본 갑구 기준 소유권 변동 이력을 입력하세요. 취득일 기준 오래된 순으로 정렬돼요.
+            등기부등본 갑구 기준 소유권 변동 이력과 그 기간의 점유자(직접 사용하면 소유자와 같은 이름, 임차인이 썼으면
+            임차인)를 입력하세요. 보고서 [표 4] 소유·점유 현황에 이 순서대로 들어가요.
           </div>
+          <LegacyLeaseRows caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
           <CategorizedRowsTable
+            key={tableVersion}
             caseId={caseId}
             moduleNumber={3}
             category="ownership"
             fields={OWNERSHIP_FIELDS}
-            emptyText="소유 이력 없음 — 아래 버튼으로 추가하세요"
-          />
-        </>
-      )}
-
-      {subTab === "lease" && (
-        <>
-          <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-            임차인 및 전대차 이력을 입력하세요. 업종 정보가 있으면 오염원 특정에 활용돼요.
-          </div>
-          <CategorizedRowsTable
-            caseId={caseId}
-            moduleNumber={3}
-            category="lease"
-            fields={LEASE_FIELDS}
-            emptyText="임대차 이력 없음 — 아래 버튼으로 추가하세요"
+            emptyText="소유·점유 이력 없음 — 아래 버튼으로 추가하세요"
           />
         </>
       )}
 
       {subTab === "table" && <OwnershipTableUpload caseId={caseId} />}
+    </div>
+  );
+}
+
+// 예전 "임대차 이력" 탭에 적은 행이 남아 있으면 알려 주고, 누르면 소유·점유 표의 행(점유자 칸)으로 바꾼다.
+// 새 행을 만들지 않고 같은 행의 row_data만 바꾸므로 변경 이력에서 되돌릴 수 있다.
+function LegacyLeaseRows({ caseId, onMoved }) {
+  const { rows, updateRow } = useModuleRows(caseId, 3);
+  const [moving, setMoving] = useState(false);
+  const [error, setError] = useState("");
+  const leaseRows = rows.filter((r) => r.row_data.category === "lease");
+  if (!leaseRows.length) return null;
+
+  async function moveAll() {
+    setMoving(true);
+    setError("");
+    for (const row of leaseRows) {
+      const d = row.row_data;
+      const { error: moveError } = await updateRow(row.id, {
+        category: "ownership",
+        owner_name: "",
+        occupant_name: d.tenant_name || "",
+        acquired_date: d.lease_start || "",
+        disposed_date: d.lease_end || "",
+        business_type: d.business_type || "",
+        note: [d.lease_type, d.note].filter(Boolean).join(" / "),
+      });
+      if (moveError) {
+        setError(`옮기지 못했어요: ${moveError.message}`);
+        break;
+      }
+    }
+    setMoving(false);
+    onMoved();
+  }
+
+  return (
+    <div
+      style={{
+        padding: "10px 12px",
+        marginBottom: 12,
+        borderRadius: 8,
+        background: "var(--color-badge-yellow-bg)",
+        color: "var(--color-badge-yellow-text)",
+        fontSize: 14,
+        display: "flex",
+        gap: 10,
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}
+    >
+      <span>
+        예전 임대차 이력 {leaseRows.length}건이 따로 남아 있어요 (
+        {leaseRows.map((r) => r.row_data.tenant_name || "이름 없음").join(", ")}). 이 표의 점유자 칸으로 옮기면
+        기간·업종·비고도 같이 옮겨져요.
+      </span>
+      <button className="btn-secondary" onClick={moveAll} disabled={moving}>
+        {moving ? "옮기는 중..." : "이 표로 옮기기"}
+      </button>
+      {error && <span style={{ color: "var(--color-badge-red-text)" }}>{error}</span>}
     </div>
   );
 }

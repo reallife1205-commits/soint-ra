@@ -128,10 +128,17 @@ function InflectionYearsHint({ caseId }) {
   rows.forEach((r) => {
     const d = r.row_data;
     if (d.category === "ownership") {
-      const who = d.owner_name || "소유자 미상";
       const biz = d.business_type ? ` (${d.business_type})` : "";
-      addEvent(d.acquired_date, `${who} 소유 시작${biz}`);
-      addEvent(d.disposed_date, `${who} 소유 종료`);
+      const occupant = (d.occupant_name || "").trim();
+      if (d.owner_name || !occupant) {
+        const who = d.owner_name || "소유자 미상";
+        addEvent(d.acquired_date, `${who} 소유 시작${biz}`);
+        addEvent(d.disposed_date, `${who} 소유 종료`);
+      }
+      if (occupant && occupant !== (d.owner_name || "").trim()) {
+        addEvent(d.acquired_date, `${occupant} 점유 시작${biz}`);
+        addEvent(d.disposed_date, `${occupant} 점유 종료`);
+      }
     } else if (d.category === "lease") {
       const who = d.tenant_name || "임차인 미상";
       const biz = d.business_type ? ` (${d.business_type})` : "";

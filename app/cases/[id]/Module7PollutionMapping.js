@@ -54,6 +54,7 @@ export default function PollutionMappingTab({ caseId }) {
     (historyRows || []).forEach((r) => {
       const d = r.row_data || {};
       if (d.category === "ownership" && d.owner_name?.trim()) companySet.add(d.owner_name.trim());
+      if (d.category === "ownership" && d.occupant_name?.trim()) companySet.add(d.occupant_name.trim());
       if (d.category === "lease" && d.tenant_name?.trim()) companySet.add(d.tenant_name.trim());
     });
 
