@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 import { buildReportHwpx } from "@/lib/hwpxReportBuilder";
-import { currentOwnerNames } from "@/lib/currentOwner";
+import { currentOwnerNames, isEmptyLeaseRow } from "@/lib/currentOwner";
 import { MAX_FIELD_PHOTOS, fieldPhotoCaption, sortFieldPhotos } from "@/lib/fieldPhotos";
 import { yearFromFileName } from "@/lib/photoYear";
 import {
@@ -268,7 +268,7 @@ async function fetchCaseData(caseId) {
     selectedSubstances,
     ownership: {
       ownershipRows: m3.filter((d) => d.category === "ownership"),
-      leaseRows: m3.filter((d) => d.category === "lease"),
+      leaseRows: m3.filter((d) => d.category === "lease" && !isEmptyLeaseRow(d)),
     },
     factoryHistoryItems: m5.filter((d) => d.category === "factory_history_item"),
     judgments: {

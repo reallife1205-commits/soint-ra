@@ -6,6 +6,7 @@ import ChecklistJudgmentForm from "./ChecklistJudgmentForm";
 import OwnershipTableUpload from "./OwnershipTableUpload";
 import ImageGallery from "./ImageGallery";
 import { useModuleRows } from "@/lib/useModuleRows";
+import { isEmptyLeaseRow } from "@/lib/currentOwner";
 
 // 보고서 [표 4] "기간/소유자/점유자/업종"과 같은 모양으로, 소유와 점유(임차)를 한 표에 적는다.
 // 예전 "임대차 이력"(category lease, tenant_name 등)은 화면에서 뺐고, 남아 있으면 LegacyLeaseRows로 옮긴다.
@@ -108,7 +109,8 @@ function LegacyLeaseRows({ caseId, onMoved }) {
   const { rows, updateRow } = useModuleRows(caseId, 3);
   const [moving, setMoving] = useState(false);
   const [error, setError] = useState("");
-  const leaseRows = rows.filter((r) => r.row_data.category === "lease");
+  // "+ 행 추가"만 누르고 아무것도 안 적은 빈 행은 옮길 게 없으니 알리지 않는다(보고서에서도 뺀다)
+  const leaseRows = rows.filter((r) => r.row_data.category === "lease" && !isEmptyLeaseRow(r.row_data));
   if (!leaseRows.length) return null;
 
   async function moveAll() {
