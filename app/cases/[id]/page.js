@@ -474,7 +474,8 @@ export default function CaseDetailPage() {
 
       <ChapterLock locked={isLocked} label={lockTarget?.label}>
       <div style={{ display: "flex", gap: 20 }}>
-        {effectiveModuleNumber !== undefined && (
+        {/* 4장은 왼쪽 칸이 본문의 "+ 추가 사진 업로드"와 같은 곳(documents 6번)에 저장해 겹쳤다 — 4장에선 빼고 본문을 넓게 쓴다 */}
+        {effectiveModuleNumber !== undefined && activeChapter !== "4" && (
           <div className="card" style={{ width: 260, flexShrink: 0 }}>
             {effectiveModuleNumber === 4 ? (
               <DocumentUpload caseId={id} moduleNumber={4} title="항공사진 업로드 (보고서엔 연도순 최대 8장)" status="required" />
