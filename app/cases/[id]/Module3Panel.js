@@ -85,6 +85,7 @@ export function OwnershipLeaseSection({ caseId }) {
             임차인)를 입력하세요. 보고서 [표 4] 소유·점유 현황에 이 순서대로 들어가요.
           </div>
           <LegacyLeaseRows caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
+          <OwnerToOccupant key={`fix-${tableVersion}`} caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
           <CategorizedRowsTable
             key={tableVersion}
             caseId={caseId}
@@ -155,6 +156,47 @@ function LegacyLeaseRows({ caseId, onMoved }) {
       </span>
       <button className="btn-secondary" onClick={moveAll} disabled={moving}>
         {moving ? "옮기는 중..." : "이 표로 옮기기"}
+      </button>
+      {error && <span style={{ color: "var(--color-badge-red-text)" }}>{error}</span>}
+    </div>
+  );
+}
+
+// 점유자 칸이 생기기 전에는 소유자명 칸에 실제로는 점유 업체를 적은 안건이 있다(지엠금속 등).
+// 점유자 칸이 전부 비어 있을 때만 보여 주고, 누르면 소유자 칸 이름을 점유자 칸으로 옮기고 소유자 칸을 비운다.
+function OwnerToOccupant({ caseId, onMoved }) {
+  const { rows, updateRow } = useModuleRows(caseId, 3);
+  const [moving, setMoving] = useState(false);
+  const [error, setError] = useState("");
+  const ownership = rows.filter((r) => r.row_data.category === "ownership");
+  const targets = ownership.filter((r) => r.row_data.owner_name?.trim());
+  if (!targets.length || ownership.some((r) => r.row_data.occupant_name?.trim())) return null;
+
+  async function moveAll() {
+    setMoving(true);
+    setError("");
+    for (const row of targets) {
+      const { error: moveError } = await updateRow(row.id, {
+        ...row.row_data,
+        occupant_name: row.row_data.owner_name,
+        owner_name: "",
+      });
+      if (moveError) {
+        setError(`옮기지 못했어요: ${moveError.message}`);
+        break;
+      }
+    }
+    setMoving(false);
+    onMoved();
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10, fontSize: 14 }}>
+      <span style={{ color: "var(--color-text-muted)" }}>
+        아래 소유자 칸에 적은 이름이 실제로는 점유 업체라면:
+      </span>
+      <button className="btn-secondary" onClick={moveAll} disabled={moving}>
+        {moving ? "옮기는 중..." : "소유자 칸 이름을 점유자 칸으로 옮기기"}
       </button>
       {error && <span style={{ color: "var(--color-badge-red-text)" }}>{error}</span>}
     </div>
