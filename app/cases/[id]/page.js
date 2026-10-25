@@ -21,7 +21,6 @@ import { OwnershipLeaseSection, SoilAssessmentSection, CostCapacitySection, Acce
 import Module4Panel from "./Module4Panel";
 import Module5Panel from "./Module5Panel";
 import Module6Panel from "./Module6Panel";
-import LegalJudgmentForm from "./LegalJudgmentForm";
 import IntegratedTimeline from "./Module7IntegratedTimeline";
 import PollutionMappingTab from "./Module7PollutionMapping";
 import SurroundingImpactTab from "./Module7SurroundingImpact";
@@ -46,7 +45,8 @@ const SUB_TAB_22 = [
 ];
 
 const SUB_TAB_6 = [
-  { key: "legal", label: "법적 판단", moduleNumber: 3, status: "required" },
+  // "법적 판단" 탭은 뺐다 — 판단 요약이 6장 종합표 3.1 검토의견에만 쓰였고 나머지 칸은 보고서에 안 들어갔다.
+  // 종합표 3.1도 다른 행처럼 3.1 화면의 판단 내용을 쓴다(예전 법적 판단 요약은 3.1이 비었을 때만).
   { key: "timeline", label: "통합 타임라인", moduleNumber: 7 },
   { key: "opinion", label: "검토 의견", moduleNumber: 7, status: "reference" },
 ];
@@ -147,7 +147,7 @@ export default function CaseDetailPage() {
     setActiveSubTab(chapter?.subTabs ? chapter.subTabs[0].key : null);
     if (chapterKey === "3" && chapter?.subTabs?.[0]?.key === "3.1") setActiveTool("ownership");
     else if (chapterKey === "2") setActiveTool("surrounding_data");
-    else if (chapterKey === "6") setActiveTool("legal");
+    else if (chapterKey === "6") setActiveTool("timeline");
     else setActiveTool(null);
   }
 
@@ -575,11 +575,6 @@ export default function CaseDetailPage() {
           {activeChapter === "6" && (
             <>
               <ToolTabs tabs={SUB_TAB_6} active={activeTool} onSelect={setActiveTool} />
-              {activeTool === "legal" && (
-                <div className="card">
-                  <LegalJudgmentForm caseId={id} />
-                </div>
-              )}
               {activeTool === "timeline" && <IntegratedTimeline caseId={id} />}
               {activeTool === "opinion" && (
                 <div className="card">
