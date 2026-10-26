@@ -279,10 +279,12 @@ export function AccessSection({ caseId }) {
           moduleNumber={3}
           category="site_plan"
           title="배치도 등 (항공사진은 왼쪽에)"
+          boundaryDrawing
           // 실제 고르는 규칙은 export-report의 fetchSitePlanImage — 바꾸면 이 안내도 같이 고칠 것
           hint={
             <>
-              보고서 배치도면엔 이름이 <b>배치도</b> → <b>부지전경</b>인 사진이 들어가요(없으면 최근 연도 항공사진).
+              보고서 배치도면엔 <b>경계선을 그린 사진</b> → 이름이 <b>배치도</b> → <b>부지전경</b>인 사진이 들어가요(없으면 최근 연도 항공사진).
+              <br />사진을 눌러 크게 본 뒤 <b>✏️ 부지 경계 그리기</b>로 대상부지 경계선을 그릴 수 있어요.
             </>
           }
         />

@@ -17,7 +17,7 @@ const MEDIA_TYPE_BY_EXT = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/p
 // 가장 먼저 올린 3장만 보내서 배치도가 빠지고 항공사진은 메모 글자만 들어갔다.
 const MAX_SITE_PLAN_IMAGES = 6;
 const MAX_AERIAL_IMAGES = 6;
-const SITE_PLAN_NAME_PRIORITY = ["배치도", "부지전경"]; // export-report의 3.4 배치도면 우선순위와 같게
+const SITE_PLAN_NAME_PRIORITY = ["경계선", "배치도", "부지전경"]; // export-report의 3.4 배치도면 우선순위와 같게
 
 function sitePlanRank(doc) {
   const base = doc.file_name.replace(/\.[^.]+$/, "").replace(/\s/g, "");

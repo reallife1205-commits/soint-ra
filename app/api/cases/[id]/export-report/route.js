@@ -110,10 +110,11 @@ async function downloadImage(doc) {
 }
 
 // 3.4 "<그림> 배치도면" 자리에 넣을 사진 한 장. 우선순위(화면 Module3Panel 안내문과 같게):
-// ① 챕터03 "배치도 등"에 올린 사진 중 이름에 "배치도"가 들어간 것 → ② "부지전경"이 들어간 것
+// ⓪ 경계선을 그린 사진 → ① 챕터03 "배치도 등"에 올린 사진 중 이름에 "배치도"가 들어간 것 → ② "부지전경"이 들어간 것
 // → ③ 항공사진 중 가장 최근 연도(연도 안 적은 사진은 뒤로, 같은 연도면 나중에 올린 것).
 // 같은 이름이 여러 장이면 가장 최근에 올린 것. 이름은 띄어쓰기 무시("부지 전경"도 인정).
-const SITE_PLAN_NAME_PRIORITY = ["배치도", "부지전경"];
+// "경계선"은 3.4 화면에서 부지 경계선을 그려 따로 저장한 사진(이름 끝 "_경계선")이라 가장 먼저 쓴다.
+const SITE_PLAN_NAME_PRIORITY = ["경계선", "배치도", "부지전경"];
 
 async function fetchSitePlanImage(caseId) {
   const { data: plans } = await supabaseAdmin
