@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { heavyMetalScientificExample } from "@/lib/substances";
 
 // 5장은 기존 module_status 완료추적 번호(0~7)에 자리가 없어서, module_rows 저장용으로만
 // 새 번호 8을 씀 (완료 토글/문서 업로드 사이드바는 CHAPTERS의 oldModuleNumbers가 비어있어 안 뜸).
@@ -13,6 +14,8 @@ export default function Module8ScientificAnalysis({ caseId }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // 오염물질이 중금속뿐이면 보여줄 예시 문구 (아니면 null)
+  const [example, setExample] = useState(null);
   // 마지막으로 불러오거나 저장한 내용. 바뀐 게 없으면 저장하지 않는다 (다른 탭의 예전 내용으로 덮어쓰기 방지).
   const lastSaved = useRef(null);
   // 첫 저장(insert)이 끝나기 전에 또 저장하면 행이 두 개 생긴다 — 진행 중인 저장을 기다렸다가 이어서 한다.
@@ -32,6 +35,13 @@ export default function Module8ScientificAnalysis({ caseId }) {
         .contains("row_data", { category: "scientific_analysis" })
         .order("updated_at", { ascending: false, nullsFirst: false })
         .limit(1);
+      const { data: contamRows } = await supabase
+        .from("module_rows")
+        .select("row_data")
+        .eq("case_id", caseId)
+        .eq("module_number", 1)
+        .order("row_order", { ascending: true });
+      setExample(heavyMetalScientificExample((contamRows || []).map((r) => r.row_data?.contaminant).filter(Boolean)));
       if (loadError) setError(`불러오지 못했어요: ${loadError.message}`);
       const row = data?.[0];
       if (row) {
@@ -93,13 +103,19 @@ export default function Module8ScientificAnalysis({ caseId }) {
         5. 과학적 기법에 의한 오염원인 추정
       </div>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 12 }}>
-        ※ 고려 가능 시 작성. 해당 사항이 없으면 &quot;검토제외&quot;로 입력하세요.
+        ※ 고려 가능 시 작성. 비워 두면 보고서에 &quot;검토제외&quot;로 나가요.
+        {example && " 오염물질이 중금속뿐이라 비워 두면 아래 예시 문구가 들어가니, 안건에 맞게 고쳐 쓰세요."}
       </div>
+      {example && !content.trim() && (
+        <button type="button" className="btn-secondary" style={{ marginBottom: 12 }} onClick={() => setContent(example)}>
+          예시 문구 넣기
+        </button>
+      )}
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onBlur={handleSave}
-        placeholder="예: 검토제외"
+        placeholder={example || "예: 검토제외"}
         rows={8}
         style={{
           width: "100%",
