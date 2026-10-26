@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
 import { PasteZone, RenameButton, RenameInput, renameDocument, splitExt } from "./UploadHelpers";
-import BoundaryDrawer from "./BoundaryDrawer";
-
-// 경계선을 그린 사진은 원본 이름 뒤에 이 말을 붙여 따로 저장한다 (보고서 3.4가 이 이름의 사진을 먼저 고른다)
-const BOUNDARY_SUFFIX = "_경계선";
+import { BoundaryDrawButton } from "./BoundaryDrawer";
 
 // boundaryDrawing: 크게 본 사진에 "부지 경계 그리기" 버튼을 보여 준다 (3.4 배치도 등)
 export default function ImageGallery({ caseId, moduleNumber = 1, category, title, hint, boundaryDrawing = false }) {
@@ -18,7 +15,6 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
   const [error, setError] = useState("");
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [renamingId, setRenamingId] = useState(null);
-  const [drawing, setDrawing] = useState(null); // { doc, blob }
 
   async function load() {
     setLoading(true);
@@ -35,6 +31,16 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseId, moduleNumber, category]);
+
+  // 다른 칸(왼쪽 항공사진 등)에서 경계선 사진을 이 목록에 저장하면 새로 불러온다
+  useEffect(() => {
+    const onChanged = (e) => {
+      if (e.detail?.caseId === caseId && e.detail?.moduleNumber === moduleNumber) load();
+    };
+    window.addEventListener("documents-changed", onChanged);
+    return () => window.removeEventListener("documents-changed", onChanged);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId, moduleNumber, category]);
 
@@ -137,24 +143,6 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
       return;
     }
     load();
-  }
-
-  async function startDrawing(doc) {
-    setError("");
-    const { data: blob, error: downloadError } = await supabase.storage.from("documents").download(doc.file_path);
-    if (downloadError || !blob) {
-      setError("사진을 불러오지 못했어요");
-      return;
-    }
-    setSelectedDoc(null);
-    setDrawing({ doc, blob });
-  }
-
-  async function saveDrawing(blob) {
-    const base = splitExt(drawing.doc.file_name).base;
-    const name = base.endsWith(BOUNDARY_SUFFIX) ? base : base + BOUNDARY_SUFFIX;
-    await uploadFile(new File([blob], name + ".jpg", { type: "image/jpeg" }));
-    setDrawing(null);
   }
 
   async function handleDelete(doc) {
@@ -341,9 +329,7 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, gap: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{selectedDoc.file_name}</div>
               {boundaryDrawing && (
-                <button type="button" className="btn-secondary" onClick={() => startDrawing(selectedDoc)} style={{ marginLeft: "auto" }}>
-                  ✏️ 부지 경계 그리기
-                </button>
+                <BoundaryDrawButton caseId={caseId} doc={selectedDoc} onError={setError} />
               )}
               <button
                 data-view onClick={() => setSelectedDoc(null)}
@@ -366,9 +352,6 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
             )}
           </div>
         </div>
-      )}
-      {drawing && (
-        <BoundaryDrawer imageBlob={drawing.blob} onCancel={() => setDrawing(null)} onSave={saveDrawing} />
       )}
     </div>
   );

@@ -1,6 +1,74 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { shrinkImageForUpload, friendlyUploadError } from "@/lib/shrinkImage";
+import { splitExt } from "./UploadHelpers";
+
+// 경계선을 그린 사진은 원본 이름 뒤에 이 말을 붙여 3.4 "배치도 등"(module 3, site_plan)에 따로 저장한다.
+// 보고서 3.4 배치도면은 이 이름의 사진을 먼저 고른다(export-report SITE_PLAN_NAME_PRIORITY).
+// 왼쪽 항공사진(module 4)에서 그려도 항공사진 목록이 아니라 여기에 저장해, 6장·보고서 항공사진 표에 같은 사진이 두 번 들어가지 않게 한다.
+const BOUNDARY_SUFFIX = "_경계선";
+const SITE_PLAN = { moduleNumber: 3, category: "site_plan" };
+
+// 저장에 실패하면 오류 문구를, 성공하면 null을 돌려준다.
+export async function saveBoundaryCopy(caseId, sourceDoc, blob) {
+  const base = splitExt(sourceDoc.file_name).base;
+  const name = (base.endsWith(BOUNDARY_SUFFIX) ? base : base + BOUNDARY_SUFFIX) + ".jpg";
+  const file = await shrinkImageForUpload(new File([blob], name, { type: "image/jpeg" }));
+  const filePath = `${caseId}/module${SITE_PLAN.moduleNumber}/${SITE_PLAN.category}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file);
+  if (uploadError) return friendlyUploadError(uploadError.message);
+  const { error: insertError } = await supabase.from("documents").insert([
+    {
+      case_id: caseId,
+      module_number: SITE_PLAN.moduleNumber,
+      category: SITE_PLAN.category,
+      file_name: name,
+      file_path: filePath,
+      file_size: file.size,
+    },
+  ]);
+  if (insertError) {
+    await supabase.storage.from("documents").remove([filePath]);
+    return `저장에 실패했어요: ${insertError.message}`;
+  }
+  window.dispatchEvent(new CustomEvent("documents-changed", { detail: { caseId, moduleNumber: SITE_PLAN.moduleNumber } }));
+  return null;
+}
+
+// 크게 본 사진 창에 붙이는 "부지 경계 그리기" 버튼 + 그리기 창. 원본 사진을 받아 와 그리고, 저장하면 saveBoundaryCopy.
+// 그리기 창은 사진 창 위(zIndex 110)에 뜬다. 사진 창을 닫으면 이 버튼과 함께 그리기 창도 사라지니 닫지 않는다.
+export function BoundaryDrawButton({ caseId, doc, onError }) {
+  const [blob, setBlob] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function start() {
+    setBusy(true);
+    const { data, error } = await supabase.storage.from("documents").download(doc.file_path);
+    setBusy(false);
+    if (error || !data) {
+      onError?.("사진을 불러오지 못했어요");
+      return;
+    }
+    setBlob(data);
+  }
+
+  async function save(drawn) {
+    const err = await saveBoundaryCopy(caseId, doc, drawn);
+    if (err) onError?.(err);
+    setBlob(null);
+  }
+
+  return (
+    <>
+      <button type="button" className="btn-secondary" onClick={start} disabled={busy} style={{ marginLeft: "auto" }}>
+        {busy ? "불러오는 중..." : "✏️ 부지 경계 그리기"}
+      </button>
+      {blob && <BoundaryDrawer imageBlob={blob} onCancel={() => setBlob(null)} onSave={save} />}
+    </>
+  );
+}
 
 // 3.4 "배치도 등" 사진 위에 대상부지 경계선을 직접 찍어 그리는 창.
 // 사진엔 좌표 정보가 없어 6장 지도의 경계선(boundary_points)을 겹칠 수 없으니, 모서리를 차례로 눌러 그린다.
