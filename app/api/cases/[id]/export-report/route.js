@@ -299,6 +299,26 @@ async function fetchCaseData(caseId) {
 
 export async function GET(req, { params }) {
   const { id: caseId } = await params;
+  return exportReport(caseId, null);
+}
+
+// 내보내기 버튼(ExportReportButton)은 POST로 [표 4] 아래 넣을 소유·점유 타임라인 그림(PNG)을 같이 보낸다.
+// 서버에는 한글 글꼴이 없어 그림은 브라우저가 그린다. 그림이 없으면 GET과 같다.
+export async function POST(req, { params }) {
+  const { id: caseId } = await params;
+  let timelineImage = null;
+  try {
+    const file = (await req.formData()).get("timeline");
+    if (file && typeof file.arrayBuffer === "function" && file.size > 0) {
+      timelineImage = { data: Buffer.from(await file.arrayBuffer()), type: "png" };
+    }
+  } catch {
+    // 본문이 없거나 깨졌으면 그림 없이 만든다
+  }
+  return exportReport(caseId, timelineImage);
+}
+
+async function exportReport(caseId, timelineImage) {
   if (!caseId) {
     return Response.json({ error: "caseId가 필요해요" }, { status: 400 });
   }
@@ -308,6 +328,7 @@ export async function GET(req, { params }) {
     if (!payload) {
       return Response.json({ error: "해당 안건을 찾을 수 없어요" }, { status: 404 });
     }
+    payload.ownershipTimelineImage = timelineImage;
 
     const templatePath = path.join(process.cwd(), "templates", "report-template.hwpx");
     const templateBuffer = fs.readFileSync(templatePath);

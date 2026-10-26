@@ -31,6 +31,7 @@ import Module8ScientificAnalysis from "./Module8ScientificAnalysis";
 import ReportStatusBadge from "./ReportStatusBadge";
 import ChangeHistoryPanel from "./ChangeHistoryPanel";
 import ChapterLock from "./ChapterLock";
+import ExportReportButton from "./ExportReportButton";
 import { screenScope } from "@/lib/changeHistory";
 
 // status: "required"(보고서에 반영됨) | "reference"(입력해도 보고서엔 안 들어감, 화면엔 남겨둠).
@@ -356,9 +357,7 @@ export default function CaseDetailPage() {
           <div style={{ fontSize: 15, color: "var(--color-text-muted)" }}>
             {completedCount}/{TOTAL_CHAPTERS} 완료
           </div>
-          <a href={`/api/cases/${id}/export-report`} className="btn-secondary">
-            📄 보고서 초안 내보내기
-          </a>
+          <ExportReportButton caseId={id} />
         </div>
       </div>
 

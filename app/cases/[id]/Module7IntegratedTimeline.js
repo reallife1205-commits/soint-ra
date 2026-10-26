@@ -2,114 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { ownerPeriod, occupantPeriod } from "@/lib/currentOwner";
-
-const LEGAL_REFERENCE_DATE = "1996-01-06"; // 토양환경보전법 시행일 기준
-const PX_PER_YEAR = 30; // 연도 간격. 50이면 막대가 너무 길어 한눈에 안 들어와서 줄임
-
-// 취득일/처분일 등이 이제 날짜선택기가 아니라 수기 텍스트라 "1989.9", "2008-01-10",
-// "2008" 등 형식이 제각각이다. 정확한 날짜 파싱 대신 연도(필수)와 있으면 월까지만
-// 관대하게 뽑아서 타임라인 위치를 근사한다. 연도를 못 찾으면(예: "현재") null 반환.
-function yearFraction(dateStr) {
-  if (!dateStr) return null;
-  const yearMatch = dateStr.match(/(19|20)\d{2}/);
-  if (!yearMatch) return null;
-  const year = parseInt(yearMatch[0], 10);
-  const rest = dateStr.slice(yearMatch.index + yearMatch[0].length);
-  const monthMatch = rest.match(/\d{1,2}/);
-  const month = monthMatch ? Math.min(Math.max(parseInt(monthMatch[0], 10), 1), 12) : 1;
-  return year + (month - 1) / 12;
-}
-
-// 정렬·비교용 키 (일까지). 연도를 못 찾으면 null.
-function dateKey(dateStr) {
-  if (!dateStr) return null;
-  const yearMatch = dateStr.match(/(19|20)\d{2}/);
-  if (!yearMatch) return null;
-  const nums = dateStr.slice(yearMatch.index + yearMatch[0].length).match(/\d{1,2}/g) || [];
-  return parseInt(yearMatch[0], 10) * 10000 + (parseInt(nums[0], 10) || 1) * 100 + (parseInt(nums[1], 10) || 1);
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return "현재";
-  return dateStr;
-}
-
-// 처분일을 비워 둔 소유자가 대부분이라 전부 "~ 현재"로 겹쳐 그려졌다.
-// 처분일이 없으면 다음 소유자(더 늦은 취득일)의 취득일까지로 본다.
-// 같은 날 취득한 사람들은 공동소유로 보고 함께 끝난다.
-function inferOwnerEnds(list) {
-  return list.map((o) => {
-    if (o.end) return o;
-    const k = dateKey(o.start);
-    if (k == null) return o;
-    const next = list
-      .filter((x) => dateKey(x.start) != null && dateKey(x.start) > k)
-      .sort((a, b) => dateKey(a.start) - dateKey(b.start))[0];
-    return next ? { ...o, end: next.start, endInferred: true } : o;
-  });
-}
-
-// 기간이 겹치는 막대는 아랫줄로 내려서 서로 가리지 않게 한다.
-function assignLanes(items, colorCount) {
-  const laneEnds = [];
-  const laneLastColor = [];
-  const placed = [];
-  items.forEach((it) => {
-    let lane = laneEnds.findIndex((end) => end <= it.s + 1e-6);
-    if (lane === -1) {
-      lane = laneEnds.length;
-      laneEnds.push(it.e);
-      laneLastColor.push(-1);
-    } else {
-      laneEnds[lane] = it.e;
-    }
-    // 같은 줄 바로 앞 막대, 그리고 기간이 겹치는 다른 줄 막대와 색이 겹치지 않게 고른다
-    const forbidden = new Set([laneLastColor[lane]]);
-    placed.forEach((p) => {
-      if (p.s < it.e && it.s < p.e) forbidden.add(p.colorIdx);
-    });
-    let colorIdx = laneLastColor[lane] + 1;
-    for (let k = 0; k < colorCount; k++) {
-      const c = (laneLastColor[lane] + 1 + k) % colorCount;
-      if (!forbidden.has(c)) {
-        colorIdx = c;
-        break;
-      }
-    }
-    laneLastColor[lane] = colorIdx % colorCount;
-    placed.push({ ...it, lane, colorIdx: colorIdx % colorCount });
-  });
-  return placed;
-}
-
-// 이웃 막대끼리 확실히 구분되도록 명도 차이가 큰 초록·연두·노랑. 밝은 색은 글자를 어둡게.
-const OWNER_COLORS = [
-  { bg: "#2e7d32", fg: "white" },
-  { bg: "#9ccc65", fg: "#1b3a1d" },
-  { bg: "#f4c430", fg: "#4a3b00" },
-];
-// 임차인은 소유자(초록 계열)와 헷갈리지 않으면서 눈에 덜 띄게 옅은 청회색 두 가지(갈색은 번잡해 보였다)
-const TENANT_COLORS = [
-  { bg: "#b4c6dc", fg: "#22344a" },
-  { bg: "#d5e0ec", fg: "#22344a" },
-];
-// 소유자·임차인 막대 모두 얇게(예전 28px은 번잡해 보였다)
-const BAR_HEIGHT = 18;
-const LANE_HEIGHT = 21;
-
-function toBars(list, colorCount) {
-  const thisYear = new Date().getFullYear();
-  const bars = list
-    .map((item, i) => {
-      const s = yearFraction(item.start);
-      if (s == null) return null;
-      const e = Math.max(yearFraction(item.end) || thisYear, s);
-      return { ...item, i, s, e };
-    })
-    .filter(Boolean);
-  return assignLanes(bars, colorCount);
-}
+import {
+  LEGAL_REFERENCE_DATE,
+  PX_PER_YEAR,
+  yearFraction,
+  formatDate,
+  ownershipTimelineLists,
+  timelineYearRange,
+  OWNER_COLORS,
+  TENANT_COLORS,
+  BAR_HEIGHT,
+  LANE_HEIGHT,
+  toBars,
+} from "@/lib/ownershipTimeline";
 
 // 이력 목록의 점 색을 타임라인 막대 색과 맞춘다
 function barColor(bars, i, colors) {
@@ -177,32 +82,7 @@ export default function IntegratedTimeline({ caseId }) {
         .eq("case_id", caseId)
         .eq("module_number", 3);
 
-      const ownerList = [];
-      const tenantList = [];
-      (rows || []).forEach((r) => {
-        const d = r.row_data || {};
-        // 소유자 줄은 소유 기간 칸으로. 한 소유자가 점유 업체마다 여러 행에 반복되므로 같은 소유자·기간은 한 번만.
-        if (d.category === "ownership" && d.owner_name) {
-          const { start, end } = ownerPeriod(d);
-          const dup = ownerList.some((o) => o.name === d.owner_name && o.start === (start || null) && o.end === (end || null));
-          if (!dup) ownerList.push({ name: d.owner_name, start: start || null, end: end || null });
-        }
-        // 소유·점유 표의 점유자는 소유자와 다를 때만 임차인 줄에 — 소유자가 직접 쓴 기간은 소유자 줄로 충분하다
-        if (d.category === "ownership" && d.occupant_name && d.occupant_name.trim() !== (d.owner_name || "").trim()) {
-          const { start, end } = occupantPeriod(d);
-          tenantList.push({ name: d.occupant_name, start: start || null, end: end || null });
-        }
-        if (d.category === "lease" && d.tenant_name) {
-          tenantList.push({
-            name: d.tenant_name,
-            start: d.lease_start || null,
-            end: d.lease_end || null,
-          });
-        }
-      });
-      const byStart = (a, b) => (dateKey(a.start) ?? Infinity) - (dateKey(b.start) ?? Infinity);
-      ownerList.sort(byStart);
-      tenantList.sort(byStart);
+      const { owners: ownerList, tenants: tenantList } = ownershipTimelineLists((rows || []).map((r) => r.row_data || {}));
 
       const { data: docs } = await supabase
         .from("documents")
@@ -221,7 +101,7 @@ export default function IntegratedTimeline({ caseId }) {
       const photoList = [...byYear.values()].sort((a, b) => a.photo_year - b.photo_year);
 
       if (!cancelled) {
-        setOwners(inferOwnerEnds(ownerList));
+        setOwners(ownerList);
         setTenants(tenantList);
         setPhotoDocs(photoList);
         setLoading(false);
@@ -241,25 +121,7 @@ export default function IntegratedTimeline({ caseId }) {
   }
 
   const { minYear, maxYear, totalWidth } = useMemo(() => {
-    const today = new Date();
-    let allYears = [today.getFullYear()];
-    owners.forEach((o) => {
-      const s = yearFraction(o.start);
-      const e = yearFraction(o.end) || today.getFullYear();
-      if (s) allYears.push(Math.floor(s));
-      allYears.push(Math.ceil(e));
-    });
-    tenants.forEach((t) => {
-      const s = yearFraction(t.start);
-      const e = yearFraction(t.end) || today.getFullYear();
-      if (s) allYears.push(Math.floor(s));
-      allYears.push(Math.ceil(e));
-    });
-    photoDocs.forEach((d) => allYears.push(d.photo_year));
-    allYears.push(1996);
-
-    const min = Math.min(...allYears) - 2;
-    const max = Math.max(...allYears) + 2;
+    const { minYear: min, maxYear: max } = timelineYearRange(owners, tenants, photoDocs.map((d) => d.photo_year));
     return {
       minYear: min,
       maxYear: max,
