@@ -11,14 +11,14 @@ import { splitExt } from "./UploadHelpers";
 const BOUNDARY_SUFFIX = "_경계선";
 const SITE_PLAN = { moduleNumber: 3, category: "site_plan" };
 
-// 저장에 실패하면 오류 문구를, 성공하면 null을 돌려준다.
+// { error } 또는 { name }(저장한 파일 이름)을 돌려준다.
 export async function saveBoundaryCopy(caseId, sourceDoc, blob) {
   const base = splitExt(sourceDoc.file_name).base;
   const name = (base.endsWith(BOUNDARY_SUFFIX) ? base : base + BOUNDARY_SUFFIX) + ".jpg";
   const file = await shrinkImageForUpload(new File([blob], name, { type: "image/jpeg" }));
   const filePath = `${caseId}/module${SITE_PLAN.moduleNumber}/${SITE_PLAN.category}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
   const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file);
-  if (uploadError) return friendlyUploadError(uploadError.message);
+  if (uploadError) return { error: friendlyUploadError(uploadError.message) };
   const { error: insertError } = await supabase.from("documents").insert([
     {
       case_id: caseId,
@@ -31,15 +31,17 @@ export async function saveBoundaryCopy(caseId, sourceDoc, blob) {
   ]);
   if (insertError) {
     await supabase.storage.from("documents").remove([filePath]);
-    return `저장에 실패했어요: ${insertError.message}`;
+    return { error: `저장에 실패했어요: ${insertError.message}` };
   }
   window.dispatchEvent(new CustomEvent("documents-changed", { detail: { caseId, moduleNumber: SITE_PLAN.moduleNumber } }));
-  return null;
+  return { name };
 }
 
 // 크게 본 사진 창에 붙이는 "부지 경계 그리기" 버튼 + 그리기 창. 원본 사진을 받아 와 그리고, 저장하면 saveBoundaryCopy.
 // 그리기 창은 사진 창 위(zIndex 110)에 뜬다. 사진 창을 닫으면 이 버튼과 함께 그리기 창도 사라지니 닫지 않는다.
-export function BoundaryDrawButton({ caseId, doc, onError }) {
+// 저장 결과는 알림 창으로 알린다 — 사진 창 뒤 목록에 오류를 적으면 가려져서, 저장이 됐는지 안 됐는지 알 수 없었다.
+// onSaved: 저장에 성공하면 불러 준다(사진 창 닫기 등).
+export function BoundaryDrawButton({ caseId, doc, onSaved }) {
   const [blob, setBlob] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -48,16 +50,22 @@ export function BoundaryDrawButton({ caseId, doc, onError }) {
     const { data, error } = await supabase.storage.from("documents").download(doc.file_path);
     setBusy(false);
     if (error || !data) {
-      onError?.("사진을 불러오지 못했어요");
+      alert("사진을 불러오지 못했어요");
       return;
     }
     setBlob(data);
   }
 
   async function save(drawn) {
-    const err = await saveBoundaryCopy(caseId, doc, drawn);
-    if (err) onError?.(err);
+    const result = await saveBoundaryCopy(caseId, doc, drawn);
+    if (result.error) {
+      alert(result.error); // 그리기 창은 그대로 두어 그린 선을 잃지 않게 한다
+      return;
+    }
     setBlob(null);
+    alert(`경계선을 그린 사진을 3.4 "배치도 등"에 "${result.name}"(으)로 저장했어요.
+원본 사진은 그대로 두었고, 보고서 배치도면엔 이 사진이 들어가요.`);
+    onSaved?.();
   }
 
   return (

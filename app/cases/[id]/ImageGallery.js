@@ -329,7 +329,7 @@ export default function ImageGallery({ caseId, moduleNumber = 1, category, title
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, gap: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{selectedDoc.file_name}</div>
               {boundaryDrawing && (
-                <BoundaryDrawButton caseId={caseId} doc={selectedDoc} onError={setError} />
+                <BoundaryDrawButton caseId={caseId} doc={selectedDoc} onSaved={() => setSelectedDoc(null)} />
               )}
               <button
                 data-view onClick={() => setSelectedDoc(null)}

@@ -353,7 +353,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, gap: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{previewDoc.file_name}</div>
               {/* 항공사진(4번)엔 대상부지 경계선을 그려 3.4 "배치도 등"에 따로 저장할 수 있다 */}
-              {moduleNumber === 4 && <BoundaryDrawButton caseId={caseId} doc={previewDoc} onError={setError} />}
+              {moduleNumber === 4 && <BoundaryDrawButton caseId={caseId} doc={previewDoc} onSaved={() => setPreviewDoc(null)} />}
               <button
                 data-view onClick={() => setPreviewDoc(null)}
                 style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 19 }}
