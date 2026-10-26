@@ -8,7 +8,7 @@ import ImageGallery from "./ImageGallery";
 import { useModuleRows } from "@/lib/useModuleRows";
 import { isEmptyLeaseRow, ownerPeriodText, occupantPeriodText } from "@/lib/currentOwner";
 
-// 보고서 [표 4] "기간/소유자/점유자/업종"과 같은 모양으로, 소유와 점유(임차)를 한 표에 적는다.
+// 보고서 [표 4] "소유 기간/소유자/점유 기간/점유자/업종"과 같은 모양으로, 소유와 점유(임차)를 한 표에 적는다.
 // 한 행 = 점유 업체 하나. 소유자가 바뀐 때와 점유 업체가 바뀐 때가 달라서 소유 기간·점유 기간을 따로,
 // 둘 다 한 칸("1986~2014")에 적는다. 예전 취득일·처분일 두 칸에 적은 값은 fallback으로 보여 주다가
 // 칸을 고치면 새 칸에 저장된다(읽는 규칙은 lib/currentOwner.js).
@@ -16,10 +16,11 @@ import { isEmptyLeaseRow, ownerPeriodText, occupantPeriodText } from "@/lib/curr
 // 예전에 적은 취득원인(acquisition_reason)은 row_data에 남아 있지만 화면·보고서에는 쓰지 않는다.
 const OWNERSHIP_FIELDS = [
   // 업종은 너비를 안 줘서 남는 폭을 전부 가져가게 한다(업종 설명이 가장 길다)
-  { key: "owner_name", label: "소유자", width: "15%" },
+  // 보고서 [표 4]와 같은 순서로 기간을 이름 앞에 둔다
   { key: "owner_period", label: "소유 기간", width: "13%", fallback: ownerPeriodText },
-  { key: "occupant_name", label: "점유자", width: "15%" },
+  { key: "owner_name", label: "소유자", width: "15%" },
   { key: "occupant_period", label: "점유 기간", width: "13%", fallback: occupantPeriodText },
+  { key: "occupant_name", label: "점유자", width: "15%" },
   { key: "business_type", label: "업종" },
   { key: "note", label: "비고", width: "13%" },
 ];
@@ -86,7 +87,7 @@ export function OwnershipLeaseSection({ caseId }) {
         <>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
             한 줄에 점유 업체 하나씩 적고, 그때의 소유자를 옆에 적어 주세요. 기간은 1986~2014, 2014~현재처럼 적어요
-            (소유 기간은 토지대장 날짜). 보고서 [표 4]에는 소유 기간·소유자·점유 기간·점유자·업종 순으로 들어가고, 모르는 기간은 비워 두면 "-"로 나와요.
+            (소유 기간은 토지대장 날짜). 보고서 [표 4]에도 이 표와 같은 순서로 들어가고, 모르는 기간은 비워 두면 "-"로 나와요.
           </div>
           <LegacyLeaseRows caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
           <OwnerToOccupant key={`fix-${tableVersion}`} caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
