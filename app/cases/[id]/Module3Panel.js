@@ -86,7 +86,7 @@ export function OwnershipLeaseSection({ caseId }) {
         <>
           <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
             한 줄에 점유 업체 하나씩 적고, 그때의 소유자를 옆에 적어 주세요. 기간은 1986~2014, 2014~현재처럼 적어요
-            (소유 기간은 토지대장 날짜). 보고서 [표 4]에도 이 표와 같은 순서로 들어가고, 모르는 기간은 비워 두면 "-"로 나와요.
+            (소유 기간은 토지대장 날짜). 보고서 [표 4]에는 소유 기간·소유자·점유 기간·점유자·업종 순으로 들어가고, 모르는 기간은 비워 두면 "-"로 나와요.
           </div>
           <LegacyLeaseRows caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
           <OwnerToOccupant key={`fix-${tableVersion}`} caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
