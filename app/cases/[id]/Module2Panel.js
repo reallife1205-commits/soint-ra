@@ -481,7 +481,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
           )}
 
           {activeTab === "실태조사" && (
-            <SurveySummaryTable rows={surveyResults} substances={Array.from(selected)} />
+            <SurveySummaryTable rows={surveyResults} substances={Array.from(selected)} regionGrade={caseInfo?.region_grade} />
           )}
         </>
       )}
@@ -599,7 +599,13 @@ function NetworkSummaryTable({ rows, regionGrade }) {
 }
 
 // [표3] 토양오염실태조사 결과 형태: 물질별로 최저/최고농도를 연도별 열로 피벗
-function SurveySummaryTable({ rows, substances }) {
+function SurveySummaryTable({ rows, substances, regionGrade }) {
+  const zone = parseRegionGrade(regionGrade);
+  // 안건 지역등급의 우려기준을 넘는 값은 빨간 굵은 글씨로 (보고서 [표 3]과 같은 규칙)
+  const valueStyle = (key, v) => {
+    const std = zone ? CONCERN_STANDARDS[key]?.[zone] : undefined;
+    return std !== undefined && v !== null && v > std ? { color: "#d00", fontWeight: 700 } : {};
+  };
   const keys = ORDERED_SUBSTANCE_KEYS.filter((k) => substances.includes(k));
 
   if (keys.length === 0) {
@@ -636,7 +642,8 @@ function SurveySummaryTable({ rows, substances }) {
   return (
     <div className="card" style={{ overflowX: "auto" }}>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-        지점 {rows.length}개
+        지점 {rows.length}개 · 우려기준 기준 지역:{" "}
+        {zone ? `${zone}지역 (기준 초과 값은 빨간 굵은 글씨)` : "미지정 (사건 목록에서 지역등급을 입력해주세요)"}
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
         <thead>
@@ -676,7 +683,7 @@ function SurveySummaryTable({ rows, substances }) {
                     최저농도
                   </td>
                   {yearStats.map((s, i) => (
-                    <td key={years[i]} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    <td key={years[i]} style={{ padding: 8, border: CELL_BORDER, textAlign: "center", ...valueStyle(key, s.min) }}>
                       {s.min !== null ? formatNum(s.min) : "-"}
                     </td>
                   ))}
@@ -686,7 +693,7 @@ function SurveySummaryTable({ rows, substances }) {
                     최고농도
                   </td>
                   {yearStats.map((s, i) => (
-                    <td key={years[i]} style={{ padding: 8, border: CELL_BORDER, textAlign: "center" }}>
+                    <td key={years[i]} style={{ padding: 8, border: CELL_BORDER, textAlign: "center", ...valueStyle(key, s.max) }}>
                       {s.max !== null ? formatNum(s.max) : "-"}
                     </td>
                   ))}
