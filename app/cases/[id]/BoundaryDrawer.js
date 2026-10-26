@@ -5,16 +5,42 @@ import { supabase } from "@/lib/supabaseClient";
 import { shrinkImageForUpload, friendlyUploadError } from "@/lib/shrinkImage";
 import { splitExt } from "./UploadHelpers";
 
-// 경계선을 그린 사진은 원본 이름 뒤에 이 말을 붙여 3.4 "배치도 등"(module 3, site_plan)에 따로 저장한다.
-// 보고서 3.4 배치도면은 이 이름의 사진을 먼저 고른다(export-report SITE_PLAN_NAME_PRIORITY).
-// 왼쪽 항공사진(module 4)에서 그려도 항공사진 목록이 아니라 여기에 저장해, 6장·보고서 항공사진 표에 같은 사진이 두 번 들어가지 않게 한다.
+// 경계선을 그린 사진은 이름 뒤에 이 말을 붙인다.
+// - "배치도 등"(module 3, site_plan) 사진: 원본은 두고 같은 목록에 따로 저장 (보고서 3.4 배치도면이 이 이름을 먼저 고른다)
+// - 왼쪽 항공사진(module 4): 그 사진 자리에 바꿔 넣는다 — 연도·태깅을 그대로 쓰고, 6장 타임라인·보고서 항공사진 표에도
+//   경계선 사진이 들어간다(따로 저장하면 같은 연도 사진이 두 장이 된다). 원본 파일은 저장소에 지우지 않고 남겨 둔다.
 const BOUNDARY_SUFFIX = "_경계선";
 const SITE_PLAN = { moduleNumber: 3, category: "site_plan" };
 
+function boundaryName(fileName) {
+  const base = splitExt(fileName).base;
+  return (base.endsWith(BOUNDARY_SUFFIX) ? base : base + BOUNDARY_SUFFIX) + ".jpg";
+}
+
+// 항공사진처럼 그 사진 자리에 바꿔 넣는다. { error } 또는 { name }.
+// 이름 확장자도 .jpg로 바꾼다 — 보고서 내보내기가 파일 이름의 확장자로 그림 형식을 정한다.
+export async function replaceWithBoundary(caseId, doc, blob) {
+  const name = boundaryName(doc.file_name);
+  const file = await shrinkImageForUpload(new File([blob], name, { type: "image/jpeg" }));
+  const folder = doc.file_path.replace(/\/[^/]*$/, "");
+  const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file);
+  if (uploadError) return { error: friendlyUploadError(uploadError.message) };
+  const { error: updateError } = await supabase
+    .from("documents")
+    .update({ file_path: filePath, file_name: name, file_size: file.size })
+    .eq("id", doc.id);
+  if (updateError) {
+    await supabase.storage.from("documents").remove([filePath]);
+    return { error: `저장에 실패했어요: ${updateError.message}` };
+  }
+  window.dispatchEvent(new CustomEvent("documents-changed", { detail: { caseId, moduleNumber: doc.module_number } }));
+  return { name };
+}
+
 // { error } 또는 { name }(저장한 파일 이름)을 돌려준다.
 export async function saveBoundaryCopy(caseId, sourceDoc, blob) {
-  const base = splitExt(sourceDoc.file_name).base;
-  const name = (base.endsWith(BOUNDARY_SUFFIX) ? base : base + BOUNDARY_SUFFIX) + ".jpg";
+  const name = boundaryName(sourceDoc.file_name);
   const file = await shrinkImageForUpload(new File([blob], name, { type: "image/jpeg" }));
   const filePath = `${caseId}/module${SITE_PLAN.moduleNumber}/${SITE_PLAN.category}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
   const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file);
@@ -40,8 +66,8 @@ export async function saveBoundaryCopy(caseId, sourceDoc, blob) {
 // 크게 본 사진 창에 붙이는 "부지 경계 그리기" 버튼 + 그리기 창. 원본 사진을 받아 와 그리고, 저장하면 saveBoundaryCopy.
 // 그리기 창은 사진 창 위(zIndex 110)에 뜬다. 사진 창을 닫으면 이 버튼과 함께 그리기 창도 사라지니 닫지 않는다.
 // 저장 결과는 알림 창으로 알린다 — 사진 창 뒤 목록에 오류를 적으면 가려져서, 저장이 됐는지 안 됐는지 알 수 없었다.
-// onSaved: 저장에 성공하면 불러 준다(사진 창 닫기 등).
-export function BoundaryDrawButton({ caseId, doc, onSaved }) {
+// onSaved: 저장에 성공하면 불러 준다(사진 창 닫기 등). inPlace: 따로 저장하지 않고 그 사진 자리에 바꿔 넣는다(항공사진).
+export function BoundaryDrawButton({ caseId, doc, onSaved, inPlace = false }) {
   const [blob, setBlob] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -57,14 +83,19 @@ export function BoundaryDrawButton({ caseId, doc, onSaved }) {
   }
 
   async function save(drawn) {
-    const result = await saveBoundaryCopy(caseId, doc, drawn);
+    const result = inPlace ? await replaceWithBoundary(caseId, doc, drawn) : await saveBoundaryCopy(caseId, doc, drawn);
     if (result.error) {
       alert(result.error); // 그리기 창은 그대로 두어 그린 선을 잃지 않게 한다
       return;
     }
     setBlob(null);
-    alert(`경계선을 그린 사진을 3.4 "배치도 등"에 "${result.name}"(으)로 저장했어요.
-원본 사진은 그대로 두었고, 보고서 배치도면엔 이 사진이 들어가요.`);
+    alert(
+      inPlace
+        ? `경계선을 그려 이 사진을 "${result.name}"(으)로 바꿨어요.
+6장 타임라인과 보고서 항공사진에도 경계선이 그려진 사진이 들어가요.`
+        : `경계선을 그린 사진을 3.4 "배치도 등"에 "${result.name}"(으)로 저장했어요.
+원본 사진은 그대로 두었고, 보고서 배치도면엔 이 사진이 들어가요.`
+    );
     onSaved?.();
   }
 
