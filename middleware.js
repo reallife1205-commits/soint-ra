@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { hashPassword, AUTH_COOKIE_NAME } from "@/lib/authToken";
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|login|api/login).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|login|api/login|api/keep-alive).*)"],
 };
 
 export async function middleware(req) {
