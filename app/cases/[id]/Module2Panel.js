@@ -521,8 +521,16 @@ function NetworkSummaryTable({ rows, regionGrade }) {
   return (
     <div className="card" style={{ overflowX: "auto" }}>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-        {siteCountText(rows)} · 우려기준 기준 지역:{" "}
-        {zone ? `${zone}지역` : "미지정 (사건 목록에서 지역등급을 입력해주세요)"}
+        {siteCountText(rows)} ·{" "}
+        {zone ? (
+          <>
+            주변 지점 모두 <b>대상부지 지역등급({zone}지역)</b>의 기준을 적용해요.
+            <br />
+            우려기준 줄의 값도 {zone}지역 기준이에요. 지역등급은 사건 목록에서 바꿀 수 있어요.
+          </>
+        ) : (
+          "우려기준 기준 지역: 미지정 (사건 목록에서 지역등급을 입력해주세요)"
+        )}
       </div>
       <table
         style={{
@@ -644,8 +652,16 @@ function SurveySummaryTable({ rows, substances, regionGrade }) {
   return (
     <div className="card" style={{ overflowX: "auto" }}>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-        {siteCountText(rows)} · 우려기준 기준 지역:{" "}
-        {zone ? `${zone}지역 (기준 초과 값은 빨간 굵은 글씨)` : "미지정 (사건 목록에서 지역등급을 입력해주세요)"}
+        {siteCountText(rows)} ·{" "}
+        {zone ? (
+          <>
+            주변 지점 모두 <b>대상부지 지역등급({zone}지역)</b>의 기준을 적용해요(지점마다의 지역 구분은 쓰지 않아요).
+            <br />
+            우려기준을 넘은 값은 빨간 굵은 글씨예요. 대책기준까지 넘은 값은 보고서 [표 3] 아래 주석에 적혀요.
+          </>
+        ) : (
+          "우려기준 기준 지역: 미지정 (사건 목록에서 지역등급을 입력해주세요)"
+        )}
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
         <thead>
