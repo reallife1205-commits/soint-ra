@@ -89,6 +89,28 @@ export function OwnershipLeaseSection({ caseId }) {
             한 줄에 점유 업체 하나씩 적고, 그때의 소유자를 옆에 적어 주세요. 기간은 1986~2014, 2014~현재처럼 적어요
             (소유 기간은 토지대장 날짜). 보고서 [표 4]에도 이 표와 같은 순서로 들어가고, 모르는 기간은 비워 두면 "-"로 나와요.
           </div>
+          <div
+            style={{
+              fontSize: 14,
+              lineHeight: 1.6,
+              background: "#f6f8f4",
+              border: "1px solid var(--color-border)",
+              borderRadius: 8,
+              padding: "10px 14px",
+              marginBottom: 12,
+            }}
+          >
+            <b>💡 보고서 그림 반영 안내</b> — 이 표의 소유자·점유자와 기간은 보고서 [표 4] 아래 「소유·점유 이력」 그림과
+            6장 통합 타임라인에 막대로 그려져요.
+            <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+              <li>소유자가 <b>바뀐 때만</b> 새 막대가 생겨요. 같은 소유자가 이어지는 줄(주소변경 등)은 한 막대로 합쳐요
+                (이름의 (주)·괄호·띄어쓰기는 빼고 비교).</li>
+              <li>소유 기간은 그 소유자의 취득일부터 <b>다음 소유자 취득일까지</b>, 마지막 소유자는 <b>현재까지</b>로 그려요.
+                처분일을 적으면 그 날짜를 써요.</li>
+              <li>같은 기간에 소유자가 여럿이면 <b>공동소유</b>로 보고 막대를 두 줄로 그려요.</li>
+              <li>점유자가 소유자와 다르면 <b>임차인</b> 줄에 따로 그려요.</li>
+            </ul>
+          </div>
           <LegacyLeaseRows caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
           <OwnerToOccupant key={`fix-${tableVersion}`} caseId={caseId} onMoved={() => setTableVersion((v) => v + 1)} />
           <CategorizedRowsTable
