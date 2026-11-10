@@ -14,6 +14,7 @@ import {
   surroundingCheckboxLine,
   buildSurroundingDraft,
   siteCountText,
+  countSites,
 } from "@/lib/surroundingContaminationDraft";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
@@ -418,7 +419,7 @@ export default function Module2Panel({ caseInfo, onCoordsUpdated }) {
       {searched && (
         <>
           <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--color-border)", marginBottom: 12 }}>
-            {["지도", `토양측정망 (${networkResults.length})`, `실태조사 (${surveyResults.length})`].map(
+            {["지도", `토양측정망 (${countSites(networkResults)}곳)`, `실태조사 (${countSites(surveyResults)}곳)`].map(
               (tabLabel, idx) => {
                 const tabKey = ["지도", "토양측정망", "실태조사"][idx];
                 return (

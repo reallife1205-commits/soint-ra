@@ -3,6 +3,7 @@
 import { MapContainer, TileLayer, Circle, CircleMarker, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { siteKey } from "@/lib/surroundingContaminationDraft";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -22,7 +23,7 @@ function groupBySite(points) {
   const groups = new Map();
   points.forEach((p) => {
     if (p.lat == null || p.lon == null) return;
-    const key = `${p.source_type}|${Number(p.lat).toFixed(5)}|${Number(p.lon).toFixed(5)}`;
+    const key = `${p.source_type}|${siteKey(p)}`;
     if (!groups.has(key)) groups.set(key, { ...p, key, names: new Set(), years: new Set() });
     const g = groups.get(key);
     g.names.add(p.site_name || p.address || "");
