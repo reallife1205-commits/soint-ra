@@ -13,6 +13,7 @@ import {
   defaultSurroundingSources,
   surroundingCheckboxLine,
   buildSurroundingDraft,
+  siteCountText,
 } from "@/lib/surroundingContaminationDraft";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
@@ -519,7 +520,7 @@ function NetworkSummaryTable({ rows, regionGrade }) {
   return (
     <div className="card" style={{ overflowX: "auto" }}>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-        지점 {rows.length}개 · 우려기준 기준 지역:{" "}
+        {siteCountText(rows)} · 우려기준 기준 지역:{" "}
         {zone ? `${zone}지역` : "미지정 (사건 목록에서 지역등급을 입력해주세요)"}
       </div>
       <table
@@ -642,7 +643,7 @@ function SurveySummaryTable({ rows, substances, regionGrade }) {
   return (
     <div className="card" style={{ overflowX: "auto" }}>
       <div style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 10 }}>
-        지점 {rows.length}개 · 우려기준 기준 지역:{" "}
+        {siteCountText(rows)} · 우려기준 기준 지역:{" "}
         {zone ? `${zone}지역 (기준 초과 값은 빨간 굵은 글씨)` : "미지정 (사건 목록에서 지역등급을 입력해주세요)"}
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15 }}>
