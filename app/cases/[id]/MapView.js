@@ -62,6 +62,10 @@ export default function MapView({ center, radiusKm, points }) {
         preferCanvas
         center={[center.lat, center.lon]}
         zoom={13}
+        // 확대·축소를 한 단계(2배)씩이 아니라 1/4 단계씩 — 반경 원이 화면에 꼭 맞게 맞추기 쉽도록
+        zoomSnap={0.25}
+        zoomDelta={0.25}
+        wheelPxPerZoomLevel={240}
         style={{ height: 400, width: "100%" }}
       >
         <TileLayer
