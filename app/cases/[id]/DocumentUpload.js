@@ -6,7 +6,7 @@ import ReportStatusBadge from "./ReportStatusBadge";
 import { PasteZone, RenameButton, RenameInput, renameDocument, splitExt } from "./UploadHelpers";
 import { yearFromFileName } from "@/lib/photoYear";
 import { shrinkImageForUpload, uploadBlockReason, friendlyUploadError } from "@/lib/shrinkImage";
-import { BoundaryDrawButton, RestoreOriginalButton, hasBoundaryDrawn } from "./BoundaryDrawer";
+import { BoundaryDrawButton } from "./BoundaryDrawer";
 
 function isImageFile(fileName) {
   return /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName || "");
@@ -161,10 +161,7 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
   }
 
   async function handleDelete(doc) {
-    // 경계선을 그린 항공사진이면 남겨 둔 원본 파일도 같이 지운다
-    await supabase.storage
-      .from("documents")
-      .remove([doc.file_path, ...(doc.original_file_path ? [doc.original_file_path] : [])]);
+    await supabase.storage.from("documents").remove([doc.file_path]);
     await supabase.from("documents").delete().eq("id", doc.id);
     reloadAndNotify();
   }
@@ -362,16 +359,6 @@ export default function DocumentUpload({ caseId, moduleNumber, title = "참고 �
                   doc={previewDoc}
                   inPlace
                   onSaved={() => {
-                    setPreviewDoc(null);
-                    load();
-                  }}
-                />
-              )}
-              {moduleNumber === 4 && hasBoundaryDrawn(previewDoc) && (
-                <RestoreOriginalButton
-                  caseId={caseId}
-                  doc={previewDoc}
-                  onRestored={() => {
                     setPreviewDoc(null);
                     load();
                   }}
