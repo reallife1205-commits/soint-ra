@@ -26,13 +26,23 @@ export async function replaceWithBoundary(caseId, doc, blob) {
   const filePath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
   const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file);
   if (uploadError) return { error: friendlyUploadError(uploadError.message) };
-  const { error: updateError } = await supabase
-    .from("documents")
-    .update({ file_path: filePath, file_name: name, file_size: file.size })
-    .eq("id", doc.id);
+  // 원본 위치를 적어 둔다("원본으로 되돌리기"용). 이미 경계선을 그린 사진에 다시 그리면 처음 원본을 그대로 둔다.
+  const original = doc.original_file_path
+    ? { original_file_path: doc.original_file_path, original_file_name: doc.original_file_name }
+    : { original_file_path: doc.file_path, original_file_name: doc.file_name };
+  const base = { file_path: filePath, file_name: name, file_size: file.size };
+  let { error: updateError } = await supabase.from("documents").update({ ...base, ...original }).eq("id", doc.id);
+  // sql/028을 아직 안 돌렸으면 원본 위치 열이 없다 — 그래도 그리기는 되게 열 없이 다시 저장한다
+  if (updateError && /original_file/.test(updateError.message)) {
+    ({ error: updateError } = await supabase.from("documents").update(base).eq("id", doc.id));
+  }
   if (updateError) {
     await supabase.storage.from("documents").remove([filePath]);
     return { error: `저장에 실패했어요: ${updateError.message}` };
+  }
+  // 경계선 사진에 다시 그렸으면 그 전 경계선 사진 파일은 더 쓸 데가 없다(원본은 지우지 않는다)
+  if (doc.original_file_path && doc.file_path !== doc.original_file_path) {
+    await supabase.storage.from("documents").remove([doc.file_path]);
   }
   window.dispatchEvent(new CustomEvent("documents-changed", { detail: { caseId, moduleNumber: doc.module_number } }));
   return { name };
@@ -105,6 +115,158 @@ export function BoundaryDrawButton({ caseId, doc, onSaved, inPlace = false }) {
         {busy ? "불러오는 중..." : "✏️ 부지 경계 그리기"}
       </button>
       {blob && <BoundaryDrawer imageBlob={blob} onCancel={() => setBlob(null)} onSave={save} />}
+    </>
+  );
+}
+
+// 경계선을 그려 바꿔 넣은 항공사진인가 — 원본 위치가 적혀 있거나, 그 열이 생기기 전에 그린 사진(이름 끝 _경계선)
+export function hasBoundaryDrawn(doc) {
+  return !!doc.original_file_path || splitExt(doc.file_name).base.endsWith(BOUNDARY_SUFFIX);
+}
+
+function originalNameFor(doc, originalPath) {
+  if (doc.original_file_name) return doc.original_file_name;
+  const base = splitExt(doc.file_name).base.replace(new RegExp(`${BOUNDARY_SUFFIX}$`), "");
+  const ext = originalPath.match(/\.[^./]+$/)?.[0] || ".jpg";
+  return base + ext;
+}
+
+// 경계선 사진을 원본으로 되돌린다. 연도·태깅·캡션은 그대로. 경계선 사진 파일은 지운다.
+async function restoreOriginal(caseId, doc, originalPath) {
+  const { data: blob, error: dlError } = await supabase.storage.from("documents").download(originalPath);
+  if (dlError || !blob) return { error: "원본 사진을 불러오지 못했어요" };
+  const name = originalNameFor(doc, originalPath);
+  const base = { file_path: originalPath, file_name: name, file_size: blob.size };
+  let { error } = await supabase
+    .from("documents")
+    .update({ ...base, original_file_path: null, original_file_name: null })
+    .eq("id", doc.id);
+  if (error && /original_file/.test(error.message)) {
+    ({ error } = await supabase.from("documents").update(base).eq("id", doc.id));
+  }
+  if (error) return { error: `되돌리지 못했어요: ${error.message}` };
+  if (doc.file_path !== originalPath) await supabase.storage.from("documents").remove([doc.file_path]);
+  window.dispatchEvent(new CustomEvent("documents-changed", { detail: { caseId, moduleNumber: doc.module_number } }));
+  return { name };
+}
+
+// 원본 위치가 안 적힌(sql/028 전에 그린) 사진: 같은 폴더에서 어떤 사진도 쓰지 않는 파일을 원본 후보로 모은다.
+// 경계선을 그린 사진이 여러 장이면 후보도 여러 장이라, 사진을 보고 직접 고르게 한다.
+async function findOriginalCandidates(caseId, doc) {
+  const folder = doc.file_path.replace(/\/[^/]*$/, "");
+  const [{ data: files, error: listError }, { data: docs, error: docsError }] = await Promise.all([
+    supabase.storage.from("documents").list(folder, { limit: 1000, sortBy: { column: "created_at", order: "asc" } }),
+    supabase.from("documents").select("*").eq("case_id", caseId),
+  ]);
+  if (listError || docsError) return { error: "저장된 사진 목록을 불러오지 못했어요" };
+  const used = new Set();
+  (docs || []).forEach((d) => {
+    used.add(d.file_path);
+    if (d.original_file_path) used.add(d.original_file_path);
+  });
+  const paths = (files || [])
+    .filter((f) => f.id) // 하위 폴더는 빼고 파일만
+    .map((f) => ({ path: `${folder}/${f.name}`, createdAt: f.created_at }))
+    .filter((f) => !used.has(f.path));
+  if (paths.length === 0) return { candidates: [] };
+  const { data: urls } = await supabase.storage.from("documents").createSignedUrls(
+    paths.map((p) => p.path),
+    3600
+  );
+  return { candidates: paths.map((p, i) => ({ ...p, url: urls?.[i]?.signedUrl })) };
+}
+
+// 크게 본 항공사진 창에 붙이는 "원본으로 되돌리기" 버튼
+export function RestoreOriginalButton({ caseId, doc, onRestored }) {
+  const [busy, setBusy] = useState(false);
+  const [candidates, setCandidates] = useState(null); // 후보 고르는 창
+
+  async function finish(originalPath) {
+    setBusy(true);
+    const result = await restoreOriginal(caseId, doc, originalPath);
+    setBusy(false);
+    if (result.error) {
+      alert(result.error);
+      return;
+    }
+    setCandidates(null);
+    alert(`경계선을 그리기 전 원본 사진 "${result.name}"(으)로 되돌렸어요.`);
+    onRestored?.();
+  }
+
+  async function start() {
+    if (doc.original_file_path) {
+      if (confirm("경계선을 그리기 전 원본 사진으로 되돌릴까요?\n지금 그려진 경계선은 사라져요.")) finish(doc.original_file_path);
+      return;
+    }
+    setBusy(true);
+    const result = await findOriginalCandidates(caseId, doc);
+    setBusy(false);
+    if (result.error) return alert(result.error);
+    if (result.candidates.length === 0) {
+      return alert("원본을 찾지 못했어요.\n이 사진을 지우고 원본 항공사진을 다시 올려 주세요.");
+    }
+    setCandidates(result.candidates);
+  }
+
+  return (
+    <>
+      <button type="button" className="btn-secondary" onClick={start} disabled={busy}>
+        {busy ? "찾는 중..." : "↩️ 원본으로 되돌리기"}
+      </button>
+      {candidates && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 110,
+            padding: 20,
+          }}
+        >
+          <div style={{ background: "white", borderRadius: 10, padding: 16, maxWidth: "95vw", maxHeight: "95vh", overflow: "auto" }}>
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>원본 사진 고르기</div>
+            <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 10 }}>
+              이 사진은 원본 위치가 적혀 있지 않아, 어떤 사진에도 쓰이지 않는 파일을 모았어요. 경계선을 그리기 전 이 사진의 원본을 눌러 고르세요.
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              {candidates.map((c) => (
+                <button
+                  key={c.path}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => finish(c.path)}
+                  style={{
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 8,
+                    padding: 6,
+                    background: "white",
+                    cursor: "pointer",
+                    textAlign: "center",
+                  }}
+                >
+                  {c.url ? (
+                    <img src={c.url} alt="" style={{ display: "block", width: 260, height: 200, objectFit: "contain", background: "#f4f4f4" }} />
+                  ) : (
+                    <div style={{ width: 260, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>미리보기 없음</div>
+                  )}
+                  <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 4 }}>
+                    {c.createdAt ? `${new Date(c.createdAt).toLocaleString("ko-KR")} 올림` : ""}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+              <button type="button" className="btn-secondary" onClick={() => setCandidates(null)} disabled={busy}>
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
