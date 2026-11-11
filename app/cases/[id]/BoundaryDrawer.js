@@ -123,6 +123,12 @@ const WIDTHS = [
   { value: 6, label: "보통" },
   { value: 10, label: "굵게" },
 ];
+// 선 모양 — 점선 간격은 굵기에 맞춰 늘린다(둥근 끝이 굵기만큼 간격을 메우니 그만큼 더 띄운다)
+const STYLES = [
+  { value: "solid", label: "실선" },
+  { value: "dashed", label: "점선" },
+];
+const dashFor = (style, lw) => (style === "dashed" ? [lw * 3, lw * 3] : []);
 const CLOSE_RADIUS_PX = 14; // 화면에서 첫 점을 이만큼 가까이 누르면 다각형을 닫는다
 
 export default function BoundaryDrawer({ imageBlob, onCancel, onSave }) {
@@ -132,6 +138,7 @@ export default function BoundaryDrawer({ imageBlob, onCancel, onSave }) {
   const [closed, setClosed] = useState(false);
   const [color, setColor] = useState(COLORS[0].value);
   const [width, setWidth] = useState(WIDTHS[1].value);
+  const [lineStyle, setLineStyle] = useState(STYLES[0].value);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -152,10 +159,12 @@ export default function BoundaryDrawer({ imageBlob, onCancel, onSave }) {
     ctx.lineWidth = lw;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
+    ctx.setLineDash(dashFor(lineStyle, lw));
     ctx.beginPath();
     points.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
     if (closed) ctx.closePath();
     ctx.stroke();
+    ctx.setLineDash([]); // 꼭짓점 동그라미 테두리는 실선으로
     if (showVertices) {
       points.forEach(([x, y], i) => {
         ctx.beginPath();
@@ -176,7 +185,7 @@ export default function BoundaryDrawer({ imageBlob, onCancel, onSave }) {
     canvas.height = img.naturalHeight;
     draw(canvas.getContext("2d"), img, { showVertices: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [img, points, closed, color, width]);
+  }, [img, points, closed, color, width, lineStyle]);
 
   function handleClick(e) {
     if (closed || !img) return;
@@ -251,6 +260,21 @@ export default function BoundaryDrawer({ imageBlob, onCancel, onSave }) {
           {WIDTHS.map((w) => (
             <button key={w.value} type="button" style={chip(width === w.value)} onClick={() => setWidth(w.value)}>
               {w.label}
+            </button>
+          ))}
+          <span style={{ fontSize: 14, marginLeft: 8 }}>선</span>
+          {STYLES.map((s) => (
+            <button key={s.value} type="button" style={chip(lineStyle === s.value)} onClick={() => setLineStyle(s.value)}>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 18,
+                  verticalAlign: "middle",
+                  borderTop: `2px ${s.value} #333`,
+                  marginRight: 4,
+                }}
+              />
+              {s.label}
             </button>
           ))}
           <span style={{ marginLeft: 8 }} />
